@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const inv = (c, ...a) => ipcRenderer.invoke(c, ...a);
 const on = (c, cb) => { const f = (_e, d) => cb(d); ipcRenderer.on(c, f); return () => ipcRenderer.removeListener(c, f); };
 
-contextBridge.exposeInMainWorld('mochi', {
+const api = {
   platform: process.platform,
 
   // ---- note ----
@@ -40,4 +40,21 @@ contextBridge.exposeInMainWorld('mochi', {
   setIgnoreMouse: v => ipcRenderer.send('mascot:ignore', !!v),
   mascotReady: () => ipcRenderer.send('mascot:ready'),
   summonMascot: () => inv('mascot:summon')
-});
+};
+
+// Mỗi phòng CHỈ sửa trong khối của mình (giữa 2 dòng đánh dấu). Kênh IPC đặt tiền tố theo phòng.
+// ===== BẮT ĐẦU PHÒNG notes (kênh 'alarm:*', 'memo:*', 'notes2:*') =====
+api.alarms = {};
+// ===== HẾT PHÒNG notes =====
+// ===== BẮT ĐẦU PHÒNG core (kênh 'pet:*') =====
+api.pet = {};
+// ===== HẾT PHÒNG core =====
+// ===== BẮT ĐẦU PHÒNG game (kênh 'game:*') =====
+api.game = {};
+// ===== HẾT PHÒNG game =====
+// ===== BẮT ĐẦU PHÒNG persona (kênh 'persona:*') =====
+api.persona = {};
+// ===== HẾT PHÒNG persona =====
+
+contextBridge.exposeInMainWorld('mochi', api);
+

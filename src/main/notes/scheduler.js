@@ -1,6 +1,6 @@
 'use strict';
 // Logic thuần (không import electron) cho reminder.
-const P = require('../shared/parse.js');
+const P = require('../../shared/parse.js');
 
 const MIN = 6e4;
 const NAG_AFTER = 10 * MIN;   // quá hạn > 10 phút mới nhắc dai
