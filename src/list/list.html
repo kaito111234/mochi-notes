@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi Notes</title>
+<link rel="stylesheet" href="list.css">
+</head>
+<body>
+<div class="app">
+  <header class="titlebar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 14c0-4.4 3-8 7-8s7 3.6 7 8c0 2.8-1.6 4.5-4 4.5H9c-2.4 0-4-1.7-4-4.5z" fill="var(--mint)" stroke="var(--text)" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.5" cy="13" r="1" fill="var(--text)"/><circle cx="14.5" cy="13" r="1" fill="var(--text)"/></svg>
+      <span class="brand-name">Mochi Notes</span>
+    </div>
+    <div class="tb-actions">
+      <button class="icon-btn" id="btnNew" type="button" title="Note mới" aria-label="Note mới"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="icon-btn" id="btnSettings" type="button" title="Cài đặt" aria-label="Cài đặt" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="icon-btn close" id="btnClose" type="button" title="Đóng" aria-label="Đóng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="list-view" id="listView">
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Tìm trong note..." autocomplete="off" spellcheck="false" aria-label="Tìm trong note">
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Bộ lọc">
+        <button class="chip" type="button" data-f="all" aria-pressed="true">Tất cả <span class="n">0</span></button>
+        <button class="chip" type="button" data-f="remind" aria-pressed="false">Có nhắc lịch <span class="n">0</span></button>
+        <button class="chip" type="button" data-f="shown" aria-pressed="false">Đang dán <span class="n">0</span></button>
+        <button class="chip" type="button" data-f="hidden" aria-pressed="false">Đang cất <span class="n">0</span></button>
+      </div>
+      <div class="scroll" id="scroll">
+        <section class="upcoming" id="upcoming" hidden aria-label="Sắp tới">
+          <h2>Sắp tới</h2>
+          <div class="up-rows" id="upRows"></div>
+        </section>
+        <div class="cards" id="cards"></div>
+        <div class="empty" id="empty" hidden></div>
+      </div>
+      <footer class="bottombar">
+        <div class="bb-btns">
+          <button class="btn" id="btnShowAll" type="button">Hiện tất cả</button>
+          <button class="btn" id="btnHideAll" type="button">Ẩn tất cả</button>
+        </div>
+        <p class="hint"><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd> note mới · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>H</kbd> ẩn/hiện</p>
+      </footer>
+    </section>
+
+    <section class="panel" id="panel" aria-label="Cài đặt" aria-hidden="true" inert>
+      <div class="panel-head">
+        <button class="icon-btn" id="btnBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <h2>Cài đặt</h2>
+      </div>
+      <div class="panel-body">
+        <div class="group">
+          <button class="row" type="button" role="switch" aria-checked="false" data-key="mascotEnabled"><span class="row-text"><span class="row-title">Bé Mochi hiện ra nhắc lịch</span><span class="row-desc">Tắt thì dùng thông báo Windows</span></span><span class="switch" aria-hidden="true"></span></button>
+          <button class="row" type="button" role="switch" aria-checked="false" data-key="mascotIdle"><span class="row-text"><span class="row-title">Bé luôn ngồi ở góc màn hình</span></span><span class="switch" aria-hidden="true"></span></button>
+          <button class="row" type="button" role="switch" aria-checked="false" data-key="sound"><span class="row-text"><span class="row-title">Âm thanh nhắc</span></span><span class="switch" aria-hidden="true"></span></button>
+          <button class="row" type="button" role="switch" aria-checked="false" data-key="glass"><span class="row-text"><span class="row-title">Nền kính Windows 11</span></span><span class="switch" aria-hidden="true"></span></button>
+          <button class="row" type="button" role="switch" aria-checked="false" data-key="startup"><span class="row-text"><span class="row-title">Khởi động cùng Windows</span></span><span class="switch" aria-hidden="true"></span></button>
+        </div>
+        <button class="btn primary wide" id="btnSummon" type="button">Gọi bé ra thử</button>
+
+        <h3>Phím tắt toàn cục</h3>
+        <dl class="keys">
+          <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>N</kbd></dt><dd>Note mới</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd></dt><dd>Ẩn/hiện tất cả</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>L</kbd></dt><dd>Danh sách note</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>M</kbd></dt><dd>Gọi bé ra</dd></div>
+        </dl>
+        <h3>Trong note</h3>
+        <dl class="keys">
+          <div><dt><kbd>Ctrl</kbd><kbd>B</kbd> <kbd>I</kbd> <kbd>U</kbd></dt><dd>Đậm, nghiêng, gạch chân</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>T</kbd></dt><dd>Gạch ngang</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>L</kbd></dt><dd>Danh sách chấm</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>H</kbd></dt><dd>Tô sáng</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>D</kbd></dt><dd>Xoá note</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>W</kbd></dt><dd>Cất note</dd></div>
+        </dl>
+        <p class="tip">Mẹo: gõ giờ tự nhiên trong note, ví dụ "họp 3h chiều nay", "nộp báo cáo thứ 6", "gọi khách 20 phút nữa" là bé tự nhắc.</p>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="../shared/parse.js"></script>
+<script src="list.js"></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  background: transparent; overflow: hidden;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  user-select: none; -webkit-user-select: none;
+}
+img { -webkit-user-drag: none; pointer-events: none; }
+
+:root {
+  --sw: 300px;      /* chiều rộng sprite */
+  --sh: 300px;      /* chiều cao sprite (JS cập nhật theo manifest) */
+  --sr: 18px;       /* cách mép phải */
+  --ink: #3a2a4d;
+}
+#stage.idle { --sw: 170px; --sr: 14px; }
+
+#stage { position: fixed; inset: 0; width: 440px; height: 520px; overflow: hidden; }
+#rig { position: absolute; inset: 0; transform: translateY(100%); will-change: transform; }
+#shaker { position: absolute; inset: 0; transform-origin: 75% 100%; pointer-events: none; }
+
+/* ---- sprite ---- */
+#sprite {
+  position: absolute; bottom: 0; right: var(--sr);
+  width: var(--sw); height: var(--sh);
+  transition: width .3s ease, height .3s ease, right .3s ease;
+}
+#tilt { position: absolute; inset: 0; transform-origin: 50% 100%; transition: transform 1.4s ease-in-out; }
+#breath { position: absolute; inset: 0; transform-origin: 50% 100%; animation: breathe 3s ease-in-out infinite; }
+.face { position: absolute; left: 0; bottom: 0; width: 100%; height: auto; opacity: 0; transition: opacity .12s linear; }
+.face.on { opacity: 1; }
+#spriteHit { position: absolute; left: 14%; right: 14%; top: 8%; bottom: 0; cursor: pointer; border-radius: 40% 40% 0 0; }
+@keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.012); } }
+
+/* ---- tờ note ---- */
+#noteWrap {
+  position: absolute; bottom: -20px;
+  right: calc(var(--sr) + var(--sw) * 0.56);
+  width: 190px; height: 130px;
+}
+#noteMove { position: absolute; inset: 0; transform: rotate(-4deg); transform-origin: 50% 100%; }
+#noteWrap.pre #noteMove { animation: holdUp 2.6s ease-in-out infinite; }
+#noteWrap.due #noteMove { animation: wave 1.1s ease-in-out infinite; }
+@keyframes holdUp {
+  0%,100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-7px) rotate(-3deg); }
+}
+@keyframes wave {
+  0%,100% { transform: translateY(0) rotate(-4deg); }
+  15% { transform: translateY(-10px) rotate(-12deg); }
+  35% { transform: translateY(-6px) rotate(6deg); }
+  55% { transform: translateY(-10px) rotate(-11deg); }
+  75% { transform: translateY(-4px) rotate(4deg); }
+}
+#sheet {
+  position: absolute; inset: 0; border-radius: 3px 3px 14px 3px;
+  background: var(--paper, #FFF7D1); color: var(--txt, #3a2a2a);
+  box-shadow: 0 10px 22px rgba(40, 20, 60, .28), 0 2px 5px rgba(40, 20, 60, .18);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+#sheet .strip { height: 20px; flex: none; background: var(--head, #F5E27A); box-shadow: inset 0 -1px 0 rgba(0,0,0,.06); }
+#sheet .body { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 3px; min-height: 0; flex: 1; font-family: "Segoe Print", "Segoe UI", sans-serif; }
+#sheet .big { font-size: 18px; font-weight: 700; line-height: 1.15; }
+#sheet .ttl {
+  font-size: 15px; line-height: 1.25; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word;
+}
+#sheet .meta { margin-top: auto; font-family: "Segoe UI", sans-serif; font-size: 12px; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#sheet .curl {
+  position: absolute; right: 0; bottom: 0; width: 34px; height: 34px;
+  background: linear-gradient(315deg, rgba(0,0,0,.20) 0%, rgba(0,0,0,.10) 22%, rgba(255,255,255,.0) 50%);
+  border-radius: 0 0 14px 0;
+}
+#sheet .curl::after {
+  content: ""; position: absolute; right: 0; bottom: 0; width: 22px; height: 22px;
+  background: linear-gradient(135deg, rgba(255,255,255,.85), rgba(255,255,255,.25) 55%, rgba(0,0,0,.08));
+  border-radius: 10px 0 14px 0; box-shadow: -2px -2px 5px rgba(0,0,0,.12);
+}
+#noteWrap.charcoal #sheet { color: #f2f2f2; }
+.hand {
+  position: absolute; bottom: -10px; width: 26px; height: 20px; border-radius: 50%;
+  background: #ffe6dc; border: 1.5px solid rgba(58, 42, 77, .55);
+  box-shadow: 0 2px 4px rgba(40, 20, 60, .2); pointer-events: none;
+}
+.hand.l { left: 12px; transform: rotate(-12deg); }
+.hand.r { right: 12px; transform: rotate(12deg); }
+
+/* ---- bong bóng thoại ---- */
+#bubble {
+  position: absolute; left: 8px; width: 224px; bottom: 150px;
+  padding: 12px 14px 12px; border-radius: 18px;
+  background: rgba(255, 255, 255, .95);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 8px 24px rgba(60, 40, 100, .22);
+  color: var(--ink); transform-origin: 100% 100%;
+  animation: bubIn .28s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+#bubble[hidden], #noteWrap[hidden] { display: none; }
+#bubble .tail {
+  position: absolute; right: -7px; bottom: 26px; width: 16px; height: 16px;
+  background: rgba(255, 255, 255, .95); border-right: 1px solid rgba(255,255,255,.9); border-top: 1px solid rgba(255,255,255,.9);
+  transform: rotate(45deg); border-radius: 0 4px 0 0;
+}
+@keyframes bubIn { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+#bText { font-size: 14px; line-height: 1.4; font-weight: 500; }
+#bBtns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+#bBtns:empty { display: none; }
+.btn {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(58, 42, 77, .18);
+  background: rgba(255, 255, 255, .85); color: var(--ink);
+  transition: transform .1s, background .15s;
+}
+.btn:hover { background: #fff; transform: translateY(-1px); }
+.btn:active { transform: scale(.96); }
+.btn.primary { background: #7fc8a9; border-color: #5fae8d; color: #123524; }
+.btn.primary:hover { background: #8fd4b6; }
+.btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+/* ---- rung ---- */
+#shaker.shake { animation: shake .6s ease-in-out; }
+@keyframes shake {
+  0%,100% { transform: translateX(0) rotate(0); }
+  15% { transform: translateX(-9px) rotate(-1.6deg); }
+  30% { transform: translateX(8px) rotate(1.4deg); }
+  45% { transform: translateX(-7px) rotate(-1deg); }
+  60% { transform: translateX(6px) rotate(.8deg); }
+  80% { transform: translateX(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #breath, #noteWrap.pre #noteMove, #noteWrap.due #noteMove, #shaker.shake, #bubble { animation: none !important; }
+  .face { transition: none; }
+  #tilt { transition: none; }
+}

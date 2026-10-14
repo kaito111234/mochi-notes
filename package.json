@@ -1,0 +1,47 @@
+{
+  "name": "mochi-notes",
+  "version": "0.1.0",
+  "description": "Sticky note + trợ lý ảo bé Mochi nhắc lịch",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win zip --x64"
+  },
+  "keywords": [],
+  "author": "Joiha",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "productName": "Mochi Notes",
+  "build": {
+    "appId": "vn.joiha.mochinotes",
+    "productName": "Mochi Notes",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "signAndEditExecutable": false
+    },
+    "asar": true,
+    "electronLanguages": [
+      "vi",
+      "en-US"
+    ]
+  }
+}

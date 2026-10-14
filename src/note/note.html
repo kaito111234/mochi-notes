@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Note</title>
+<link rel="stylesheet" href="note.css">
+</head>
+<body data-color="yellow">
+<div class="note" id="note">
+  <header class="topbar">
+    <button class="ib" id="btnNew" type="button" title="Note mới (Ctrl+N)" aria-label="Note mới">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <span class="pin" id="pin" hidden title="Luôn nổi trên cùng" aria-label="Luôn nổi trên cùng">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+    </span>
+    <span class="spacer"></span>
+    <button class="ib" id="btnMenu" type="button" data-pop-toggle title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
+    </button>
+    <button class="ib" id="btnClose" type="button" title="Cất note (Ctrl+W)" aria-label="Cất note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </header>
+
+  <div class="lower">
+    <main class="body"><div id="editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Nội dung note" data-placeholder="Ghi chú…"></div></main>
+
+    <div class="chiprow" id="chipRow" hidden>
+      <button class="chip" id="chip" type="button" data-pop-toggle>
+        <svg class="i-clock" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <svg class="i-check" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M5 12l4.5 4.5L19 7"/></svg>
+        <span id="chipText"></span>
+      </button>
+      <span class="hint" id="hint" hidden>Bé Mochi sẽ nhắc cậu</span>
+    </div>
+
+    <div class="fmtwrap">
+      <div class="pop hlpanel" id="hlPanel" hidden role="group" aria-label="Màu tô sáng">
+        <button class="hsw" type="button" data-hl="yellow" title="Vàng" aria-label="Vàng"></button>
+        <button class="hsw" type="button" data-hl="green" title="Xanh lá" aria-label="Xanh lá"></button>
+        <button class="hsw" type="button" data-hl="pink" title="Hồng" aria-label="Hồng"></button>
+        <button class="hsw" type="button" data-hl="blue" title="Xanh dương" aria-label="Xanh dương"></button>
+        <button class="hsw" type="button" data-hl="purple" title="Tím" aria-label="Tím"></button>
+        <button class="btn small" type="button" data-hl="none">Bỏ tô</button>
+      </div>
+      <div class="fmt" id="fmt" role="toolbar" aria-label="Định dạng">
+        <button class="fb" type="button" data-cmd="bold" title="Đậm (Ctrl+B)" aria-label="Đậm" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/></svg></button>
+        <button class="fb" type="button" data-cmd="italic" title="Nghiêng (Ctrl+I)" aria-label="Nghiêng" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5h8M6 19h8M15 5L9 19"/></svg></button>
+        <button class="fb" type="button" data-cmd="underline" title="Gạch chân (Ctrl+U)" aria-label="Gạch chân" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v7a5 5 0 0 0 10 0V4M5 20h14"/></svg></button>
+        <button class="fb" type="button" data-cmd="strikeThrough" title="Gạch ngang (Ctrl+T)" aria-label="Gạch ngang" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M16 7.5C15.5 5.8 14 5 12 5c-2.4 0-4 1.2-4 3M8 16.5c.7 1.7 2.3 2.5 4.3 2.5 2.4 0 4.2-1.2 4.2-3"/></svg></button>
+        <button class="fb" type="button" data-cmd="insertUnorderedList" title="Danh sách chấm (Ctrl+Shift+L)" aria-label="Danh sách chấm" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path class="dots" d="M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
+        <button class="fb" type="button" id="btnHl" data-pop-toggle title="Tô sáng (Ctrl+Shift+H)" aria-label="Tô sáng" aria-haspopup="true" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg><i class="hlbar" id="hlBar"></i></button>
+        <button class="fb" type="button" id="btnRem" data-pop-toggle title="Nhắc lịch (Ctrl+Shift+R)" aria-label="Nhắc lịch" aria-haspopup="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pop menu" id="menu" hidden role="menu" aria-label="Menu note">
+    <div id="menuMain">
+      <div class="swatches" role="radiogroup" aria-label="Màu note">
+        <button class="sw" type="button" role="radio" data-color="yellow" title="Vàng" aria-label="Vàng"></button>
+        <button class="sw" type="button" role="radio" data-color="green" title="Xanh lá" aria-label="Xanh lá"></button>
+        <button class="sw" type="button" role="radio" data-color="pink" title="Hồng" aria-label="Hồng"></button>
+        <button class="sw" type="button" role="radio" data-color="purple" title="Tím" aria-label="Tím"></button>
+        <button class="sw" type="button" role="radio" data-color="blue" title="Xanh dương" aria-label="Xanh dương"></button>
+        <button class="sw" type="button" role="radio" data-color="gray" title="Xám" aria-label="Xám"></button>
+        <button class="sw" type="button" role="radio" data-color="charcoal" title="Than" aria-label="Than"></button>
+      </div>
+      <button class="mi" type="button" role="menuitemcheckbox" aria-checked="false" data-act="top"><span>Luôn nổi trên cùng</span><svg class="chk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7"/></svg></button>
+      <button class="mi" type="button" role="menuitem" data-act="remind"><span>Nhắc lịch…</span></button>
+      <button class="mi" type="button" role="menuitem" data-act="list"><span>Danh sách note</span></button>
+      <button class="mi" type="button" role="menuitem" data-act="hideall"><span>Ẩn tất cả note</span></button>
+      <div class="sep"></div>
+      <button class="mi danger" type="button" role="menuitem" data-act="delete"><span>Xoá note</span></button>
+    </div>
+    <div id="menuConfirm" hidden>
+      <div class="ptitle">Xoá note này?</div>
+      <div class="pnote">Note sẽ bị xoá hẳn, không khôi phục được.</div>
+      <div class="row">
+        <button class="btn danger" type="button" data-act="del-yes">Xoá</button>
+        <button class="btn" type="button" data-act="del-no" id="delNo">Huỷ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pop panel" id="remPanel" hidden role="dialog" aria-label="Nhắc lịch">
+    <div class="ptitle">Nhắc lịch</div>
+    <label class="fld"><span>Thời gian</span><input type="datetime-local" id="remDue"></label>
+    <label class="fld"><span>Báo trước</span>
+      <select id="remLead">
+        <option value="0">Đúng giờ</option>
+        <option value="300000">5 phút</option>
+        <option value="600000">10 phút</option>
+        <option value="900000">15 phút</option>
+        <option value="1800000">30 phút</option>
+        <option value="3600000">1 tiếng</option>
+        <option value="86400000">1 ngày</option>
+      </select>
+    </label>
+    <div class="auto" id="remAuto" hidden>Tự hiểu từ nội dung</div>
+    <div class="err" id="remErr" role="alert" hidden></div>
+    <div class="row">
+      <button class="btn primary" type="button" id="remSave">Lưu</button>
+      <button class="btn" type="button" id="remOff">Tắt nhắc</button>
+      <button class="btn" type="button" id="remDone">Đánh dấu xong</button>
+    </div>
+  </div>
+</div>
+<script src="../shared/parse.js"></script>
+<script src="note.js"></script>
+</body>
+</html>

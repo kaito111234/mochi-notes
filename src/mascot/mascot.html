@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mochi</title>
+<link rel="stylesheet" href="mascot.css">
+</head>
+<body>
+<div id="stage">
+  <div id="rig">
+    <div id="shaker">
+      <div id="sprite">
+        <div id="tilt">
+          <div id="breath">
+            <img id="imgA" class="face on" alt="" draggable="false">
+            <img id="imgB" class="face" alt="" draggable="false">
+          </div>
+        </div>
+        <div id="spriteHit" class="hit"></div>
+      </div>
+
+      <div id="noteWrap" hidden>
+        <div id="noteMove">
+          <div id="sheet" class="hit">
+            <div class="strip"></div>
+            <div class="body">
+              <div id="nBig" class="big"></div>
+              <div id="nTitle" class="ttl"></div>
+              <div id="nMeta" class="meta"></div>
+            </div>
+            <div class="curl"></div>
+          </div>
+          <div class="hand l"></div>
+          <div class="hand r"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="bubble" class="hit" hidden>
+      <div id="bText"></div>
+      <div id="bBtns"></div>
+      <span class="tail"></span>
+    </div>
+  </div>
+</div>
+<script src="../shared/parse.js"></script>
+<script src="mascot.js"></script>
+</body>
+</html>
