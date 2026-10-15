@@ -18,44 +18,43 @@ File được sửa: xem `docs/spec/00-ownership.md` (dòng persona).
 - ART-BRIEF đủ mọi action, đọc là vẽ được.
 
 ## Trạng thái
-_Cập nhật 2026-10-15 — lượt 2 (tích hợp Đợt 2/2B). Đợt 1 đã xong và đã gộp vào main (xem lịch sử git)._
+_Cập nhật 2026-10-15 — lượt 3 (Đợt 3, theo yêu cầu điều hành). Đợt 1 đã gộp; lượt 2 (bỏ nói trùng, nhiều nhắc/note) nằm trên nhánh này, chưa gộp._
 
-### Đã xong lượt này
-- **Bỏ nói trùng** (phát hiện khi đọc code các phòng sau Đợt 2):
-  - `click`/`pat_head`/`pat_body`: petcore/brain.js đã tự nói → persona chỉ còn tự nói `lift`/`drop`.
-  - `feed`, `gacha_*`: game tự `speak()` → persona không nói.
-  - `done`/`done_late`/`snooze`: hoãn 400ms, huỷ nếu có `pet:stageAction` cùng `noteId` (bấm nút trên bé thì core đã nói).
-  - `reward`: im nếu trong 5s vừa có câu priority ≥ 30 hoặc đang chờ câu done (tránh "xong rồi" + "được kẹo" dồn dập). `levelup` vẫn nói.
-- **Nhiều nhắc/note** (hợp đồng 01 mới): `remindersOf(note)`; `overdue` đếm theo `reminders`; `note_created` phát hiện nhắc mới theo khoá `id:due`, dùng `r.title`/`r.intent`; `reminder:done/snoozed` dùng `reminderId`. Payload `note:created` có `source:'pet'` thì im (chờ notes thêm, xem đề xuất).
-- `game:mode` lấy thêm `level`.
-- **Intent nghiêm** trong `dialogue.matches`: câu có `cond.intent` chỉ khớp khi state có intent đó (trước đây note thường có thể nhận câu "nhắc uống thuốc").
-- **Event mới** (đã có trong `EVENTS` của dialogue.js, cần điều hành ghi vào spec 04): `due_again` (core đã dùng trong stage.js), `knock` (Đợt 2B bé gõ app), `outfit` (persona tự nói khi `game:outfit` đổi/thêm món, bỏ qua lần phát đầu), `expired_done|expired_overdue|expired_checklist` (persona tự nói khi `note:expired`, p15, ≤1 câu/30s, trừ khi `ctx.pet.tossesNotes === true`).
-- **Kho thoại +132 câu → 639**: due_again 30 (10 chung + 2/intent), idle +40 theo level (1–3/4–8/9+), năng lượng thấp, mode sad, buổi chiều; outfit 16; knock 16; expired_* 30. Trưởng phòng đã đọc hết và sửa 4 câu.
-- Chạy thử Electron thật (xvfb, `MOCHI_DEV_CAPTURE`): persona nạp được, không lỗi, ngăn `persona` lưu đúng.
+### Đã xong lượt 3 (theo 5 mục của điều hành)
+1. **Xưng hô**: `docs/persona/MOCHI.md` mục 3 ghi quy ước spec 04 (giao diện "Mochi/bạn", bé nói "tớ/cậu", không trộn), "mình" chỉ phản thân.
+2. **Tiền là "xu"**: 7 câu reward đổi kẹo → xu; mọi câu reward có `{count}` weight 2; thêm 12 câu `reward.xu.*`. MOCHI.md ghi rõ.
+3. **Event mới** (đã đăng ký trong `EVENTS` của `src/shared/dialogue.js`, mỗi event ≥ 12 câu):
+   - Dọn note hết hạn: `expire_ask` (hỏi trước, {title}/{count}) 14, `expired_done|overdue|checklist` (khi dọn) 12 mỗi loại, `expire_keep` (bấm "Giữ lại") 12.
+   - `knock` 16 (lượt 2).
+   - Ghi nhanh qua bé: `capture` ({title}, {time} có thể trống) 16, `capture_many` ({count}, {title} = việc sớm nhất) 12.
+   - Gacha theo độ hiếm và theo món: khoá cond mới `rarity`, `item`. gacha_win 42 (16 theo 4 độ hiếm, 14 theo món: đủ 5 legend, 6 epic, 3 món mèo), gacha_dup 16.
+   - Cho ăn theo món: feed 34 (2 câu × 11 món trong `assets/game/catalog.json`).
+   - `checkin` ({count} = số ngày liên tiếp) 14, `quest_done` ({count} xu, {title}) 14. Persona tự chọn khi `game:reward`: reason `quest:*` → quest_done; payload có `streak` → checkin; còn lại → reward.
+   - Persona tự đổi tên món → id qua catalog (game đang truyền `{item: tên}`), nên câu theo món chạy ngay không cần game sửa.
+4. **BUG-023**: `dialogue.pick` ưu tiên tuyệt đối theo nhóm: `cond.item` > `cond.rarity`/`cond.intent` > câu chung (nhóm hết câu do chống lặp 5 câu thì rơi xuống nhóm kế). Câu có intent chỉ khớp khi có intent (lượt 2). Trong khi core chưa truyền `intent`, `ctx.persona.pick` tự tra intent cho các event nhắc qua `vars.noteId`/`reminderId`, hoặc khớp `vars.title` với reminder/note. Test với kho thật: note "Gọi điện cho mẹ" (call) ra câu `due.call.*`, không ra `due.go.*`.
+5. **Lễ Việt Nam**: khoá cond mới `date` và `lunar` (["MM-DD","MM-DD"], vòng qua cuối năm được), đổi âm lịch bằng `src/main/persona/lunar.js` (thuật toán Hồ Ngọc Đức, GMT+7; test 6 mốc Tết/Trung thu 2024–2027). Ngày cuối tháng Chạp luôn tính là `12-30` (giao thừa tháng thiếu như 16/02/2026). Event `holiday` 42 câu: Tết (mùng 1–3) 8, giao thừa 3, cuối năm (26–29 Chạp) 3, ông Táo 2, Trung thu (14–15/8 âm) 6, 20/10 5, 8/3 5 (chúc trung tính, không giả định giới tính), Giáng sinh 6, Tết Dương 4. Bé nói 1 lần/ngày ở khởi động hoặc lần nói rảnh đầu tiên; ngày thường không có câu khớp nên im.
 
-### Số câu theo event (tổng 639)
-click 18, pat_head 16, pat_body 10, lift 10, drop 8, feed 12, idle 73, sleepy 10, wake 10, startup 14, shutdown 10, morning 10, noon 8, evening 8, late_night 10, pre 48, due 64, due_again 30, done 22, done_late 14, snooze 14, nag 18, alarm 22, alarm_stop 10, alarm_snooze 10, memo 22, reward 14, levelup 12, hungry 10, gacha_win 12, gacha_dup 10, note_created 18, knock 16, outfit 16, expired_done 10, expired_overdue 10, expired_checklist 10.
+Tất cả khoá cond mới (`date`, `lunar`, `item`, `rarity`) và `intent` đều **nghiêm**: state không có giá trị thì câu bị loại.
+
+### Số câu theo event (tổng 839)
+click 18, pat_head 16, pat_body 10, lift 10, drop 8, idle 73, sleepy 10, wake 10, startup 14, shutdown 10, morning 10, noon 8, evening 8, late_night 10, pre 48, due 64, due_again 30, done 22, done_late 14, snooze 14, nag 18, alarm 22, alarm_stop 10, alarm_snooze 10, memo 22, reward 26, levelup 12, feed 34, hungry 10, gacha_win 42, gacha_dup 16, note_created 18, knock 16, outfit 16, expired_done 12, expired_overdue 12, expired_checklist 12, capture 16, capture_many 12, checkin 14, quest_done 14, expire_ask 14, expire_keep 12, holiday 42.
 
 ### Cách chạy
-- Test: `node --test src/main/persona/test/*.test.js` (35 test xanh).
-- Đếm + kiểm kho thoại: `node src/main/persona/tools/count-lines.js [file]` (exit 1 nếu lỗi).
-
-### Quyết định đã chốt (phòng tự quyết)
-- Như lượt 1 (đã được điều hành ghi vào spec 04), thêm: intent nghiêm; 6 event mới ở trên; persona không nói click/pat/feed.
+- Test: `node --test src/main/persona/test/*.test.js` (57 test xanh, gồm `lunar.test.js`).
+- Đếm + kiểm kho thoại: `node src/main/persona/tools/count-lines.js [file]` (exit 1 nếu lỗi; in thêm bảng theo intent/item/rarity và lịch lễ).
 
 ### Việc tiếp theo
-1. Câu theo mùa/ngày lễ (Tết, Trung thu, Giáng sinh) — cần khoá `cond.date` (xem đề xuất 3).
-2. Câu riêng theo món ăn/gacha khi game chốt danh mục.
-3. `hungry` chưa ai phát — chờ game có chỉ số đói hoặc bỏ event.
-4. Cập nhật `docs/art/ART-BRIEF.md` khi spec 03 thêm action Đợt 2B (vo note, ném, gõ cửa sổ, thay đồ).
+1. Khi core/notes/game nối các event mới (xem đề xuất), chạy thử xvfb để soát câu thực tế.
+2. Câu `gacha_win` cho 5 món epic còn lại; câu outfit theo món.
+3. `hungry` vẫn chưa ai phát.
+4. Cập nhật `docs/art/ART-BRIEF.md` khi spec 03 có action Đợt 2B (vo note, ném, gõ cửa sổ).
 
 ### Vướng mắc
-- Chạy thử thấy ghi nhanh qua bé có nhắc thì bé nói 2 câu (quickCapture đọc lại giờ + persona `note_created`) — chờ đề xuất 1.
+- Không có. Ghi nhanh qua bé vẫn có thể nói 2 câu cho tới khi notes làm đề xuất 1.
 
 ## Đề xuất cho phòng điều hành
-1. **notes** (`insightService.quickCapture`): phát `note:created` kèm `source: 'pet'` (cả nhánh `N.createNote`) để persona không nói `note_created` trùng câu đọc lại giờ. Persona đã sẵn sàng nhận.
-2. **Spec 04**: thêm event `due_again`, `knock`, `outfit`, `expired_done`, `expired_overdue`, `expired_checklist`; ghi "câu có `cond.intent` chỉ khớp khi có intent".
-3. **Spec 04**: thêm khoá `cond.date: ["MM-DD","MM-DD"]` (dương lịch) và có thể `cond.lunar` cho Tết/Trung thu — persona sẽ viết câu theo mùa khi được duyệt.
-4. **core**: khi làm cảnh ném note (Đợt 2B), đặt `ctx.pet.tossesNotes = true` và gọi `ctx.persona.pick('expired_' + reason, {title})`; cảnh gõ app gọi `pick('knock', {title, time})`.
-5. **game**: công bố `ctx.game.itemName(id)` để câu `outfit` có tên món.
-6. Từ lượt 1 còn mở: loại `src/main/persona/test/**`, `tools/**` khỏi `build.files`; script `test:persona`.
+1. **notes** (`insightService.quickCapture`): dùng `ctx.persona.pick('capture', {title, time})` (một việc) / `pick('capture_many', {count, title})` (nhiều việc) thay `buildReply`, giữ `buildReply` làm dự phòng; phát `note:created` kèm `source: 'pet'` để persona không nói thêm `note_created`.
+2. **core** (`stage.js varsFor`): truyền `intent` và `noteId`/`reminderId` cho pre/due/due_again/nag/done/snooze (BUG-023; persona đã tự tra nếu thiếu). Cảnh dọn note: `pick('expire_ask', {title|count})` khi hỏi, `pick('expired_<reason>', {title})` khi dọn, `pick('expire_keep', {title})` khi bấm "Giữ lại"; đặt `ctx.pet.tossesNotes = true` để persona không tự nói `note:expired`. Gõ cửa sổ: `pick('knock', {title, time})`.
+3. **game**: `game:reward` kèm `streak` (khi chạm mốc chuỗi ngày) và `title` (tên nhiệm vụ) để `checkin`/`quest_done` đủ biến; nên truyền `itemId` (và `rarity`) cho `pick('feed'|'gacha_win'|'gacha_dup')` thay vì chỉ tên; công bố `ctx.game.itemName(id)` cho câu `outfit`.
+4. **Spec 04**: thêm 13 event mới (`due_again`, `knock`, `outfit`, `expired_done`, `expired_overdue`, `expired_checklist`, `expire_ask`, `expire_keep`, `capture`, `capture_many`, `checkin`, `quest_done`, `holiday`) và khoá cond `date`, `lunar`, `item`, `rarity` (nghiêm, như `intent`); ghi thứ tự ưu tiên item > rarity/intent > chung; biến `{count}` của reward là số xu.
+5. Còn mở từ lượt 1: loại `src/main/persona/test/**`, `tools/**` khỏi `build.files`; script `test:persona`.
