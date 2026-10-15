@@ -39,13 +39,15 @@
   var ICON_DOTS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M5 12h.01M12 12h.01M19 12h.01"/></svg>';
   var ICON_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 
+  var FMT = "<div class=\"fmtwrap\"><div class=\"fmt\" role=\"toolbar\"><button class=\"fb\" type=\"button\" data-cmd=\"bold\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z\"/></svg></button><button class=\"fb\" type=\"button\" data-cmd=\"italic\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M10 5h8M6 19h8M15 5L9 19\"/></svg></button><button class=\"fb\" type=\"button\" data-cmd=\"underline\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 4v7a5 5 0 0 0 10 0V4M5 20h14\"/></svg></button><button class=\"fb\" type=\"button\" data-cmd=\"strikeThrough\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h16M16 7.5C15.5 5.8 14 5 12 5c-2.4 0-4 1.2-4 3M8 16.5c.7 1.7 2.3 2.5 4.3 2.5 2.4 0 4.2-1.2 4.2-3\"/></svg></button><button class=\"fb\" type=\"button\" data-cmd=\"insertUnorderedList\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 6h11M9 12h11M9 18h11\"/><path class=\"dots\" d=\"M4 6h.01M4 12h.01M4 18h.01\"/></svg></button><button class=\"fb\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 11-6 6v3h9l3-3\"/><path d=\"m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4\"/></svg><i class=\"hlbar\"></i></button><button class=\"fb\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg></button><button class=\"fb\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"9\" rx=\"2\"/><path class=\"shackle\" d=\"M8 11V8a4 4 0 0 1 8 0v3\"/></svg></button></div></div>";
+
   function fakeNote(def) {
     var root = document.createElement('div');
     root.className = 'gn-root';
     root.innerHTML = '<div class="note"><div class="paper-layer" id="paperLayer" aria-hidden="true"></div>' +
       '<header class="topbar"><button class="ib" type="button">' + ICON_PLUS + '</button><div class="paper-head" id="paperHead" aria-hidden="true"></div><span class="spacer"></span>' +
       '<button class="ib" type="button">' + ICON_DOTS + '</button><button class="ib" type="button">' + ICON_X + '</button></header>' +
-      '<div class="lower"><main class="body"><div id="editor" contenteditable="true" spellcheck="false"></div></main></div></div>';
+      '<div class="lower"><main class="body"><div id="editor" contenteditable="true" spellcheck="false"></div></main>' + FMT + '</div></div>';
     var ed = root.querySelector('#editor');
     SAMPLE.split('\n').forEach(function (t) { var d = document.createElement('div'); d.textContent = t; ed.appendChild(d); });
     return root;
@@ -53,7 +55,7 @@
 
   var grid = document.getElementById('gGrid'), thumbs = document.getElementById('gThumbs');
   var optTilt = document.getElementById('optTilt'), optDeco = document.getElementById('optDeco'), optGlass = document.getElementById('optGlass');
-  var optZoom = document.getElementById('optZoom'), optFont = document.getElementById('optFont');
+  var optZoom = document.getElementById('optZoom'), optFont = document.getElementById('optFont'), optBar = document.getElementById('optBar');
   P.fonts().forEach(function (f) { var o = document.createElement('option'); o.value = f.id; o.textContent = f.name; optFont.appendChild(o); });
 
   function render() {
@@ -77,6 +79,9 @@
     });
   }
   [optTilt, optDeco, optGlass, optZoom, optFont].forEach(function (e) { e.addEventListener('change', render); });
+  // giả lập trạng thái rê chuột/đang gõ: thanh trên + thanh định dạng hiện đủ, trang trí góc dưới mờ như thật
+  optBar.addEventListener('change', function () { document.body.classList.toggle('editing', optBar.checked); document.body.classList.toggle('show-bar', optBar.checked); });
+  if (/[?&]bar=1/.test(location.search)) { optBar.checked = true; optBar.dispatchEvent(new Event('change')); }
   render();
 
   // thử đổi qua lại nhiều lần: không rò rỉ phần tử

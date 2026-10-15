@@ -10,7 +10,7 @@ function defaults() {
   return { v: 1, settings: defaultSettings(), noteMeta: {} };
 }
 function defaultSettings() {
-  return { defaultPaper: null, defaultFont: null, hideDeco: false, tilt: false, hiddenPapers: [] };
+  return { defaultPaper: null, defaultFont: null, hideDeco: false, tilt: false, hiddenPapers: [], randomPaper: false };
 }
 
 // id mẫu/phông: chuỗi [a-z0-9-] dài 1..40, ngược lại null
@@ -59,6 +59,7 @@ function normalizeSettings(s) {
   if (typeof s.hideDeco === 'boolean') out.hideDeco = s.hideDeco;
   if (typeof s.tilt === 'boolean') out.tilt = s.tilt;
   out.hiddenPapers = cleanHidden(s.hiddenPapers);
+  if (typeof s.randomPaper === 'boolean') out.randomPaper = s.randomPaper;
   return out;
 }
 
@@ -95,6 +96,7 @@ function applySettings(settings, patch) {
   if (own(patch, 'defaultFont')) { if (patch.defaultFont === null) out.defaultFont = null; else { const s = cleanId(patch.defaultFont); if (s) out.defaultFont = s; } }
   if (typeof patch.hideDeco === 'boolean') out.hideDeco = patch.hideDeco;
   if (typeof patch.tilt === 'boolean') out.tilt = patch.tilt;
+  if (typeof patch.randomPaper === 'boolean') out.randomPaper = patch.randomPaper;
   if (own(patch, 'hiddenPapers') && Array.isArray(patch.hiddenPapers)) out.hiddenPapers = cleanHidden(patch.hiddenPapers);
   return out;
 }
@@ -106,6 +108,29 @@ function defaultFor(settings) {
   const m = { paper: s.defaultPaper };
   if (s.defaultFont) m.font = s.defaultFont;
   return m;
+}
+
+// Chọn ngẫu nhiên một mẫu thiết kế (trang trí thuần, không liên quan nhắc lịch).
+// ids: danh sách id mẫu thiết kế (không gồm nhóm plain); loại hidden; tránh `last` nếu còn mẫu khác.
+// rng: () => [0,1) để kiểm thử tất định. Trả id hoặc null nếu không còn mẫu nào.
+function pickRandomPaper(ids, hidden, last, rng) {
+  const hid = new Set(Array.isArray(hidden) ? hidden : []);
+  let pool = (Array.isArray(ids) ? ids : []).filter(id => cleanId(id) && !hid.has(id));
+  if (!pool.length) return null;
+  if (pool.length > 1 && last) { const p2 = pool.filter(id => id !== last); if (p2.length) pool = p2; }
+  const f = typeof rng === 'function' ? rng : Math.random;
+  let r = Number(f());
+  if (!Number.isFinite(r) || r < 0) r = 0;
+  return pool[Math.min(pool.length - 1, Math.floor(r * pool.length))];
+}
+// Meta cho note mới: random (nếu bật và còn mẫu) rồi mới tới mẫu mặc định. Font mặc định vẫn áp.
+function metaForNewNote(settings, ids, last, rng) {
+  const s = normalizeSettings(settings);
+  if (s.randomPaper) {
+    const id = pickRandomPaper(ids, s.hiddenPapers, last, rng);
+    if (id) { const m = { paper: id }; if (s.defaultFont) m.font = s.defaultFont; return m; }
+  }
+  return defaultFor(s);
 }
 
 function cleanIndex(i) {
@@ -135,5 +160,5 @@ function clampBounds(size, cur, wa) {
 
 module.exports = {
   BAD, SHAPES, defaults, defaultSettings, cleanId, cleanHidden, okNoteId, normalizeMeta, normalizeSettings,
-  normalize, applyPatch, applySettings, defaultFor, cleanIndex, clampBounds
+  normalize, applyPatch, applySettings, defaultFor, pickRandomPaper, metaForNewNote, cleanIndex, clampBounds
 };

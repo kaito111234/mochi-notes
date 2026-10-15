@@ -125,22 +125,37 @@ function validate(p, dirName) {
     }
   });
   if (typeof p.checklist !== 'boolean') err(id, 'checklist phải là boolean');
-  // tương phản chữ/nền (WCAG AA 4.5:1)
+  // tương phản (WCAG): chữ thân >= 4.5; icon thanh công cụ (màu chữ) và tiêu đề lớn >= 3. --strict => lỗi, không thì cảnh báo.
+  const cw = (m) => (STRICT ? err(id, m) : warn(id, m));
+  const MIN_TEXT = 4.5, MIN_ICON = 3;
   if (isColor(p.ink) && bg && isColor(bg.color)) {
     const ink = parseRgb(p.ink);
-    const bgs = [bg.color].concat(Array.isArray(bg.gradient) ? bg.gradient : []);
-    if (bg.head && bg.head !== 'same' && isColor(bg.head)) bgs.push(bg.head);
-    for (const c of bgs) {
-      if (!isColor(c)) continue;
+    const grad = Array.isArray(bg.gradient) ? bg.gradient.filter(isColor) : [];
+    const bodies = [bg.color].concat(grad);
+    if (grad.length >= 2) { // màu giữa (nền thật của thanh định dạng kính giấy)
+      const a = parseRgb(grad[0]), z = parseRgb(grad[grad.length - 1]);
+      if (a && z) bodies.push('rgb(' + a.map((v, i) => Math.round((v + z[i]) / 2)).join(',') + ')');
+    }
+    const headBg = bg.head && bg.head !== 'same' && isColor(bg.head) ? bg.head : bg.color;
+    for (const c of bodies) {
       const r = parseRgb(c);
       if (!r || !ink) continue;
       const cr = contrast(ink, r);
-      if (cr < 4.5) warn(id, `tương phản ink ${p.ink} / nền ${c} = ${cr.toFixed(2)} < 4.5`);
+      if (cr < MIN_TEXT) cw(`tương phản chữ thân ink ${p.ink} / nền thân ${c} = ${cr.toFixed(2)} < ${MIN_TEXT}`);
+      if (cr < MIN_ICON) cw(`icon thanh định dạng ${p.ink} / nền thanh ${c} = ${cr.toFixed(2)} < ${MIN_ICON}`);
+    }
+    const hr = parseRgb(headBg);
+    if (hr && ink) {
+      const cr = contrast(ink, hr);
+      if (cr < MIN_ICON) cw(`icon thanh trên (ink ${p.ink}) / nền đầu giấy ${headBg} = ${cr.toFixed(2)} < ${MIN_ICON}`);
+      else if (cr < MIN_TEXT) warn(id, `icon thanh trên / nền đầu giấy = ${cr.toFixed(2)} (>=3 đạt, <4.5 nên cải thiện)`);
     }
     if (h && isColor(h.color)) {
-      const r = parseRgb(bg.color), hc = parseRgb(h.color);
-      const cr = r && hc ? contrast(hc, r) : 99;
-      if (cr < 3) warn(id, `tương phản tiêu đề ${h.color} / nền ${bg.color} = ${cr.toFixed(2)} < 3`);
+      const hc = parseRgb(h.color);
+      for (const c of [headBg, bg.color]) {
+        const r = parseRgb(c), cr = r && hc ? contrast(hc, r) : 99;
+        if (cr < MIN_ICON) cw(`tương phản tiêu đề ${h.color} / nền ${c} = ${cr.toFixed(2)} < ${MIN_ICON}`);
+      }
     }
   }
 }

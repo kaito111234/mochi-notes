@@ -1,13 +1,33 @@
 'use strict';
 // Phòng paper: mẫu giấy / phông / hình dạng của từng note. Ngăn dữ liệu 'paper' (docs/rooms/paper/DESIGN.md mục 1).
+const fs = require('fs');
+const path = require('path');
 const L = require('./paperLogic.js');
+
+// id các mẫu thiết kế (assets/paper/<id>/paper.json, bỏ deco/catalog, bỏ nhóm plain); đọc một lần, lỗi => [].
+function loadDesignIds() {
+  const out = [];
+  try {
+    const dir = path.join(__dirname, '..', '..', '..', 'assets', 'paper');
+    for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!d.isDirectory() || d.name === 'deco') continue;
+      try {
+        const j = JSON.parse(fs.readFileSync(path.join(dir, d.name, 'paper.json'), 'utf8'));
+        const id = j && j.id;
+        if (L.cleanId(id) && j.group !== 'plain') out.push(id);
+      } catch (_) { /* bỏ qua mẫu hỏng */ }
+    }
+  } catch (_) { /* không có thư mục */ }
+  return out;
+}
 
 function init(ctx) {
   let ipcMain = null, screen = null;
   try { ({ ipcMain, screen } = require('electron')); } catch (_) { return; }
   if (!ipcMain || !ctx || !ctx.store || typeof ctx.store.section !== 'function') return;
 
-  let box;
+  let box, lastRandom = null;
+  const designIds = loadDesignIds();
   try { box = ctx.store.section('paper', L.defaults, L.normalize); } catch (_) { return; }
   const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   const save = () => { try { ctx.store.save(); } catch (_) { /* bỏ qua */ } };
@@ -96,8 +116,9 @@ function init(ctx) {
       try {
         const id = p && p.note && p.note.id;
         if (!L.okNoteId(id) || own(box.noteMeta, id)) return;
-        const m = L.defaultFor(box.settings);
+        const m = L.metaForNewNote(box.settings, designIds, lastRandom);
         if (!m) return;
+        if (box.settings.randomPaper && m.paper !== box.settings.defaultPaper) lastRandom = m.paper;
         box.noteMeta[id] = m;
         save();
         sendNote(id, 'paper:meta', { id, meta: clone(m) });

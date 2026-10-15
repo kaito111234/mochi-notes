@@ -7,7 +7,7 @@
   var metaCbs = [], setCbs = [], ipcHooked = false;
 
   function api() { return (window.mochi && window.mochi.paper) || null; }
-  function defSettings() { return { defaultPaper: null, defaultFont: null, hideDeco: false, tilt: false, hiddenPapers: [] }; }
+  function defSettings() { return { defaultPaper: null, defaultFont: null, hideDeco: false, tilt: false, hiddenPapers: [], randomPaper: false }; }
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
   function idOk(v) { return typeof v === 'string' && /^[a-z0-9-]{1,40}$/.test(v); }
 
@@ -42,6 +42,7 @@
     if (typeof s.hideDeco === 'boolean') o.hideDeco = s.hideDeco;
     if (typeof s.tilt === 'boolean') o.tilt = s.tilt;
     o.hiddenPapers = cleanHidden(s.hiddenPapers);
+    if (typeof s.randomPaper === 'boolean') o.randomPaper = s.randomPaper;
     return o;
   }
   function patchMeta(old, patch) {
@@ -65,6 +66,7 @@
     });
     if (typeof patch.hideDeco === 'boolean') o.hideDeco = patch.hideDeco;
     if (typeof patch.tilt === 'boolean') o.tilt = patch.tilt;
+    if (typeof patch.randomPaper === 'boolean') o.randomPaper = patch.randomPaper;
     if (Array.isArray(patch.hiddenPapers)) o.hiddenPapers = cleanHidden(patch.hiddenPapers);
     return o;
   }
@@ -83,7 +85,7 @@
   function hasKeys(o) { return isObj(o) && Object.keys(o).length > 0; }
   function isDefaultSettings(s) {
     var d = defSettings(), c = cleanSettings(s);
-    return c.defaultPaper === d.defaultPaper && c.defaultFont === d.defaultFont && c.hideDeco === d.hideDeco && c.tilt === d.tilt && c.hiddenPapers.length === 0;
+    return c.defaultPaper === d.defaultPaper && c.defaultFont === d.defaultFont && c.hideDeco === d.hideDeco && c.tilt === d.tilt && c.randomPaper === d.randomPaper && c.hiddenPapers.length === 0;
   }
   // Gọi thẳng IPC (không đổi cờ fallback); lỗi => undefined.
   function rawCall(name, args) {

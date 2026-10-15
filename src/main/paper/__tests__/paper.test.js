@@ -77,4 +77,32 @@ t('clampBounds workArea', () => {
 });
 t('clampBounds bad', () => { assert.strictEqual(L.clampBounds(null, {}, null), null); assert.strictEqual(L.clampBounds({ width: 'a', height: 1 }, {}, null), null); });
 t('okNoteId', () => { assert.ok(L.okNoteId('abc')); assert.ok(!L.okNoteId('__proto__')); assert.ok(!L.okNoteId('')); assert.ok(!L.okNoteId(5)); });
+t('randomPaper settings', () => {
+  assert.strictEqual(L.defaultSettings().randomPaper, false);
+  assert.strictEqual(L.applySettings(L.defaultSettings(), { randomPaper: true }).randomPaper, true);
+  assert.strictEqual(L.applySettings({ randomPaper: true }, { randomPaper: 'x' }).randomPaper, true);
+  assert.strictEqual(L.normalizeSettings({ randomPaper: 1 }).randomPaper, false);
+});
+t('pickRandomPaper tránh hidden, last, trả null khi hết', () => {
+  const ids = ['a', 'b', 'c'];
+  assert.strictEqual(L.pickRandomPaper(ids, ['a', 'c'], null, () => 0.99), 'b');
+  assert.strictEqual(L.pickRandomPaper(ids, ['a', 'b', 'c'], null, () => 0), null);
+  assert.strictEqual(L.pickRandomPaper([], [], null, () => 0), null);
+  assert.strictEqual(L.pickRandomPaper(ids, [], 'a', () => 0), 'b');
+  assert.strictEqual(L.pickRandomPaper(['a'], [], 'a', () => 0), 'a');
+  assert.strictEqual(L.pickRandomPaper(ids, [], null, () => 0.99), 'c');
+  assert.strictEqual(L.pickRandomPaper(ids, [], null, () => 1), 'c');
+  assert.strictEqual(L.pickRandomPaper(ids, [], null, () => NaN), 'a');
+});
+t('metaForNewNote', () => {
+  const ids = ['d1', 'd2'];
+  assert.strictEqual(L.metaForNewNote({ defaultPaper: 'plain-yellow' }, ids, null, () => 0).paper, 'plain-yellow');   // tắt random
+  assert.strictEqual(L.metaForNewNote({}, ids, null, () => 0), null);
+  const on = { randomPaper: true, defaultPaper: 'plain-pink', defaultFont: 'itim' };
+  assert.deepStrictEqual(L.metaForNewNote(on, ids, null, () => 0.9), { paper: 'd2', font: 'itim' });
+  for (let i = 0; i < 20; i++) assert.ok(!/^plain/.test(L.metaForNewNote(on, ids, null, () => i / 20).paper));
+  assert.strictEqual(L.metaForNewNote(Object.assign({ hiddenPapers: ['d1'] }, on), ids, null, () => 0).paper, 'd2');
+  assert.strictEqual(L.metaForNewNote(Object.assign({ hiddenPapers: ['d1', 'd2'] }, on), ids, null, () => 0).paper, 'plain-pink'); // fallback
+  assert.strictEqual(L.metaForNewNote({ randomPaper: true }, [], null, () => 0), null);
+});
 console.log('OK ' + n);

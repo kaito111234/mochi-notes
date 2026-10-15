@@ -150,13 +150,13 @@
 
   /* ---------- áp mẫu ---------- */
   var PROPS = ['--bg-rgb', '--head-rgb', '--fg', '--fg-rgb', '--ink', '--paper-font', '--step-base', '--line', '--line-soft', '--margin-color',
-    '--paper-bg', '--topbar-h', '--head-font', '--head-color', '--head-size', '--head-ink', '--paper-mask', '--paper-clip'];
+    '--tr-w', '--tr-h', '--paper-bg', '--topbar-h', '--head-font', '--head-color', '--head-size', '--head-ink', '--paper-mask', '--paper-clip'];
   var CLASSES = ['has-paper', 'paper-dark', 'paper-hashead', 'paper-edge'];
 
   function clearRoot(root, headEl, layerEl) {
     PROPS.forEach(function (p) { root.style.removeProperty(p); });
     CLASSES.forEach(function (c) { root.classList.remove(c); });
-    delete root.dataset.lines; delete root.dataset.margin; delete root.dataset.edge; delete root.dataset.corner; delete root.dataset.headStyle;
+    delete root.dataset.lines; delete root.dataset.margin; delete root.dataset.edge; delete root.dataset.corner; delete root.dataset.headStyle; delete root.dataset.tr;
     if (headEl) headEl.textContent = '';
     if (layerEl) layerEl.textContent = '';
   }
@@ -208,7 +208,26 @@
     if (tf) s.transform = tf;
   }
 
-  function buildLayer(layerEl, def, o) {
+  /* vùng chữ tránh trang trí 'tr': đo hộp bao các hình 'tr' (rộng = lề phải + w, cao = dy + h so với đầu vùng soạn) */
+  function reserveTr(root, items) {
+    if (!root || !items.length) return;
+    function upd() {
+      var W = 0, H = 0, main = items[0];
+      items.forEach(function (it) { if (it.w > main.w) main = it; }); // chỉ chừa chỗ cho hình lớn nhất; hình nhỏ đi kèm chấp nhận đè nhẹ
+      [main].forEach(function (it) {
+        var h = it.el.naturalWidth > 0 ? it.w * it.el.naturalHeight / it.el.naturalWidth : it.w;
+        W = Math.max(W, it.dx + it.w + 6 - 12); H = Math.max(H, it.dy - 2 + h + 2);
+      });
+      root.style.setProperty('--tr-w', Math.max(0, Math.round(W)) + 'px');
+      root.style.setProperty('--tr-h', Math.max(0, Math.round(H)) + 'px');
+      root.dataset.tr = '1';
+    }
+    upd();
+    items.forEach(function (it) { if (!(it.el.naturalWidth > 0)) it.el.addEventListener('load', upd); });
+  }
+
+  function buildLayer(layerEl, def, o, root) {
+    var trItems = [];
     var seed = def.id, deco = Array.isArray(def.deco) ? def.deco : [];
     if (o.deco !== false) {
       deco.forEach(function (d, i) {
@@ -221,6 +240,7 @@
           el.src = assetUrl(d.src);
           el.className = 'paper-deco';
           place(el, d.pos, d.dx, d.dy, rot, w);
+          if ((d.pos || 'tr') === 'tr') trItems.push({ el: el, w: w, dx: +d.dx || 0, dy: +d.dy || 0 });
         } else if (d.kind === 'washi') {
           var wn = washiNode(d, seed, o.tilt, i);
           el = wn.el;
@@ -228,6 +248,7 @@
         }
         if (el) layerEl.appendChild(el);
       });
+      reserveTr(root, trItems);
     }
     if (def.corner === 'fold') {
       var f = document.createElement('div');
@@ -334,7 +355,7 @@
       root.dataset.corner = 'fold'; root.classList.add('paper-edge');
     }
 
-    if (layerEl) buildLayer(layerEl, def, o);
+    if (layerEl) buildLayer(layerEl, def, o, root);
     return def;
   }
 

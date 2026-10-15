@@ -361,6 +361,21 @@
     o.appendChild(els.tilt);
     o.appendChild(els.deco);
 
+    els.rand = $('button', 'pk-sw');
+    var rb = els.rand;
+    rb.type = 'button'; rb.setAttribute('role', 'switch'); rb.setAttribute('aria-checked', 'false');
+    rb.appendChild($('span', 'pk-swt', 'Mẫu ngẫu nhiên cho note mới'));
+    var rk = $('span', 'pk-knob'); rk.setAttribute('aria-hidden', 'true'); rb.appendChild(rk);
+    rb.addEventListener('click', function () {
+      var on = rb.getAttribute('aria-checked') !== 'true', S = window.MochiPaperStore;
+      rb.setAttribute('aria-checked', String(on));
+      var p = S && S.setSettings && safe(function () { return S.setSettings({ randomPaper: on }); });
+      if (p && p.then) p.then(sync, sync);
+      var st = state(); if (st.settings) st.settings.randomPaper = on;
+      sync();
+    });
+    o.appendChild(rb);
+
     var d = $('button', 'btn pk-def', 'Dùng cho note mới');
     d.type = 'button';
     d.addEventListener('click', function () {
@@ -389,7 +404,10 @@
     els.tilt.setAttribute('aria-checked', String(!!s.tilt));
     els.deco.setAttribute('aria-checked', String(s.deco !== false));
     var dp = s.settings && s.settings.defaultPaper, dd = dp && safe(function () { return P().get(dp); });
-    els.defNote.textContent = 'Note mới: ' + (dd ? dd.name : 'Theo màu note');
+    var rnd = !!(s.settings && s.settings.randomPaper);
+    if (els.rand) els.rand.setAttribute('aria-checked', String(rnd));
+    var dn = dd ? dd.name : 'Theo màu note';
+    els.defNote.textContent = rnd ? 'Note mới: ngẫu nhiên (dự phòng: ' + dn + ')' : 'Note mới: ' + dn;
     lastPaperId = s.paperId;
   }
 
