@@ -2,8 +2,8 @@
 .sh-stats { position: relative; padding: 10px 14px; margin-bottom: 12px; }
 .sh-meters { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
 .sh-meter-row { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
-.sh-meter-lab { flex: none; color: var(--text-soft, #7a6a6a); }
-.sh-meter { flex: 1; height: 8px; border-radius: 99px; background: rgba(0,0,0,.08); overflow: hidden; min-width: 30px; }
+.sh-meter-lab { flex: none; color: var(--muted); }
+.sh-meter { flex: 1; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; min-width: 30px; }
 .sh-meter i { display: block; height: 100%; border-radius: 99px; transition: width .5s ease; }
 .sh-mood i { background: linear-gradient(90deg, #ffb3c1, #ff7f9e); }
 .sh-energy i { background: linear-gradient(90deg, #9fd8f5, #5cb8e6); }
@@ -13,7 +13,21 @@
 .sh-bubble.pop { animation: sh-pop .35s ease; }
 .sh-bubble[hidden] { display: none; }
 @keyframes sh-pop { 0% { transform: scale(.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-.sh-section { font-weight: 700; font-size: 13px; margin: 2px 2px 8px; }
+.sh-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 2px 8px; min-height: 26px; }
+.sh-section { font-weight: 700; font-size: 13px; }
+.sh-sec-sub { font-size: 11.5px; color: var(--muted); }
+.sh-qty { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+.sh-seg { display: inline-flex; gap: 4px; }
+.sh-seg-b { height: 24px; padding: 0 10px; cursor: pointer; font-weight: 600; }
+.sh-bag { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.sh-bag[hidden], .sh-bag-empty[hidden] { display: none; }
+.sh-bag-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; text-align: center; }
+.sh-bag-ic { position: relative; width: 38px; height: 38px; }
+.sh-bag-ic img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sh-bag-n { position: absolute; right: -10px; bottom: -4px; min-width: 20px; padding: 0 5px; height: 17px; line-height: 17px; border-radius: 9px; background: var(--accent); color: var(--accent-contrast); font-size: 10.5px; font-weight: 700; text-align: center; }
+.sh-bag-name { font-size: 11.5px; font-weight: 600; line-height: 1.2; }
+.sh-bag-feed { width: 100%; }
+.sh-bag-empty { font-size: 12px; color: var(--muted); padding: 9px 12px; margin-bottom: 14px; border-radius: 12px; border: 1px dashed var(--line); }
 .sh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .sh-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; text-align: center; transition: opacity .2s; }
 .sh-card.dim { opacity: .6; }
@@ -21,12 +35,19 @@
 .sh-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .sh-name { font-weight: 700; font-size: 13px; line-height: 1.2; }
 .sh-price { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-size: 13px; }
-.sh-gain { font-size: 11px; color: var(--text-soft, #7a6a6a); line-height: 1.3; }
-.sh-tag { font-size: 10.5px; min-height: 14px; color: #b9a58a; }
-.sh-tag.on { color: #c0956a; }
-.sh-buy { width: 100%; margin-top: auto; font-size: 12px; padding: 6px 8px; }
+.sh-gain { font-size: 11px; color: var(--muted); line-height: 1.3; }
+.sh-tag { font-size: 10.5px; min-height: 14px; color: var(--muted); }
+.sh-tag.on { color: #b07a3a; }
+.sh-acts { width: 100%; margin-top: auto; padding-top: 4px; display: flex; flex-direction: column; gap: 5px; }
+.sh-buy { width: 100%; font-size: 12px; padding: 0 8px; }
 .sh-buy:disabled { cursor: not-allowed; }
 .sh-fly { position: fixed; width: 32px; height: 32px; z-index: 999; pointer-events: none; }
 .sh-heart { position: fixed; width: 22px; height: 22px; z-index: 999; pointer-events: none; animation: sh-heart .9s ease-out forwards; }
 .sh-heart svg { width: 100%; height: 100%; fill: #ff6f91; }
 @keyframes sh-heart { 0% { transform: translateY(0) scale(.6); opacity: 1; } 100% { transform: translateY(-34px) scale(1.2); opacity: 0; } }
+
+@media (prefers-color-scheme: dark) {
+  .sh-bubble { background: #3a3220; border-color: #6b5a2c; color: #f3e6c4; }
+  .sh-bubble::before { background: #3a3220; border-color: #6b5a2c; }
+  .sh-tag.on { color: #e0b27a; }
+}

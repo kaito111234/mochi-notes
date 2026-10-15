@@ -25,7 +25,11 @@
         { id: 'daily.tidy1', name: 'Dọn 1 note hết hạn', progress: 0, goal: 1, claimed: false, reward: { candy: 30, exp: 20 } },
         { id: 'daily.pat1', name: 'Xoa đầu Mochi', progress: 1, goal: 1, claimed: true, reward: { candy: 30, exp: 20 } }
       ],
-      weekly: [{ id: 'weekly.done15', name: 'Xong 15 note trong tuần', progress: 9, goal: 15, claimed: false, reward: { candy: 150, exp: 80 } }]
+      weekly: [
+        { id: 'weekly.done15', name: 'Xong 15 note', progress: 9, goal: 15, claimed: false, reward: { candy: 150, exp: 80 } },
+        { id: 'weekly.tidy3', name: 'Dọn 3 note hết hạn', progress: 3, goal: 3, claimed: false, reward: { candy: 150, exp: 80 } },
+        { id: 'weekly.feed5', name: 'Cho Mochi ăn 5 lần', progress: 2, goal: 5, claimed: false, reward: { candy: 150, exp: 80 } }
+      ]
     },
     ach: [
       ['first_done', 'Việc đầu tiên', 'Xong note đầu tiên', 20, 1], ['done10', 'Chăm chỉ', 'Xong 10 note', 40, 1],
@@ -36,9 +40,24 @@
       ['wear5', 'Mặc đủ bộ', 'Mặc đủ 5 khe', 80, 0], ['collect20', 'Nhà sưu tầm', 'Gom 20 món', 120, 0],
       ['outfit1', 'Có gu', 'Lưu một bộ đồ', 30, 1], ['alarm10', 'Dậy đúng giờ', 'Tắt 10 báo thức', 40, 0]
     ].map(function (a, i) { return { id: a[0], name: a[1], desc: a[2], icon: a[0], reward: a[3], unlocked: !!a[4], at: a[4] ? Date.now() - (i + 1) * 86400000 : 0 }; }),
-    log: []
+    log: [],
+    checkin: { cycleDay: 3, lastDay: '', total: 17 },
+    bag: { food_mochi: 2, food_boba: 1 },
+    claimed: {}
   };
+  var BAG_MAX = 99;
+  var CHECKIN_REWARDS = [
+    { day: 1, candy: 20 }, { day: 2, candy: 25 }, { day: 3, candy: 30, food: { id: 'food_mochi', n: 1 } },
+    { day: 4, candy: 35 }, { day: 5, candy: 40, food: { id: 'food_boba', n: 1 } }, { day: 6, candy: 50 },
+    { day: 7, candy: 100, food: { id: 'food_strawberry_cake', n: 1 } }
+  ];
+  var SETS = [
+    ['pajama', 'Bộ đồ ngủ', 150], ['sport', 'Bộ thể thao', 200], ['school', 'Bộ đi học', 250],
+    ['cosplay', 'Bộ hóa trang', 300], ['party', 'Bộ dự tiệc', 300], ['winter', 'Bộ mùa đông', 250],
+    ['camping', 'Bộ cắm trại', 150], ['daily', 'Bộ thường ngày', 400], ['cat', 'Bộ mèo con', 500]
+  ].map(function (a) { return { id: a[0], name: a[1], reward: a[2] }; });
   S.stats.streak.lastDay = ymd(new Date());
+  S.checkin.lastDay = ymd(new Date(Date.now() - 86400000));
   for (var d = 29; d >= 0; d--) { var dt = new Date(Date.now() - d * 86400000); var n = rnd() < 0.2 ? 0 : Math.floor(rnd() * 8); S.log.push({ day: ymd(dt), done: n, coins: n * 12 + Math.floor(rnd() * 9) }); }
 
   var catalog = null, listeners = [], tabListeners = [];
@@ -50,6 +69,9 @@
     var firstOf = function (slot) { var x = c.items.find(function (i) { return i.slot === slot && S.items[i.id]; }); return x && x.id; };
     ['hat', 'hairclip', 'body'].forEach(function (s) { var id = firstOf(s); if (id) S.worn[s] = id; });
     S.outfits[0].worn = Object.assign({}, S.worn);
+    c.sets = c.sets || SETS;
+    ['pajama', 'camping'].forEach(function (sid) { c.items.forEach(function (it) { if (it.set === sid && !S.items[it.id]) S.items[it.id] = { count: 1 }; }); });
+    S.claimed.camping = Date.now() - 86400000;
     return c;
   });
 
@@ -60,11 +82,17 @@
     var lv = level(S.stats.exp), ff = {};
     (catalog ? catalog.foods : []).forEach(function (f) { ff[f.id] = foodFactor(f.id); });
     var today = S.log[S.log.length - 1];
+    var album = ((catalog && catalog.sets) || []).map(function (st) {
+      var ids = catalog.items.filter(function (i) { return i.set === st.id; }).map(function (i) { return i.id; });
+      var own = ids.filter(function (id) { return S.items[id]; }).length;
+      return { setId: st.id, name: st.name, items: ids, owned: own, total: ids.length, complete: own === ids.length && ids.length > 0, claimed: !!S.claimed[st.id], reward: st.reward };
+    });
     return JSON.parse(JSON.stringify({
       enabled: S.enabled, stats: S.stats, level: lv, nextLevelExp: lv * lv * 100, levelExp: (lv - 1) * (lv - 1) * 100,
       mode: S.enabled ? mode() : 'normal', items: S.items, shards: S.shards, worn: S.worn, outfits: S.outfits,
       pity: S.pity, pityLeft: PITY - S.pity, totalPulls: S.total, history: S.history,
-      quests: S.quests, achievements: S.ach, log: S.log.slice(-60), today: { done: today.done, coins: today.coins },
+      checkin: { cycleDay: S.checkin.cycleDay, todayDone: S.checkin.lastDay === ymd(new Date()), total: S.checkin.total, rewards: CHECKIN_REWARDS },
+      bag: S.bag, album: album, quests: S.quests, achievements: S.ach, log: S.log.slice(-60), today: { done: today.done, coins: today.coins },
       rates: { base: RATES, effective: EFFECTIVE }, cost: COST, shardPrice: SHARD_PRICE, foodFactor: ff
     }));
   }
@@ -125,6 +153,38 @@
       S.stats.mood = Math.min(100, S.stats.mood + Math.round(f.mood * k)); S.stats.energy = Math.min(100, S.stats.energy + Math.round(f.energy * k));
       S.foodLog.push({ foodId: id, at: Date.now() });
       return { ok: true, factor: k, line: k < 1 ? 'Ừm… no rồi, hơi ngán.' : 'Ngon quá, cảm ơn cậu nha.', view: emit() }; }); },
+    checkin: function () { return wait(function () {
+      if (!S.enabled) return fail('off');
+      if (S.checkin.lastDay === ymd(new Date())) return fail('done');
+      var r = CHECKIN_REWARDS[S.checkin.cycleDay];
+      S.stats.candy += r.candy;
+      if (r.food) S.bag[r.food.id] = Math.min(BAG_MAX, (S.bag[r.food.id] || 0) + r.food.n);
+      S.checkin.cycleDay = (S.checkin.cycleDay + 1) % 7; S.checkin.total++; S.checkin.lastDay = ymd(new Date());
+      return { ok: true, reward: { candy: r.candy, food: r.food }, view: emit() }; }); },
+    buy: function (id, n) { return wait(function () {
+      var f = catalog.foods.find(function (x) { return x.id === id; }); n = Math.floor(n);
+      if (!f || !(n >= 1 && n <= 10)) return fail('bad');
+      if (!S.enabled) return fail('off');
+      if ((S.bag[id] || 0) + n > BAG_MAX) return fail('full');
+      if (S.stats.candy < f.price * n) return fail('coins');
+      S.stats.candy -= f.price * n; S.bag[id] = (S.bag[id] || 0) + n;
+      return { ok: true, view: emit() }; }); },
+    feedBag: function (id) { return wait(function () {
+      var f = catalog.foods.find(function (x) { return x.id === id; }); if (!f) return fail('bad');
+      if (!S.enabled) return fail('off');
+      if (!S.bag[id]) return fail('empty');
+      var k = foodFactor(id); S.bag[id]--; if (!S.bag[id]) delete S.bag[id];
+      S.stats.mood = Math.min(100, S.stats.mood + Math.round(f.mood * k)); S.stats.energy = Math.min(100, S.stats.energy + Math.round(f.energy * k));
+      S.foodLog.push({ foodId: id, at: Date.now() });
+      return { ok: true, factor: k, line: k < 1 ? 'Ừm… no rồi, hơi ngán.' : 'Ngon quá, cảm ơn cậu nha.', view: emit() }; }); },
+    claimSet: function (setId) { return wait(function () {
+      if (!S.enabled) return fail('off');
+      var st = ((catalog && catalog.sets) || []).filter(function (x) { return x.id === setId; })[0]; if (!st) return fail('bad');
+      if (S.claimed[setId]) return fail('done');
+      var ids = catalog.items.filter(function (i) { return i.set === setId; });
+      if (!ids.length || ids.some(function (i) { return !S.items[i.id]; })) return fail('incomplete');
+      S.claimed[setId] = Date.now(); S.stats.candy += st.reward;
+      return { ok: true, reward: st.reward, view: emit() }; }); },
     claim: function (qid) { return wait(function () {
       var q = S.quests.daily.concat(S.quests.weekly).find(function (x) { return x.id === qid; });
       if (!q || q.claimed || q.progress < q.goal) return fail('Chưa nhận được');

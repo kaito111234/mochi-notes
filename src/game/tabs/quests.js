@@ -89,10 +89,84 @@
         var r = res.reward || {};
         room.toast('Nhận ' + (r.candy || 0) + ' xu, ' + (r.exp || 0) + ' exp', 'coin');
       } else {
-        room.toast(res.reason || 'Chưa nhận được', 'warn');
+        room.toast(reasonText(res.reason), 'warn');
       }
     }).catch(function () { room.toast('Có lỗi, thử lại nhé', 'warn'); })
       .then(function () { busy = false; });
+  }
+
+  var REASONS = { off: 'Game hóa đang tắt', done: 'Hôm nay Mochi nhận rồi nhé', bad: 'Có lỗi, thử lại nhé', coins: 'Chưa đủ xu', full: 'Túi đầy rồi', empty: 'Hết rồi', incomplete: 'Chưa đủ bộ' };
+  function reasonText(r) { return REASONS[r] || 'Chưa làm được'; }
+
+  function renderCheckin(view) {
+    var ci = view.checkin;
+    var box = refs.checkin;
+    box.textContent = '';
+    if (!ci) { box.hidden = true; return; }
+    box.hidden = false;
+    var enabled = view.enabled !== false;
+    var top = h('div', 'qs-top');
+    top.appendChild(h('div', 'qs-name', 'Điểm danh 7 ngày'));
+    top.appendChild(h('div', 'qs-clock', 'Đã điểm danh ' + (ci.total || 0) + ' lần'));
+    box.appendChild(top);
+    var grid = h('div', 'qs-days');
+    (ci.rewards || []).forEach(function (r, i) {
+      var st = i < ci.cycleDay ? 'done' : (i === ci.cycleDay && !ci.todayDone) ? 'today' : 'next';
+      var c = h('div', 'qs-day ' + st);
+      c.appendChild(h('div', 'qs-day-n', 'Ngày ' + r.day));
+      var ic = h('div', 'qs-day-ic');
+      if (r.food) {
+        var f = room.food(r.food.id);
+        if (f && f.icon) {
+          var img = document.createElement('img');
+          img.src = room.iconUrl(f.icon); img.alt = ''; img.draggable = false;
+          ic.appendChild(img);
+          if (r.food.n > 1) ic.appendChild(h('span', 'qs-day-x', '×' + r.food.n));
+        }
+        c.title = (f ? f.name : 'Đồ ăn') + (r.food.n > 1 ? ' ×' + r.food.n : '');
+      }
+      c.appendChild(ic);
+      var amt = h('div', 'qs-day-amt');
+      amt.appendChild(h('span', 'coin'));
+      amt.appendChild(h('span', null, String(r.candy)));
+      c.appendChild(amt);
+      if (st === 'done') {
+        var tick = h('span', 'qs-day-tick');
+        tick.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12.500l4 4 8-9"/></svg>';
+        c.appendChild(tick);
+      }
+      grid.appendChild(c);
+    });
+    box.appendChild(grid);
+    var foot = h('div', 'qs-ci-foot');
+    foot.appendChild(h('div', 'qs-ci-note', 'Lỡ ngày không sao, vòng không bị mất.'));
+    var btn = h('button', 'btn qs-ci-btn' + (ci.todayDone ? '' : ' btn-primary'), ci.todayDone ? 'Mai quay lại nhé' : 'Điểm danh');
+    btn.type = 'button';
+    btn.disabled = ci.todayDone || !enabled;
+    if (!enabled) btn.title = REASONS.off;
+    btn.addEventListener('click', function () { checkin(btn); });
+    foot.appendChild(btn);
+    box.appendChild(foot);
+  }
+
+  function checkin(btn) {
+    if (busy) return;
+    busy = true; btn.disabled = true;
+    Promise.resolve(room.api.checkin()).then(function (res) {
+      res = res || {};
+      if (res.view) room.setView(res.view);
+      if (res.ok) {
+        var r = res.reward || {}, msg = 'Điểm danh xong, nhận ' + (r.candy || 0) + ' xu';
+        if (r.food) {
+          var f = room.food(r.food.id);
+          msg += ' và ' + (f ? f.name : 'đồ ăn') + (r.food.n > 1 ? ' ×' + r.food.n : '');
+        }
+        room.toast(msg, 'coin');
+      } else {
+        room.toast(reasonText(res.reason), 'warn');
+      }
+    }).catch(function () { room.toast('Có lỗi, thử lại nhé', 'warn'); })
+      .then(function () { busy = false; if (room.view) renderCheckin(room.view); });
   }
 
   function fmtDate(ms) {
@@ -104,6 +178,7 @@
   function render(view) {
     if (!el) return;
     var enabled = view.enabled !== false;
+    renderCheckin(view);
     var qd = (view.quests && view.quests.daily) || [];
     var qw = (view.quests && view.quests.weekly) || [];
     refs.daily.textContent = '';
@@ -140,6 +215,9 @@
     mount: function (root, r) {
       el = root; room = r;
       el.classList.add('qs-root');
+      refs.checkin = h('div', 'qs-checkin card');
+      refs.checkin.hidden = true;
+      el.appendChild(refs.checkin);
       var head = h('div', 'qs-head');
       head.appendChild(h('div', 'qs-title', 'Hôm nay'));
       refs.clock = h('div', 'qs-clock');
