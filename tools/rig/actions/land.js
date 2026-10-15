@@ -16,7 +16,7 @@ const hold = { hand_l: 'hold', hand_r: 'hold' };
 function frame(ms, face, a, s, o) {
   const L = legs(a, s);
   const bones = {
-    hips: { y: r1(L.hipsY) },
+    hips: { y: r1(L.hipsY + (o.dy || 0)) },
     thigh_l: L.thigh_l, shin_l: L.shin_l, thigh_r: L.thigh_r, shin_r: L.shin_r,
     chest: { sy: o.chestSy || 1, sx: o.chestSx || 1, r: o.chestR || 0 },
     head: { r: o.headR || 0, y: o.headY || 0 },
@@ -29,6 +29,7 @@ function frame(ms, face, a, s, o) {
   if (o.show) f.show = o.show;
   return f;
 }
+const DUST = !process.env.NODUST;
 const dust = (id) => ({ id, file: 'fx/' + id + '.svg', bone: 'canvas', z: 210 });
 
 module.exports = {
@@ -36,15 +37,15 @@ module.exports = {
   moods: {
     normal: {
       single: [
-        frame(60, 'wince', 25, -55, { chestSy: 0.97, headY: 1, hbSy: 1.03, hbR: 3, slR: -4, ahR: -8, rbR: -5,
+        frame(60, 'wince', 25, -55, { dy: -4, chestSy: 0.97, headY: 1, hbSy: 1.03, hbR: 3, slR: -4, ahR: -8, rbR: -5,
           arms: { upper_arm_l: { r: -22 }, forearm_l: { r: -20 }, upper_arm_r: { r: 22 }, forearm_r: { r: 20 } } }),
-        frame(80, 'wince', 50, -95, { chestSy: 0.92, chestSx: 1.03, headY: 2, hbSy: 1.05, hbSx: 1.04, hbR: 5, slR: -6, ahR: -12, rbR: -8,
+        frame(80, 'wince', 40, -75, { dy: -5, chestSy: 0.92, chestSx: 1.03, headY: 2, hbSy: 1.05, hbSx: 1.04, hbR: 5, slR: -6, ahR: -12, rbR: -8,
           arms: { upper_arm_l: { r: 25 }, forearm_l: { r: 5 }, upper_arm_r: { r: -25 }, forearm_r: { r: -5 } },
-          show: [dust('dust')] }),
-        frame(90, 'surprised', 18, -40, { chestSy: 0.99, chestR: -2, hbSy: 1.02, hbR: -3, slR: 3, ahR: 8, rbR: 4,
+          show: DUST ? [dust('dust')] : undefined }),
+        frame(90, 'surprised', 18, -40, { dy: -3, chestSy: 0.99, chestR: -2, hbSy: 1.02, hbR: -3, slR: 3, ahR: 8, rbR: 4,
           arms: { upper_arm_l: { r: 50 }, forearm_l: { r: 10 }, upper_arm_r: { r: -50 }, forearm_r: { r: -10 } },
-          swap: { hand_l: 'open', hand_r: 'open' }, show: [dust('dust2')] }),
-        frame(100, 'normal', 5, -10, { chestR: 1, headR: -6, hbR: 2, slR: -2, ahR: -4,
+          swap: { hand_l: 'open', hand_r: 'open' }, show: DUST ? [dust('dust2')] : undefined }),
+        frame(100, 'normal', 5, -10, { dy: -1, chestR: 1, headR: -6, hbR: 2, slR: -2, ahR: -4,
           arms: { upper_arm_l: { r: -18 }, forearm_l: { r: -28 }, upper_arm_r: { r: 18 }, forearm_r: { r: 28 } } }),
         frame(160, 'normal', 0, 0, { chestSy: 0.9865, chestSx: 1.004, headY: -0.3 }),
       ],
