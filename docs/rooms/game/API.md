@@ -175,3 +175,26 @@ Gacha/cho ăn: index.js gọi `ctx.persona.pick('gacha_win'|'gacha_dup'|'feed', 
 
 ## 10. Cửa sổ
 `ctx.game.open(tab?)` — một cửa sổ 760×560, không viền (frame:false), có titlebar kéo được, nút đóng. Phím tắt đề xuất Ctrl+Alt+G (điều hành đăng ký). Chạy thử: biến môi trường `MOCHI_GAME_OPEN=<tab>` mở sẵn cửa sổ sau khởi động 1,5 giây.
+
+## 11. Renderer (`src/game/`) — quy ước giữa khung và các tab
+Thứ tự nạp script trong `room.html` (script thường, không module): `preview.js`, `room.js`, `tabs/wardrobe.js`, `tabs/gacha.js`, `tabs/shop.js`, `tabs/quests.js`, `tabs/stats.js`. CSS: `room.css` rồi `tabs/*.css`.
+```js
+window.MochiRoom.registerTab(id, {          // gọi lúc nạp script; khung mount sau DOMContentLoaded
+  label: 'Tủ đồ', icon: '<svg …>',          // icon nét 24×24 (stroke currentColor)
+  mount(el, room) {},                       // el = <section class="tab-panel" id="tab-<id>">
+  update(view, room) {},                    // gọi mỗi lần View đổi (kể cả khi tab đang ẩn)
+  show(room) {}                             // tuỳ chọn: khi tab được chọn
+});
+room = {
+  api: window.mochi.game, view, catalog,
+  setView(view),                            // gọi sau mọi API trả về view → cập nhật mọi tab + thanh trên
+  toast(text, kind),                        // kind: 'ok'|'warn'|'coin'
+  iconUrl(pathInCatalog) -> '../../assets/game/' + path,
+  item(id), food(id), rarityName(r), slotName(s),
+  goto(tabId),
+  preview: window.MochiPreview
+};
+MochiPreview.render(container, worn, catalog, { size: 220, mode: 'normal' })   // vẽ bé + đồ theo khe, trả element
+```
+Id tab: `wardrobe`, `gacha`, `shop`, `quests`, `stats`. CSS mỗi tab chỉ dùng lớp có tiền tố riêng (`.wd-`, `.gc-`, `.sh-`, `.qs-`, `.st-`); token màu/thành phần chung (`--r-common`, `--r-rare`, `--r-epic`, `--r-legend`, `.btn`, `.btn-primary`, `.card`, `.chip`, `.coin`) do `room.css` định nghĩa.
+Xem thử không cần Electron: `python3 -m http.server <cổng>` ở gốc repo, mở `http://localhost:<cổng>/src/game/test/preview.html` (nạp `test/mock-api.js` giả lập `window.mochi.game` + catalog qua fetch).
