@@ -1,11 +1,12 @@
 /* Mochi Notes — bộ chọn thoại (spec 04). Thuần JS, dùng chung main + test (require) và renderer (global MochiDialogue). */
 (function (root) {
-  // 31 event theo spec 04.
+  // 31 event theo spec 04 + 6 event Đợt 2B/3 (due_again, knock, outfit, expired_*).
   const EVENTS = ['click', 'pat_head', 'pat_body', 'lift', 'drop', 'idle', 'sleepy', 'wake', 'startup', 'shutdown',
     'morning', 'noon', 'evening', 'late_night', 'pre', 'due', 'done', 'done_late', 'snooze', 'nag', 'alarm',
-    'alarm_stop', 'alarm_snooze', 'memo', 'reward', 'levelup', 'feed', 'hungry', 'gacha_win', 'gacha_dup', 'note_created'];
-  const REMIND_EVENTS = ['pre', 'due', 'nag', 'alarm', 'memo', 'snooze', 'alarm_snooze'];
-  const NEED_TITLE = ['pre', 'due', 'nag', 'snooze', 'memo'];
+    'alarm_stop', 'alarm_snooze', 'memo', 'reward', 'levelup', 'feed', 'hungry', 'gacha_win', 'gacha_dup', 'note_created',
+    'due_again', 'knock', 'outfit', 'expired_done', 'expired_overdue', 'expired_checklist'];
+  const REMIND_EVENTS = ['pre', 'due', 'nag', 'alarm', 'memo', 'snooze', 'alarm_snooze', 'due_again', 'knock'];
+  const NEED_TITLE = ['pre', 'due', 'nag', 'snooze', 'memo', 'due_again', 'knock'];
   const NEED_LABEL = ['alarm', 'alarm_snooze'];
   const RANGE_KEYS = ['hour', 'energy', 'mood', 'level', 'overdue'];
   const LIST_KEYS = ['mode', 'intent', 'weekday'];
@@ -26,7 +27,7 @@
     return out;
   }
 
-  /** Câu có khớp state không (khoá state không có thì bỏ qua). */
+  /** Câu có khớp state không (khoá state không có thì bỏ qua, riêng intent thì nghiêm). */
   function matches(line, state) {
     const cond = line && line.cond;
     state = state || {};
@@ -38,7 +39,11 @@
       if (!(state[k] >= r[0] && state[k] <= r[1])) return false;
     }
     for (const k of LIST_KEYS) {
-      if (!has(cond[k]) || !has(state[k])) continue;
+      if (!has(cond[k])) continue;
+      // Intent nghiêm: câu theo intent chỉ dành cho note có intent đó; state không có intent (note thường)
+      // thì loại, tránh câu kiểu "nhắc uống thuốc" cho một note bình thường.
+      if (k === 'intent' && !has(state[k])) return false;
+      if (!has(state[k])) continue;
       if (!Array.isArray(cond[k]) || !cond[k].includes(state[k])) return false;
     }
     return true;

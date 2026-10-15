@@ -72,7 +72,20 @@ test('ưu tiên câu khớp intent', () => {
   const lines = [L('g', 'due', 'chung {title}'), L('m', 'due', 'họp {title}', { cond: { intent: ['meet'] } })];
   for (let k = 0; k < 10; k++) assert.equal(D.pick(lines, 'due', { title: 't' }, { intent: 'meet' }, []).id, 'm');
   assert.equal(D.pick(lines, 'due', { title: 't' }, { intent: 'pay' }, []).id, 'g');
-  assert.equal(D.pick(lines, 'due', { title: 't' }, {}, [], () => 0.99).id, 'm'); // state không có intent: cond bị bỏ qua
+  // Intent nghiêm: state không có intent thì câu theo intent bị loại (không nhắc "uống thuốc" cho note thường).
+  for (let k = 0; k < 10; k++) assert.equal(D.pick(lines, 'due', { title: 't' }, {}, [], () => 0.99).id, 'g');
+  assert.equal(D.pick([lines[1]], 'due', { title: 't' }, {}, []), null);
+  assert.ok(!D.matches(lines[1], {}));
+  assert.ok(D.matches(lines[1], { intent: 'meet' }));
+  assert.ok(D.matches(L('x', 'due', 'x', { cond: { hour: [1, 2] } }), {})); // khoá khác vẫn bỏ qua khi state thiếu
+});
+
+test('event mới: due_again/knock cần {title}, expired_* tồn tại', () => {
+  for (const ev of ['due_again', 'knock', 'outfit', 'expired_done', 'expired_overdue', 'expired_checklist']) assert.ok(D.EVENTS.includes(ev), ev);
+  assert.ok(D.REMIND_EVENTS.includes('due_again') && D.REMIND_EVENTS.includes('knock'));
+  assert.ok(D.validate([L('a', 'due_again', 'lại nữa')]).some(e => e.includes('thiếu {title}')));
+  assert.ok(D.validate([L('b', 'knock', 'cốc cốc')]).some(e => e.includes('thiếu {title}')));
+  assert.deepEqual(D.validate([L('c', 'knock', 'cốc cốc {title}'), L('d', 'expired_done', 'vứt nè'), L('e', 'outfit', 'đẹp không')]), []);
 });
 
 test('face/anim/effects được trả về, thiếu thì undefined', () => {
@@ -95,7 +108,7 @@ test('validate bắt lỗi', () => {
     assert.ok(errs.some(e => e.includes(key)), 'thiếu lỗi: ' + key + '\n' + errs.join('\n'));
   }
   assert.deepEqual(D.validate([L('ok', 'due', 'Tới giờ {title}', { cond: { hour: [1, 2] } })]), []);
-  assert.equal(D.EVENTS.length, 31);
+  assert.equal(D.EVENTS.length, 37);
 });
 
 test('kho thoại assets/dialogue/vi.json hợp lệ', t => {
@@ -103,7 +116,9 @@ test('kho thoại assets/dialogue/vi.json hợp lệ', t => {
   if (!fs.existsSync(file)) return t.skip('chưa có vi.json');
   const lines = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.deepEqual(D.validate(lines), []);
-  for (const ev of D.EVENTS) {
+  // 6 event mới chưa bắt buộc có câu trong vi.json (phòng thoại sẽ bổ sung).
+  const NEW = ['due_again', 'knock', 'outfit', 'expired_done', 'expired_overdue', 'expired_checklist'];
+  for (const ev of D.EVENTS.filter(e => !NEW.includes(e))) {
     assert.ok(lines.some(l => l.event === ev && !l.cond), 'event ' + ev + ' chưa có câu không cond');
   }
 });

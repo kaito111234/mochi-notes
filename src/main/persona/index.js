@@ -7,7 +7,11 @@ const dialogue = require('../../shared/dialogue.js');
 const LINES_FILE = path.join(__dirname, '../../../assets/dialogue/vi.json');
 const MAX_RECENT = 20;
 const MIN = 6e4;
-const KIND_EVENT = { click: 'click', 'pat-head': 'pat_head', 'pat-body': 'pat_body', lift: 'lift', drop: 'drop', feed: 'feed' };
+// click/pat/feed do petcore/game tự nói; persona chỉ nói khi nhấc lên/thả xuống (tránh nói 2 lần).
+const KIND_EVENT = { lift: 'lift', drop: 'drop' };
+const DONE_DELAY_MS = 400;     // hoãn câu done/snooze để chờ core (pet:stageAction) tự nói
+const REWARD_QUIET_MS = 5000;  // sau một câu priority >= 30 thì không nói reward
+const EXPIRED_REASONS = ['done', 'overdue', 'checklist'];
 
 const defaults = () => ({ recentLines: [], name: '', settings: { chatter: true, chatterEveryMin: 20 } });
 
@@ -50,16 +54,29 @@ function titleOf(note) {
   return line.length > 40 ? line.slice(0, 39).trimEnd() + '…' : line;
 }
 
-function reminderAt(n) {
-  const r = n && n.reminder;
+/** Danh sách nhắc của note: `reminders` nếu là mảng, không thì [reminder] nếu có. */
+function remindersOf(note) {
+  if (!note) return [];
+  if (Array.isArray(note.reminders)) return note.reminders.filter(r => r && typeof r === 'object');
+  return note.reminder && typeof note.reminder === 'object' ? [note.reminder] : [];
+}
+
+function dueOf(r) {
   if (!r) return null;
   const t = Number.isFinite(r.due) ? r.due : r.at;
   return Number.isFinite(t) ? t : null;
 }
 
+const keyOf = r => r.id + ':' + dueOf(r);
+
+/** Chuỗi JSON khoá đã sắp xếp (so sánh bộ đồ đang mặc). */
+const stableJson = o => JSON.stringify(Object.keys(o || {}).sort().map(k => [k, o[k]]));
+
 function createPersona(ctx, opts) {
   opts = opts || {};
   const now = opts.now || (() => Date.now());
+  const setT = opts.setTimeout || ((fn, ms) => setTimeout(fn, ms));
+  const clearT = opts.clearTimeout || (h => clearTimeout(h));
   const bus = ctx.bus;
   const box = ctx.store.section('persona', defaults, normalize);
   const st = { mode: 'normal', level: undefined, energy: undefined, mood: undefined };
@@ -80,7 +97,7 @@ function createPersona(ctx, opts) {
   function overdue() {
     try {
       const t = now();
-      return ctx.store.data.notes.filter(n => { const a = reminderAt(n); return a !== null && a < t && !n.done && !n.reminder.done; }).length;
+      return ctx.store.data.notes.filter(n => !n.done && remindersOf(n).some(r => { const a = dueOf(r); return !r.done && a !== null && a < t; })).length;
     } catch (_) { return 0; }
   }
 
@@ -126,9 +143,38 @@ function createPersona(ctx, opts) {
 
   const safe = fn => payload => { try { fn(payload || {}); } catch (e) { console.error('[persona]', e); } };
   const noteOf = id => { try { return ctx.findNote ? ctx.findNote(id) : ctx.store.data.notes.find(n => n.id === id); } catch (_) { return null; } };
-  const noteVars = n => { const v = { title: titleOf(n) }; if (n && n.reminder && n.reminder.intent) v.intent = n.reminder.intent; return v; };
+  /** Biến title/intent cho note; có reminderId thì ưu tiên reminder đó. */
+  const noteVars = (n, reminderId) => {
+    const rs = remindersOf(n);
+    const r = (reminderId !== undefined && rs.find(x => x.id === reminderId)) || n && n.reminder || rs[0] || null;
+    const v = { title: (r && r.title) || titleOf(n) };
+    if (r && r.intent) v.intent = r.intent;
+    return v;
+  };
+
+  // Thời điểm câu priority >= 30 gần nhất (của mình, game hay core) để không khen chồng lên.
+  let lastBig = -Infinity;
+  bus.on('persona:line', safe(l => { if (Number.isFinite(l.priority) && l.priority >= 30) lastBig = now(); }));
+  // Câu done/snooze đang hoãn: { noteId, timer }
+  const pendingDone = [];
+  function deferSay(noteId, fn) {
+    const e = { noteId };
+    e.timer = setT(() => {
+      const i = pendingDone.indexOf(e);
+      if (i >= 0) pendingDone.splice(i, 1);
+      try { fn(); } catch (err) { console.error('[persona]', err); }
+    }, DONE_DELAY_MS);
+    pendingDone.push(e);
+  }
+  bus.on('pet:stageAction', safe(p => {
+    if (p.noteId === undefined) return;
+    for (let i = pendingDone.length - 1; i >= 0; i--) {
+      if (pendingDone[i].noteId === p.noteId) { clearT(pendingDone[i].timer); pendingDone.splice(i, 1); }
+    }
+  }));
 
   bus.on('game:mode', safe(p => {
+    if (Number.isFinite(p.level)) st.level = p.level;
     if (typeof p.mode === 'string') st.mode = p.mode;
     if (Number.isFinite(p.energy)) st.energy = p.energy;
     if (Number.isFinite(p.mood)) st.mood = p.mood;
@@ -137,7 +183,10 @@ function createPersona(ctx, opts) {
     if (Number.isFinite(p.level)) st.level = p.level;
     say('levelup', { level: p.level }, 30, 8000);
   }));
-  bus.on('game:reward', safe(p => { say('reward', { count: p.candy }, 30, 6000); }));
+  bus.on('game:reward', safe(p => {
+    if (pendingDone.length || now() - lastBig < REWARD_QUIET_MS) return;
+    say('reward', { count: p.candy }, 30, 6000);
+  }));
 
   bus.on('pet:interact', safe(p => {
     const event = KIND_EVENT[p.kind];
@@ -168,10 +217,12 @@ function createPersona(ctx, opts) {
   }));
 
   bus.on('reminder:done', safe(p => {
-    say(p.onTime === false ? 'done_late' : 'done', noteVars(noteOf(p.noteId)), 30, 8000);
+    const v = noteVars(noteOf(p.noteId), p.reminderId);
+    deferSay(p.noteId, () => say(p.onTime === false ? 'done_late' : 'done', v, 30, 8000));
   }));
   bus.on('reminder:snoozed', safe(p => {
-    say('snooze', Object.assign(noteVars(noteOf(p.noteId)), { left: p.minutes + ' phút' }), 30, 8000);
+    const v = Object.assign(noteVars(noteOf(p.noteId), p.reminderId), { left: p.minutes + ' phút' });
+    deferSay(p.noteId, () => say('snooze', v, 30, 8000));
   }));
   const alarmLabel = (p, id) => {
     if (typeof p.label === 'string' && p.label) return p.label;
@@ -186,27 +237,60 @@ function createPersona(ctx, opts) {
     say('alarm_snooze', { label: alarmLabel(p, p.alarmId), left: p.minutes + ' phút' }, 30, 8000);
   }));
 
-  // Mốc reminder đã thấy theo note; chỉ nói khi có giờ mới trong tương lai.
-  const seenAt = new Map();
+  // Khoá `id:due` của các nhắc đã thấy theo note; chỉ nói khi có nhắc tương lai với khoá mới.
+  const seenKeys = new Map();
   const lastNoteSay = new Map();
-  try { for (const n of ctx.store.data.notes) if (n && n.id !== undefined) seenAt.set(n.id, reminderAt(n)); } catch (_) { /* bỏ qua */ }
+  try { for (const n of ctx.store.data.notes) if (n && n.id !== undefined) seenKeys.set(n.id, new Set(remindersOf(n).map(keyOf))); } catch (_) { /* bỏ qua */ }
   const onNote = safe(p => {
     const n = p.note;
     if (!n || n.id === undefined) return;
-    const at = reminderAt(n);
-    const prev = seenAt.has(n.id) ? seenAt.get(n.id) : null;
-    seenAt.set(n.id, at);
+    const prev = seenKeys.get(n.id) || new Set();
+    const rs = remindersOf(n);
+    const fresh = rs.filter(r => !prev.has(keyOf(r)));
+    seenKeys.set(n.id, new Set(rs.map(keyOf)));
     const t = now();
-    if (at === null || at <= t || n.done || at === prev) return;
+    if (n.done || p.source === 'pet') return;
+    const cands = fresh.filter(r => !r.done && dueOf(r) !== null && dueOf(r) > t).sort((x, y) => dueOf(x) - dueOf(y));
+    if (!cands.length) return;
     if (lastNoteSay.has(n.id) && t - lastNoteSay.get(n.id) < 15000) return;
-    const v = noteVars(n);
-    const d = new Date(at);
+    const r = cands[0];
+    const v = { title: r.title || titleOf(n) };
+    if (r.intent) v.intent = r.intent;
+    const d = new Date(dueOf(r));
     v.time = pad(d.getHours()) + ':' + pad(d.getMinutes());
     if (say('note_created', v, 20, 6000)) lastNoteSay.set(n.id, t);
   });
   bus.on('note:created', onNote);
   bus.on('note:updated', onNote);
-  bus.on('note:deleted', safe(p => { seenAt.delete(p.id); lastNoteSay.delete(p.id); }));
+  bus.on('note:deleted', safe(p => { seenKeys.delete(p.id); lastNoteSay.delete(p.id); }));
+
+  // Đổi đồ: bỏ qua lần đầu (game phát lúc khởi động); chỉ nói khi có món thêm/đổi, không nói khi chỉ tháo.
+  let lastWorn = null;
+  let lastOutfitSay = -Infinity;
+  bus.on('game:outfit', safe(p => {
+    const worn = p.worn && typeof p.worn === 'object' ? p.worn : {};
+    const prev = lastWorn;
+    lastWorn = worn;
+    if (prev === null || stableJson(prev) === stableJson(worn)) return;
+    const slot = Object.keys(worn).sort().find(k => worn[k] && worn[k] !== prev[k]);
+    if (slot === undefined) return;
+    const t = now();
+    if (t - lastOutfitSay < 10000) return;
+    const v = {};
+    try { const nm = ctx.game && ctx.game.itemName && ctx.game.itemName(worn[slot]); if (nm) v.item = nm; } catch (_) { /* bỏ qua */ }
+    if (say('outfit', v, 20, 6000)) lastOutfitSay = t;
+  }));
+
+  // Note hết hạn: nếu core có diễn cảnh ném thùng rác (tossesNotes) thì core tự hỏi pick, persona im.
+  let lastExpiredSay = -Infinity;
+  bus.on('note:expired', safe(p => {
+    if (ctx.pet && ctx.pet.tossesNotes === true) return;
+    if (!EXPIRED_REASONS.includes(p.reason)) return;
+    const t = now();
+    if (t - lastExpiredSay < 30000) return;
+    const title = titleOf(noteOf(p.noteId));
+    if (say('expired_' + p.reason, title ? { title } : {}, 15, 6000)) lastExpiredSay = t;
+  }));
 
   reload();
   ctx.persona = persona;
@@ -215,4 +299,4 @@ function createPersona(ctx, opts) {
 
 function init(ctx) { return createPersona(ctx); }
 
-module.exports = { init, _internal: { createPersona, normalize, titleOf, bucketOf, defaults } };
+module.exports = { init, _internal: { createPersona, normalize, titleOf, bucketOf, defaults, remindersOf } };
