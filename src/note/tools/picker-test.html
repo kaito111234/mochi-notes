@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>Thử bộ chọn mẫu giấy</title>
+<link rel="stylesheet" href="../note.css">
+<link rel="stylesheet" href="../paper.css">
+<link rel="stylesheet" href="../picker.css">
+</head>
+<body data-color="yellow">
+<div class="note" id="note">
+  <header class="topbar">
+    <span class="spacer"></span>
+    <button class="ib" id="btnMenu" type="button" data-pop-toggle aria-label="Menu" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path class="dots" d="M5 12h.01M12 12h.01M19 12h.01"/></svg></button>
+  </header>
+  <div class="lower"><main class="body"><div id="editor" contenteditable="true">Ghi chú thử: mua sữa, gọi mẹ lúc 7h tối. Dòng chữ dài để xem nền hợp màu.</div></main></div>
+  <div class="pop menu" id="menu" hidden role="menu"><button class="mi" type="button" role="menuitem" data-act="paper"><span>Mẫu giấy…</span></button></div>
+  <div class="pop picker-panel" id="pickerPanel" hidden role="dialog" aria-label="Mẫu giấy"></div>
+</div>
+<script src="picker-test.js"></script>
+</body>
+</html>

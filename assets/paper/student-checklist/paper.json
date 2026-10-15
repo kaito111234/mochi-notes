@@ -1,0 +1,44 @@
+{
+  "id": "student-checklist",
+  "name": "Checklist & gà con",
+  "group": "student",
+  "order": 40,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#fffbe6",
+    "head": "#ffeeaa",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(200,150,40,.3)",
+    "step": 28,
+    "margin": null
+  },
+  "header": {
+    "text": "Checklist",
+    "font": "pangolin",
+    "color": "#a56a00",
+    "size": 22,
+    "align": "left",
+    "style": "underline"
+  },
+  "ink": "#3a3016",
+  "font": "pangolin",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/chick.svg",
+      "pos": "tr",
+      "w": 50,
+      "dx": 8,
+      "dy": 2,
+      "rot": 5
+    }
+  ],
+  "checklist": true
+}

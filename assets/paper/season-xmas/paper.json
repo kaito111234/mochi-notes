@@ -1,0 +1,62 @@
+{
+  "id": "season-xmas",
+  "name": "Giáng sinh",
+  "group": "season",
+  "order": 30,
+  "noteColor": "green",
+  "dark": false,
+  "bg": {
+    "color": "#f3faf0",
+    "head": "#d9efd4",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Giáng sinh",
+    "font": "baloo2",
+    "color": "#a8222a",
+    "size": 19,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#1d3d27",
+  "font": "baloo2",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/xmas-tree.svg",
+      "pos": "tr",
+      "w": 46,
+      "dx": 34,
+      "dy": 2,
+      "rot": 4
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/holly.svg",
+      "pos": "bl",
+      "w": 36,
+      "dx": 8,
+      "dy": 8,
+      "rot": -10
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/snowflake.svg",
+      "pos": "br",
+      "w": 36,
+      "dx": 8,
+      "dy": 8,
+      "rot": 10
+    }
+  ],
+  "checklist": false
+}

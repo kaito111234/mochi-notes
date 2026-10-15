@@ -1,0 +1,62 @@
+{
+  "id": "season-trungthu",
+  "name": "Trung thu",
+  "group": "season",
+  "order": 20,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#fff3d0",
+    "head": "#ffe2a0",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Trung thu",
+    "font": "baloo2",
+    "color": "#9a4a00",
+    "size": 19,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#4a2c0a",
+  "font": "baloo2",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/lantern-star.svg",
+      "pos": "tr",
+      "w": 42,
+      "dx": 34,
+      "dy": 0,
+      "rot": 6
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/mooncake.svg",
+      "pos": "br",
+      "w": 44,
+      "dx": 8,
+      "dy": 8,
+      "rot": -8
+    },
+    {
+      "kind": "img",
+      "src": "deco/animals/bunny.svg",
+      "pos": "bl",
+      "w": 44,
+      "dx": 8,
+      "dy": 8,
+      "rot": 4
+    }
+  ],
+  "checklist": false
+}

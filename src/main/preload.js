@@ -115,7 +115,15 @@ api.pet = {
 api.game = {};
 // ===== HẾT PHÒNG game =====
 // ===== BẮT ĐẦU PHÒNG paper (kênh 'paper:*') =====
-api.paper = {};
+api.paper = {
+  get: id => inv('paper:get', id),                        // -> {meta, settings}
+  set: (id, patch) => inv('paper:set', id, patch),        // patch NotePaper (null = xoá khoá) -> meta
+  settings: patch => inv('paper:settings', patch || {}),  // -> settings
+  resize: (id, size) => inv('paper:resize', id, size),    // {width,height} -> boolean
+  checkItem: (id, index, done) => inv('paper:checkItem', id, index, !!done),
+  onMeta: cb => on('paper:meta', cb),                     // cb({id, meta})
+  onSettings: cb => on('paper:settings', cb)              // cb(settings)
+};
 // ===== HẾT PHÒNG paper =====
 // ===== BẮT ĐẦU PHÒNG persona (kênh 'persona:*') =====
 api.persona = {};

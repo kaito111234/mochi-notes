@@ -1,0 +1,27 @@
+{
+  "id": "minimal-night",
+  "name": "Đêm xanh than",
+  "group": "minimal",
+  "order": 40,
+  "noteColor": "charcoal",
+  "dark": true,
+  "bg": {
+    "color": "#1f2a3a",
+    "head": "#18212e",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "dots",
+    "color": "rgba(200,220,255,.2)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#f3ead7",
+  "font": "bevietnam",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false
+}

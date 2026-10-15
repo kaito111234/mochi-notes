@@ -1,0 +1,53 @@
+{
+  "id": "cute-puppy-music",
+  "name": "Kem kẻ ngang & cún nghe nhạc",
+  "group": "cute",
+  "order": 40,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#fdf6df",
+    "head": "#f8e9b8",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(190,150,70,.3)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Hôm nay",
+    "font": "mali",
+    "color": "#8a5a1f",
+    "size": 20,
+    "align": "left",
+    "style": "underline"
+  },
+  "ink": "#3d3020",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/puppy-headphones.svg",
+      "pos": "tr",
+      "w": 54,
+      "dx": 8,
+      "dy": 4,
+      "rot": -4
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/pencil.svg",
+      "pos": "bl",
+      "w": 40,
+      "dx": 6,
+      "dy": 6,
+      "rot": -20
+    }
+  ],
+  "checklist": false
+}

@@ -19,6 +19,11 @@
   let locked = false, zoom = 1, meta = { repeat: null, zoom: 1, locked: false };
   const N2 = M.notes2 || {};
   const RECUR = () => window.MochiRecur || null;
+  const listeners = { note: [], locked: [], zoom: [], ready: [] };
+  let readyDone = false;
+  function emit(evt, arg) {
+    (listeners[evt] || []).slice().forEach(cb => { try { cb(arg); } catch (_) {} });
+  }
 
   /* ================= Sanitizer ================= */
   const ALLOW = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'UL', 'OL', 'LI', 'BR', 'DIV', 'P', 'SPAN', 'MARK', 'IMG']);
@@ -48,6 +53,7 @@
         cleanInto(n, el, doc); dst.appendChild(el); continue;
       }
       const el = doc.createElement(tag.toLowerCase());
+      if (tag === 'DIV' || tag === 'LI') { const ck = n.getAttribute('data-ck'); if (ck === '0' || ck === '1') el.setAttribute('data-ck', ck); }
       if (tag === 'MARK') { const bg = bgOf(n); if (bg) el.setAttribute('style', 'background-color: ' + bg); }
       cleanInto(n, el, doc);
       dst.appendChild(el);
@@ -267,6 +273,7 @@
   function applyZoom(z) {
     zoom = Math.min(3, Math.max(0.5, Number(z) || 1));
     ed.style.setProperty('--zoom', String(zoom));
+    emit('zoom', zoom);
   }
   function stepZoom(delta) {
     const z = delta === 0 ? 1 : Math.min(3, Math.max(0.5, Math.round((zoom + delta) * 10) / 10));
@@ -293,6 +300,7 @@
     b.title = b.ariaLabel = locked ? 'Mở khoá note (Ctrl+Shift+K)' : 'Khoá note (Ctrl+Shift+K)';
     menu.querySelector('[data-act="lock"]').setAttribute('aria-checked', String(locked));
     menu.querySelector('[data-act="lock"] span').textContent = locked ? 'Mở khoá note' : 'Khoá note';
+    emit('locked', locked);
   }
   function setLocked(v) {
     applyLocked(v);
@@ -314,7 +322,13 @@
     const prevShown = shownHtml;
     shownHtml = html;
     dirty = true;
-    const text = html ? ed.innerText : '';
+    let text = null;
+    if (html) {
+      for (const h of hooks) {
+        try { const t = h(ed); if (typeof t === 'string') { text = t; break; } } catch (_) {}
+      }
+      if (text === null) text = ed.innerText;
+    } else text = '';
     try {
       const r = await M.updateNote(id, { html, text });
       dirty = html !== currentHtml();
@@ -325,6 +339,7 @@
       clearTimeout(saveTimer); saveTimer = setTimeout(flush, 2000);
     }
   }
+  const hooks = [];
   function afterEdit() { toggleEmpty(); schedule(); updateFmtState(); }
 
   /* ================= Hiển thị note ================= */
@@ -352,6 +367,7 @@
     if (r && r.auto && !r.done && document.activeElement === ed && (!pr || pr.due !== r.due)) showHint();
     renderChip();
     if (!remPanel.hidden) refreshRemMeta();
+    emit('note', n);
   }
   function showHint() {
     const h = $('hint'); h.hidden = false;
@@ -429,6 +445,7 @@
       body.dataset.color = b.dataset.color;
       menu.querySelectorAll('.sw').forEach(x => x.setAttribute('aria-checked', String(x === b)));
       const r = await M.updateNote(id, { color: b.dataset.color }); if (r) applyNote(r, { noHtml: true });
+      try { if (window.MochiPaperCtl && MochiPaperCtl.choose) MochiPaperCtl.choose({ paper: 'plain-' + b.dataset.color }); } catch (_) {}
       return;
     }
     switch (b.dataset.act) {
@@ -669,7 +686,12 @@
   $('btnNew').addEventListener('click', newNote);
   $('btnClose').addEventListener('click', closeNote);
   $('btnMenu').addEventListener('click', toggleMenu);
-  function newNote() { M.createNote({ nearId: id, color: note ? note.color : 'yellow' }); }
+  function newNote() {
+    const p = M.createNote({ nearId: id, color: note ? note.color : 'yellow' });
+    try {
+      if (p && typeof p.then === 'function') p.then(nn => { try { if (nn && window.MochiPaperCtl && MochiPaperCtl.noteCreated) MochiPaperCtl.noteCreated(nn); } catch (_) {} }, () => {});
+    } catch (_) {}
+  }
   async function closeNote() { await flush(); M.closeWindow(); }
 
   document.addEventListener('keydown', e => {
@@ -716,6 +738,26 @@
   if (document.hasFocus()) body.classList.add('win-focus');
   window.addEventListener('beforeunload', () => { if (saveTimer) flush(); });
 
+  /* ================= Móc nối cho các module (window.MochiNote) ================= */
+  window.MochiNote = {
+    id, editor: ed, body,
+    note: () => note,
+    isLocked: () => locked,
+    zoom: () => zoom,
+    histCommit, afterEdit, flush, toast,
+    openPop, closePops,
+    registerPop(el) { if (el && !pops.includes(el)) pops.push(el); },
+    setColor(color) {
+      return Promise.resolve(M.updateNote(id, { color })).then(r => { if (r) applyNote(r, { noHtml: true }); return r; });
+    },
+    on(evt, cb) {
+      if (typeof cb !== 'function' || !listeners[evt]) return;
+      listeners[evt].push(cb);
+      if (evt === 'ready' && readyDone) { try { cb(); } catch (_) {} }
+    },
+    textHooks: hooks
+  };
+
   /* ================= Khởi động & đồng bộ ================= */
   function applySettings(s) { body.classList.toggle('glass', !!(s && s.glass) && M.platform === 'win32'); }
   M.onSettingsChanged(applySettings);
@@ -733,6 +775,7 @@
     let got = false;
     if (N2.getMeta) { try { const m = await N2.getMeta(id); if (m) { got = true; meta = m; applyZoom(m.zoom); applyLocked(m.locked); renderChip(); } } catch (_) {} }
     if (!got && !metaPushed) applyLocked(false);
+    readyDone = true; emit('ready');
   })();
   if (N2.onMeta) N2.onMeta(m => {
     if (!m || m.id !== id) return;
