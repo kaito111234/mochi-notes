@@ -9,7 +9,7 @@ const { app, BrowserWindow, Notification, screen, ipcMain, powerMonitor } = requ
 const path = require('path');
 const { getBox, normMemo } = require('./box.js');
 const L = require('./memoLogic.js');
-const { placeAvoiding, needsMove } = require('./placement.js');
+const { placeAvoiding, needsMove, petRectFor, petVisible } = require('./placement.js');
 
 const POPUP_W = 360, POPUP_H = 320, QUIT_AUTO_MS = 60000;
 
@@ -46,9 +46,7 @@ function init(ctx) {
     } catch (_) { /* bỏ qua */ }
   }
 
-  const petRect = () => {
-    try { return ctx.pet && typeof ctx.pet.occupiedRect === 'function' ? ctx.pet.occupiedRect() : null; } catch (_) { return null; }
-  };
+  const petRect = () => petRectFor(ctx, screen.getPrimaryDisplay().workArea);
   const ringRect = () => {
     try { return ctx.alarms && typeof ctx.alarms.ringBounds === 'function' ? ctx.alarms.ringBounds() : null; } catch (_) { return null; }
   };
@@ -82,7 +80,7 @@ function init(ctx) {
     try {
       const ln = ctx.persona && typeof ctx.persona.pick === 'function'
         ? ctx.persona.pick('memo', { title: payload.items.map(i => i.text).join('; ').slice(0, 80) }) : null;
-      if (ln && typeof ln.text === 'string' && ln.text.trim()) payload = { ...payload, line: ln.text.trim().slice(0, 140) };
+      if (!petVisible(ctx) && ln && typeof ln.text === 'string' && ln.text.trim()) payload = { ...payload, line: ln.text.trim().slice(0, 140) };
     } catch (_) { /* câu thoại không ảnh hưởng dặn dò */ }
     pending = payload;
     if (ctx.alive(popup)) {

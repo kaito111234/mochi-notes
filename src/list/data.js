@@ -55,7 +55,7 @@
     setTimeout(() => $('bkBack').focus({ preventScroll: true }), 30);
     let list;
     try { list = await api.notes2.listBackups(); } catch (e) { setBody(msg(NOT_READY, 'Chưa kết nối được phần sao lưu.')); return; }
-    if (!Array.isArray(list) || !list.length) { setBody(msg('Chưa có bản sao lưu nào', 'Mochi tự sao lưu mỗi ngày khi bạn dùng.')); return; }
+    if (!Array.isArray(list) || !list.length) { setBody(msg('Chưa có bản sao lưu nào', 'Bé Mochi tự sao lưu mỗi ngày khi bạn dùng.')); return; }
     const ul = el('div', 'bk-list');
     list.forEach(b => {
       const btn = el('button', 'bk-item');

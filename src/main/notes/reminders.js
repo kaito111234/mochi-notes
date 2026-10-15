@@ -5,11 +5,22 @@ try { normRepeat = require('../alarms/box.js').normRepeat; } catch (_) { /* thi�
 
 const MAX = 20;
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
+const UNSAFE = ['__proto__', 'constructor', 'prototype'];
+
+/** Sao các trường lạ (của phòng khác/bản mới hơn) sang out để không mất khi nạp-ghi (BUG-031). */
+function keepUnknown(src, out) {
+  for (const k of Object.keys(src)) {
+    if (UNSAFE.includes(k) || Object.prototype.hasOwnProperty.call(out, k)) continue;
+    out[k] = src[k];
+  }
+  return out;
+}
 
 /** Chuẩn hoá một nhắc (từ JSON/bên ngoài). Trả object mới hoặc null nếu hỏng. id có thể thiếu (ensureIds cấp sau). */
 function normItem(r) {
   if (!r || typeof r !== 'object' || !isNum(r.due)) return null;
   const out = {};
+  const KNOWN = ['id', 'due', 'lead', 'intent', 'auto', 'preFired', 'fired', 'done', 'repeat', 'title', 'key', 'line'];
   if (typeof r.id === 'string' && r.id && r.id.length <= 40) out.id = r.id;
   out.due = r.due;
   out.lead = isNum(r.lead) && r.lead > 0 ? r.lead : 0;
@@ -24,7 +35,9 @@ function normItem(r) {
   if (typeof r.title === 'string' && r.title.trim()) out.title = r.title.trim().slice(0, 120);
   if (typeof r.key === 'string' && r.key) out.key = r.key.slice(0, 80);
   if (Number.isInteger(r.line) && r.line >= 0) out.line = r.line;
-  return out;
+  const extra = {};
+  for (const k of Object.keys(r)) if (!KNOWN.includes(k)) extra[k] = r[k];
+  return keepUnknown(extra, out);
 }
 
 /** Id mới, duy nhất trong list: danh sách rỗng -> 'r1', còn lại 'r' + 5 ký tự base36 ngẫu nhiên. */
@@ -82,4 +95,4 @@ function sortList(list) {
   return list;
 }
 
-module.exports = { normItem, ensureIds, pickPrimary, sortList, newId, MAX };
+module.exports = { keepUnknown, normItem, ensureIds, pickPrimary, sortList, newId, MAX };

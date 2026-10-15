@@ -141,3 +141,10 @@ handleUrl(url)                                   // gọi ctx.alarms.stop/snooze
 
 ## 7. Né bé
 `src/main/alarms/placement.js` (thuần, có test): `placeAvoiding(workArea, size, avoidRect|null, margin=12) -> {x,y}` — ưu tiên góc dưới phải; nếu giao với vùng bé thì thử dịch lên trên vùng bé, rồi sang trái vùng bé, rồi góc dưới trái, rồi góc trên phải. Cửa sổ chuông/popup dặn dò đọc `ctx.pet.occupiedRect?.()` khi mở và nghe `pet:moved {rect}` để dời (throttle 300ms, chỉ dời khi giao nhau).
+
+## Cửa sổ trong suốt (noteTransparent)
+- Khoá settings người dùng `noteTransparent` (boolean, mặc định false/thiếu; store giữ khoá lạ). Bật = `true` trong `settings` của mochi-data.json (hoặc `settings:set` nếu giao diện có).
+- Khi bật, **cửa sổ note mở sau đó** dùng `transparent: true, backgroundColor: '#00000000', hasShadow: false` (bỏ acrylic). Không dựng lại cửa sổ đang mở.
+- Báo renderer: URL note.html có thêm `?id=<id>&transparent=1`. Đọc: `new URLSearchParams(location.search).get('transparent') === '1'` (không cần preload). Tắt thì URL chỉ có `?id=`.
+- Renderer nên: để `html, body` nền `transparent` khi cờ bật, tự vẽ bóng/nền giấy và mép trong chính khung giấy (cửa sổ không còn bóng hệ thống).
+- Windows: cửa sổ transparent + frameless + resizable có thể mất tay nắm đổi cỡ ngoài mép ở một số máy; vùng trong suốt vẫn bắt chuột (trừ khi renderer dùng pointer-events) — nên chừa lề nhỏ cho shadow CSS và kiểm tra thực tế.

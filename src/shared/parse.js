@@ -31,6 +31,13 @@
     while (i < s.length) {
       let j = i + 1;
       const cp = s.charCodeAt(i);
+      if (cp < 128 && !(j < s.length && s.charCodeAt(j) >= 0x300 && s.charCodeAt(j) <= 0x36f)) { /* đường nhanh: ASCII thuần */
+        let c = s[i]; const u0 = cp >= 65 && cp <= 90;
+        if (u0) c = c.toLowerCase();
+        const f0 = (cp === 32 || (cp >= 9 && cp <= 13)) ? ' ' : c;
+        lo.push(cp >= 9 && cp <= 13 ? c : c); fa.push(f0); up.push(u0); st.push(i); en.push(j);
+        i = j; continue;
+      }
       const astral = cp >= 0xd800 && cp < 0xdc00 && j < s.length && (s.charCodeAt(j) & 0xfc00) === 0xdc00;
       if (astral) j++;
       while (j < s.length && COMB.test(s[j])) j++;
@@ -79,8 +86,8 @@
   function leadFor(intent, due, timed, now = Date.now()) {
     if (!timed && intent.lead !== 'day' && intent.lead !== 'due') return 0;
     if (intent.lead === 'day') return due - now > 26 * HOUR ? DAY : 0;
-    if (intent.lead === 'due') return due - now > 26 * HOUR ? DAY : HOUR;
-    return intent.lead;
+    if (intent.lead === 'due') return due - now > 26 * HOUR ? DAY : (due - now > HOUR ? HOUR : 0);
+    return due - now > intent.lead ? intent.lead : 0; /* còn ít hơn mức báo trước -> báo đúng giờ */
   }
 
   /* ---------- Quét các cụm thời gian (dùng chung cho parseWhen & whenSpans) ---------- */
@@ -96,8 +103,73 @@
   const NUMPER_BLOCK = /(?:^|\s)(?:phong|tang|so|lop|ban|bai|muc|buoc|thang|ngay|tuan|quy|trang|cau|tap|dong|thu|nhom|toa|can|lau)\s+$/;
   const R = (src) => new RegExp(src, 'gud');
 
+  /* Số bằng chữ ("chín giờ", "mười giờ rưỡi", "hai mươi phút nữa") -> chữ số, GIỮ NGUYÊN độ dài chuỗi
+     (chữ số đặt ở đầu từ, phần còn lại thành khoảng trắng) để chỉ số vẫn khớp chuỗi gốc. */
+  const NW = { khong: [0, ['không', 'khong']], mot: [1, ['một', 'mốt', 'mot']], hai: [2, ['hai']], ba: [3, ['ba']], bon: [4, ['bốn', 'bon']], tu: [4, ['tư', 'tu']],
+    nam: [5, ['năm', 'nam']], lam: [5, ['lăm', 'lam']], sau: [6, ['sáu']], bay: [7, ['bảy']], tam: [8, ['tám', 'tam']], chin: [9, ['chín', 'chin']], muoi: [10, ['mười', 'mươi', 'muoi']] };
+  const NUMW = '(?:(?:hai|ba|bon|nam|sau|bay|tam|chin)\\s+muoi|muoi)(?:\\s+(?:mot|tu|lam|hai|ba|bon|nam|sau|bay|tam|chin))?|khong|mot|hai|ba|bon|tu|nam|sau|bay|tam|chin';
+  function numWords(P) {
+    const f = P.f, lo = P.lo;
+    const val = (a, b) => {
+      const words = []; const re = /[a-z]+/g; let m;
+      const seg = f.slice(a, b);
+      while ((m = re.exec(seg))) words.push([m[0], a + m.index]);
+      let v = 0;
+      for (let i = 0; i < words.length; i++) {
+        const [wd, at] = words[i], e = NW[wd];
+        if (!e || e[1].indexOf(lo.slice(at, at + wd.length)) < 0) return null;
+        if (wd === 'muoi') { v = (i === 0 ? 10 : v * 10) ; }
+        else if (i + 1 < words.length && words[i + 1][0] === 'muoi') { v = e[0]; }
+        else v += e[0];
+      }
+      return v;
+    };
+    const out = f.split('');
+    P.nw = [];
+    const put = (a, b, v) => { P.nw.push([a, b]); const t = String(v); for (let x = a; x < b; x++) out[x] = x - a < t.length ? t[x - a] : ' '; };
+    const re1 = new RegExp(`${LB}(${NUMW})\\s+(gio|(?:phut|tieng|ngay|tuan)(?=\\s*(?:ruoi\\s*)?(?:nua|sau|toi)(?![${LN}])))${RB}`, 'gu');
+    let m;
+    while ((m = re1.exec(f))) {
+      const a = m.index, b = a + m[1].length, u = m[2], ua = b + (m[0].length - m[1].length - u.length);
+      if (['giờ', 'gio', 'phút', 'phut', 'tiếng', 'tieng', 'ngày', 'ngay', 'tuần', 'tuan'].indexOf(lo.slice(ua, ua + u.length)) < 0) continue;
+      const v = val(a, b);
+      if (v == null || (u === 'gio' ? v > 24 : v < 1 || v > 99)) continue;
+      put(a, b, v);
+    }
+    const f2 = out.join('');
+    const re2 = new RegExp(`(?<=(?:^|\\s)gio\\s+)(${NUMW})(?=\\s*(?:phut)?(?![${LN}]))`, 'gu');
+    while ((m = re2.exec(f2))) {
+      const a = m.index, b = a + m[1].length;
+      const gi = f2.lastIndexOf('gio', a);
+      if (['giờ', 'gio'].indexOf(lo.slice(gi, gi + 3)) < 0) continue;
+      const v = val(a, b);
+      if (v == null || v < 10 || v > 59) continue;
+      put(a, b, v);
+    }
+    for (let x = 0; x < out.length; x++) if (out[x] !== f[x]) { P.f = out.join(''); return; }
+  }
+
+  /** Chuỗi cùng độ dài, số bằng chữ trong ngữ cảnh giờ/khoảng thời gian đã đổi thành chữ số ("hai giờ chiều" -> "2    giờ chiều"). */
+  const NUMW_HINT = /(?:kh[oô]ng|m[oộố]t|hai|ba|b[oố]n|t[ưu]|n[aă]m|l[aă]m|s[aáu]u|b[aả]y|t[aá]m|ch[ií]n|m[uưứ][oờ]i)/i;
+  function normNum(text) {
+    const src = String(text == null ? '' : text).normalize('NFC');
+    if (!NUMW_HINT.test(src)) return src;
+    const P = prep(src);
+    numWords(P);
+    if (!P.nw || !P.nw.length) return src;
+    let out = src;
+    for (const [a, b] of P.nw) {
+      const sa = P.st[a], sb = P.en[b - 1];
+      const dg = P.f.slice(a, b).replace(/\s+$/, '');
+      out = out.slice(0, sa) + (dg + ' '.repeat(Math.max(0, sb - sa - dg.length))).slice(0, sb - sa) + out.slice(sb);
+    }
+    return out;
+  }
+
   function scan(text) {
-    const P = prep(text), f = P.f, lo = P.lo, up = P.up;
+    const P = prep(text);
+    numWords(P);
+    const f = P.f, lo = P.lo, up = P.up;
     let w = f;
     const toks = [];
     const blank = (a, b) => { w = w.slice(0, a) + '\u0001'.repeat(b - a) + w.slice(b); };
@@ -112,7 +184,24 @@
       }
     };
 
-    /* khoảng thời gian: "5 phút nữa", "sau 2 tiếng", "1 giờ 30 phút nữa" */
+    /* khoảng thời gian: "5 phút nữa", "sau 2 tiếng", "1 giờ 30 phút nữa", "trong 5 phút", "nửa tiếng nữa", "1h30 nữa" */
+    run(R(`${LB}trong\\s*(\\d{1,3})\\s*(giay|phut|ph|p)(?:\\s*(nua))?${RB}`), (m, a, b) => {
+      const i = m.indices;
+      if (!okw(i[2][0], i[2][1], UNITOK[m[2]])) return null;
+      if (m[3] && !okw(i[3][0], i[3][1], ['nữa', 'nua'])) return null;
+      return { type: 'dur', ms: +m[1] * UNITK[m[2]], timed: true };
+    });
+    run(R(`${LB}(nua)\\s*(tieng|gio)\\s*(nua)${RB}`), (m) => {
+      const i = m.indices;
+      if (!okw(i[1][0], i[1][1], ['nửa', 'nua']) || !okw(i[2][0], i[2][1], UNITOK[m[2]]) || !okw(i[3][0], i[3][1], ['nữa', 'nua'])) return null;
+      return { type: 'dur', ms: HOUR / 2, timed: true };
+    });
+    run(R(`${NLB}(\\d{1,2})\\s*(h|gio|g)\\s*(\\d{2})\\s*(nua)${RB}`), (m) => {
+      const i = m.indices;
+      if (+m[3] > 59 || !okw(i[2][0], i[2][1], UNITOK[m[2]] || ['g']) || !okw(i[4][0], i[4][1], ['nữa', 'nua'])) return null;
+      if (m[2] === 'g' && up[i[2][0]]) return null;
+      return { type: 'dur', ms: +m[1] * HOUR + (+m[3]) * MIN, timed: true };
+    });
     run(R(`${NLB}(\\d{1,3})\\s*(tieng|gio|h)\\s*(\\d{1,2})\\s*(phut|ph|p)\\s*(nua|sau)${RB}`), (m, a, b) => {
       const i = m.indices;
       if (!okw(i[2][0], i[2][1], UNITOK[m[2]]) || !okw(i[4][0], i[4][1], UNITOK[m[4]]) || !okw(i[5][0], i[5][1], ['nữa', 'nua', 'sau'])) return null;
@@ -137,17 +226,34 @@
 
     /* ngày cụ thể */
     const dateTok = (d, mo, y) => (d >= 1 && d <= 31 && mo >= 1 && mo <= 12) ? { type: 'date', d, mo, y } : null;
-    run(R(`(?:${LB}ngay\\s*)?(?<![${LN}./:])(\\d{1,2})\\s*\\/\\s*(\\d{1,2})(?:\\s*\\/\\s*(\\d{4}|\\d{2}))?(?![\\d/])`), (m, a) => {
-      if (m[0].startsWith('ngay') && !okw(a, a + 4, ['ngày', 'ngay'])) return null;
+    const TIMEISH = /^\s*(?:(?:luc|vao)\s+)?\d{1,2}\s*(?:h|g|gio|:\d|ruoi|\s+(?:sang|trua|chieu|toi|dem)(?![\p{L}\p{N}]))/u;
+    const FRACDEN = [2, 3, 4, 5, 6, 8];
+    run(R(`(?:${LB}ngay\\s*)?(?<![${LN}./:])(\\d{1,2})\\s*\\/\\s*(\\d{1,2})(?:\\s*\\/\\s*(\\d{4}|\\d{2}))?(?![\\d/])`), (m, a, b) => {
+      const ng = m[0].startsWith('ngay');
+      if (ng && !okw(a, a + 4, ['ngày', 'ngay'])) return null;
+      const d = +m[1], mo = +m[2];
+      if (!m[3] && !ng && d < mo && FRACDEN.indexOf(mo) >= 0 && !TIMEISH.test(f.slice(b))) return null; /* phân số: 3/4 cuốn, 1/2 cái bánh */
+      return dateTok(d, mo, m[3] ? (m[3].length === 2 ? 2000 + (+m[3]) : +m[3]) : undefined) || { type: 'bad' };
+    });
+    run(R(`(?:${LB}ngay\\s*)?(?<![${LN}./:\\-])(\\d{1,2})\\s*-\\s*(\\d{1,2})(?:\\s*-\\s*(\\d{4}|\\d{2}))?(?![\\d\\-/])`), (m, a, b) => {
+      const ng = m[0].startsWith('ngay');
+      if (ng && !okw(a, a + 4, ['ngày', 'ngay'])) return null;
+      if (!m[3] && !ng && !TIMEISH.test(f.slice(b))) return null; /* "50-60k", "2-3 lần" không phải ngày */
       return dateTok(+m[1], +m[2], m[3] ? (m[3].length === 2 ? 2000 + (+m[3]) : +m[3]) : undefined);
     });
-    run(R(`(?<![${LN}./:\\-])(\\d{1,2})\\s*-\\s*(\\d{1,2})\\s*-\\s*(\\d{4}|\\d{2})(?![\\d\\-])`), (m) => dateTok(+m[1], +m[2], m[3].length === 2 ? 2000 + (+m[3]) : +m[3]));
     run(R(`${LB}ngay\\s*(\\d{1,2})\\s*thang\\s*(\\d{1,2})(?:\\s*nam\\s*(\\d{4}))?${RB}`), (m, a) => {
       const i = m.indices;
       if (!okw(a, a + 4, ['ngày', 'ngay'])) return null;
       const th = f.indexOf('thang', i[1][1]);
       if (!okw(th, th + 5, ['tháng', 'thang'])) return null;
       return dateTok(+m[1], +m[2], m[3] ? +m[3] : undefined);
+    });
+    run(R(`${LB}ngay\\s*(\\d{1,2})${RB}`), (m, a, b) => {
+      const d = +m[1];
+      if (!okw(a, a + 4, ['ngày', 'ngay']) || d < 1 || d > 31) return null;
+      if (/(?:^|\s)(?:moi|hang|ca|qua|trong|vai|may|nhieu|tung|cac|nhung|\d+)\s+$/.test(f.slice(0, a)) || /\d\s*$/.test(f.slice(0, a))) return null;
+      if (/^\s*(?:lan|dem|cai|buoi|bua|tieng|gio|phut|nghin|ngan|trieu|tr|k|lit|trang|ly|chuyen|ngay|tuan|thang|nua|nay|truoc|sau|do|roi|qua|cua|[\p{N}])/u.test(f.slice(b))) return null;
+      return { type: 'date', d, mo: 0 };
     });
     run(R(`${LB}cuoi\\s*thang${RB}`), (m, a, b) => {
       const th = f.indexOf('thang', a);
@@ -179,6 +285,8 @@
       const tu = f.indexOf('tuan', a);
       return okw(a, a + 4, ['cuối', 'cuoi']) && okw(tu, tu + 4, ['tuần', 'tuan']) ? { type: 'weekend' } : null;
     });
+    run(R(`${LB}mai\\s*mot${RB}`), (m, a, b) => /^(?:mai mốt|mai mot)$/.test(lo.slice(a, b).replace(/\s+/g, ' ')) ? { type: 'maimot' } : null);
+    run(R(`${LB}nua\\s*dem${RB}`), (m, a, b) => /^(?:nửa|nua) (?:đêm|dem)$/.test(lo.slice(a, b).replace(/\s+/g, ' ')) ? { type: 'clock', h: 24, mi: 0 } : null);
     run(R(`${LB}(?:(ngay)\\s*)?(mot|kia)${RB}`), (m, a) => {
       const i = m.indices, wd = lo.slice(i[2][0], i[2][1]);
       if (m[1] && !okw(i[1][0], i[1][1], ['ngày', 'ngay'])) return null;
@@ -230,6 +338,21 @@
       return { type: 'clock', h, mi };
     });
     run(R(`${NLB}(\\d{1,2}):(\\d{2})(?![\\d:])`), (m) => hmOK(+m[1], +m[2]) ? { type: 'clock', h: +m[1], mi: +m[2] } : null);
+    /* "9.30", "9.30 sáng": giờ kiểu dấu chấm — chỉ nhận khi có ngữ cảnh giờ (buổi/ngày kề bên hoặc "lúc/vào"); không nhận "1.5kg", "2.000.000" */
+    run(R(`${NLB}(\\d{1,2})\\.(\\d{2})(?![\\d]|[.,]\\d)`), (m, a, b) => {
+      const h = +m[1], mi = +m[2];
+      if (!hmOK(h, mi) || (h === 24 && mi > 0)) return null;
+      if (/^[\p{L}%]/u.test(f.slice(b))) return null;
+      const after = f.slice(b), before = f.slice(0, a);
+      const ctx = /^\s*(?:sang|trua|chieu|toi|dem|khuya|mai|nay|hom nay|mot|kia|t[2-7]|cn|thu\s*(?:hai|ba|tu|bon|nam|sau|bay|[2-7])|chu\s*nhat|ngay\s*mai)(?![\p{L}\p{N}])/u.test(after)
+        || /(?:^|\s)(?:luc|vao|khoang|tam)\s+$/.test(before)
+        || /(?:^|\s)(?:mai|nay|hom nay|sang|trua|chieu|toi|dem|t[2-7]|cn|chu nhat|thu\s*(?:hai|ba|tu|bon|nam|sau|bay|[2-7]))\s+$/.test(before);
+      if (ctx) return { type: 'clock', h, mi };
+      /* trần trụi ("họp 9.30"): chỉ nhận khi không giống số đo/giá/phiên bản */
+      if (/^\s*(?:kg|g|gam|lan|lit|l|ml|cm|mm|m|km|do|k|tr|d|vnd|usd|dong|nghin|ngan|trieu|ty|phan|cai|qua|trai|gb|mb|tb|kb|%|x|nam|tuoi)(?![\p{L}\p{N}])/u.test(after)) return null;
+      if (/(?:^|\s)(?:gia|tien|phi|ver|version|v|chuong|muc|bai|dieu|so|ma|diem|ty le|ti le|tong|iphone|ios|android|python|node|win|windows|macos|chrome|tang|phong|lop|nhom|dong|hang|cot|trang|buoc|giai|vong|luong|can nang|chieu cao|nhiet do|\d+|[=x+*\-])\s*$/u.test(before)) return null;
+      return { type: 'clock', h, mi };
+    });
     run(R(`${NLB}(\\d{1,2})\\s*(sang|trua|chieu|toi)${RB}`), (m, a, b) => {
       const i = m.indices, h = +m[1], p = m[2], wd = lo.slice(i[2][0], i[2][1]);
       if (!(h >= 1 && h <= 12) || NUMPER_BLOCK.test(f.slice(0, a))) return null;
@@ -250,6 +373,8 @@
       if (PEREXCL[p] && PEREXCL[p].test(nx)) return null;
       if (wd !== PERCANON[p] && wd !== p) return null;
       if (wd === p && wd !== PERCANON[p] && (p === 'sang' || p === 'toi' || p === 'dem') && !buoi && !adj(a, b, adjTypes[p])) return null;
+      /* "đêm" đứng một mình (đi 3 ngày 2 đêm, thức đêm, ca đêm, đêm qua) không phải giờ: chỉ nhận khi kề giờ ("11h đêm") hoặc "đêm nay/đêm mai" */
+      if (p === 'dem' && !adj(a, b, ['clock', 'mai', 'nay'])) return null;
       const t = { type: 'per', per: p };
       if (buoi) t.a = bs;
       return t;
@@ -263,6 +388,7 @@
     const toks = scan(raw).toks;
     const now = nowD.getTime();
     const has = ty => toks.find(t => t.type === ty);
+    if (has('bad') || has('maimot')) return null; /* ngày vô lý -> bỏ cả câu; "mai mốt" chỉ là hạn mềm, không có giờ */
     const dur = has('dur');
     if (dur) return { date: new Date(now + dur.ms), timed: dur.timed };
     const today = new Date(nowD); today.setHours(0, 0, 0, 0);
@@ -271,10 +397,19 @@
     const toMon = () => ((8 - today.getDay()) % 7) || 7;
     let dateOk = false;
     if ((t = has('date'))) {
-      const y = t.y || today.getFullYear();
-      let b = new Date(y, t.mo - 1, t.d);
-      if (!t.y && b < today) b = new Date(y + 1, t.mo - 1, t.d);
-      if (b.getMonth() === t.mo - 1 && b.getDate() === t.d) { base = b; dayset = true; dateOk = true; }
+      if (!t.mo) { /* "ngày 20": tháng này, đã qua thì tháng sau (tìm tháng có đủ ngày) */
+        for (let k = 0; k < 13 && !dateOk; k++) {
+          const b = new Date(today.getFullYear(), today.getMonth() + k, t.d);
+          if (b.getDate() === t.d && b >= today) { base = b; dayset = true; dateOk = true; }
+        }
+        if (!dateOk) return null;
+      } else {
+        const y = t.y || today.getFullYear();
+        let b = new Date(y, t.mo - 1, t.d);
+        if (!t.y && b < today) b = new Date(y + 1, t.mo - 1, t.d);
+        if (b.getMonth() === t.mo - 1 && b.getDate() === t.d) { base = b; dayset = true; dateOk = true; }
+        else return null; /* 30/2: ngày không tồn tại */
+      }
     }
     if (dateOk) { /* đã có ngày */ }
     else if (has('eom')) { base = new Date(today.getFullYear(), today.getMonth() + 1, 0); dayset = true; }
@@ -311,7 +446,7 @@
 
   /** Các cụm chỉ thời gian đã nhận ra: [[start,end], ...] theo chỉ số CHUỖI GỐC. */
   function whenSpans(text) {
-    const { toks, P } = scan(text), f = P.f, lo = P.lo;
+    const sc = scan(text), P = sc.P, f = P.f, lo = P.lo, toks = sc.toks.filter(t => t.type !== 'bad');
     if (!toks.length) return [];
     const groups = [];
     for (const t of toks) {
@@ -333,7 +468,9 @@
         if (['vào', 'vao', 'lúc', 'luc', 'khoảng', 'khoang', 'tầm', 'tam'].indexOf(lo.slice(ws, ws + m[1].length)) < 0) break;
         a = ws;
       }
-      return [P.st[a], P.en[g.b - 1]];
+      let e = g.b;
+      for (const [x, y] of (P.nw || [])) if (e > x && e < y) e = y;
+      return [P.st[a], P.en[e - 1]];
     });
   }
 
@@ -363,7 +500,7 @@
   const leadLabel = l => l >= DAY ? 'báo trước 1 ngày' : l > 0 ? 'báo trước ' + dur(l) : 'báo đúng giờ';
   const intentLabel = k => (INTENTS.find(i => i.k === k) || DEFAULT_INTENT).label;
 
-  const api = { MIN, HOUR, DAY, fold, whenSpans, parseWhen, analyze, intentOf, intentLabel, leadFor, whenLabel, dur, leadLabel, hm };
+  const api = { MIN, HOUR, DAY, fold, normNum, whenSpans, parseWhen, analyze, intentOf, intentLabel, leadFor, whenLabel, dur, leadLabel, hm };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MochiParse = api;
 })(typeof window !== 'undefined' ? window : globalThis);

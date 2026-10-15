@@ -51,11 +51,14 @@ function init(ctx) {
       x: b.x, y: b.y, width: b.width, height: b.height,
       minWidth: 220, minHeight: 160,
       frame: false, show: false, skipTaskbar: true, resizable: true,
-      alwaysOnTop: !!note.alwaysOnTop, title: 'Mochi Note',
+      alwaysOnTop: !!note.alwaysOnTop, title: 'Mochi Notes',
       webPreferences: ctx.webPrefs()
     };
     if (ctx.useGlass()) { o.backgroundMaterial = 'acrylic'; o.backgroundColor = '#00000000'; }
     else o.backgroundColor = ctx.COLOR_BG[note.color] || ctx.COLOR_BG.yellow;
+    // Cửa sổ trong suốt (tuỳ chọn, mặc định tắt): chỉ áp dụng cho cửa sổ mở sau khi bật; renderer đọc ?transparent=1.
+    const transparent = ctx.settings().noteTransparent === true;
+    if (transparent) { o.transparent = true; o.backgroundColor = '#00000000'; o.hasShadow = false; delete o.backgroundMaterial; }
     const win = new BrowserWindow(o);
     noteWins.set(id, win);
     ctx.hardenWebContents(win);
@@ -80,7 +83,7 @@ function init(ctx) {
       } else if (!win.__silent) saveBounds();
     });
     win.on('closed', () => { if (noteWins.get(id) === win) noteWins.delete(id); });
-    win.loadFile(ctx.paths.noteHtml, { query: { id } });
+    win.loadFile(ctx.paths.noteHtml, { query: transparent ? { id, transparent: '1' } : { id } });
     return win;
   }
 
@@ -90,9 +93,30 @@ function init(ctx) {
     if (alive(w)) { w.__silent = true; w.close(); }
   }
 
+  // BUG-020: tạo cửa sổ dần (lô nhỏ, nghỉ giữa các lô) để main không bị chặn; mỗi cửa sổ tự hiện khi ready-to-show.
+  const OPEN_BATCH = 2;
+  const OPEN_GAP = 40;
+  let openGen = 0;
   function openAllVisible(inactive) {
-    for (const n of ctx.store.data.notes) if (n.visible) openNote(n.id, { focus: !inactive });
+    const gen = ++openGen;   // lệnh mới huỷ hàng đợi cũ
+    const ids = ctx.store.data.notes.filter(n => n.visible).map(n => n.id);
+    let i = 0;
+    const step = () => {
+      if (gen !== openGen || ctx.quitting) return;
+      let made = 0;
+      while (i < ids.length && made < OPEN_BATCH) {
+        const id = ids[i++];
+        const n = ctx.findNote(id);
+        if (!n || !n.visible || ctx.settings().allHidden) continue;   // ẩn tất cả/xoá giữa chừng
+        const had = alive(noteWins.get(id));
+        openNote(id, { focus: !inactive });
+        if (!had) made++;
+      }
+      if (i < ids.length) { const t = setTimeout(step, OPEN_GAP); if (t && t.unref) t.unref(); }
+    };
+    step();
   }
+  ctx.notes.cancelOpenAll = () => { openGen++; };
 
   Object.assign(ctx.notes, { fitBounds, newNoteBounds, openNote, closeNoteWin, openAllVisible });
 }

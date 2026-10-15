@@ -63,7 +63,21 @@ function noteTitle(text) {
   return '';
 }
 
+/** BUG-025: lead không được lớn hơn thời gian còn lại (hạn còn 2 phút thì không "báo trước 5 phút"): bỏ báo trước. */
+function clampLead(lead, due, now) {
+  return isNum(lead) && lead > 0 && isNum(due) && isNum(now) && due - now > lead ? lead : 0;
+}
+/** BUG-012: giờ trong chữ đã qua nhưng vẫn trong HÔM NAY (vd gõ "3h chiều nay" lúc 20h) và không lặp. */
+function isPastToday(due, now) {
+  if (!isNum(due) || due > now) return false;
+  const a = new Date(due), b = new Date(now);
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+/** Đánh dấu "đã qua": có trong danh sách (chip hiện đã qua) nhưng KHÔNG kêu chuông, không nhắc dai. */
+function markPast(r) { r.lead = 0; r.preFired = true; r.fired = true; r.done = false; r.past = true; return r; }
+
 function mkReminder(due, lead, intent, auto, now, repeat) {
+  lead = clampLead(lead, due, now);
   const r = {
     due, lead, intent, auto,
     preFired: lead > 0 && now >= due - lead,
@@ -284,10 +298,11 @@ function applyItem(r, it, now) {
     ? sameRule(r.repeat, it.repeat) && nextOf(r.repeat, timeOfReminder(r), r.due - 1) === r.due
     : !r.repeat && r.due === it.due;
   if (!keep) {
-    r.due = it.due; r.lead = it.lead; r.intent = it.intent;
+    r.due = it.due; r.lead = clampLead(it.lead, it.due, now); r.intent = it.intent;
     if (it.repeat) r.repeat = it.repeat; else delete r.repeat;
     r.preFired = r.lead > 0 && now >= r.due - r.lead;
-    r.fired = false; r.done = false;
+    r.fired = false; r.done = false; delete r.past;
+    if (!it.repeat && isPastToday(it.due, now)) markPast(r);
   }
   if (it.key !== undefined) r.key = it.key;
   if (it.title !== undefined) r.title = it.title;
@@ -305,8 +320,11 @@ function applyText(note, now = Date.now()) {
   const manual = list.filter(r => !r.auto);
 
   // Chỉ lấy ý còn tương lai/lặp, hoặc ý quá giờ nhưng vẫn khớp một nhắc auto đang có (giữ để nhắc dai).
+  // BUG-012: nếu TẤT CẢ ý đều là giờ đã qua trong hôm nay thì vẫn lưu (đánh dấu past) để không im lặng;
+  // note còn ý tương lai thì ý đã qua bị bỏ như trước (đỡ rác).
+  const allowPast = !items.some(it => it.due > now || it.repeat);
   items = items.filter(it => !(it.key && muted.has(it.key)) &&
-    (it.due > now || it.repeat || autos.some(a => a.due === it.due && (!a.key || a.key === it.key))));
+    (it.due > now || it.repeat || (allowPast && isPastToday(it.due, now)) || autos.some(a => a.due === it.due && (!a.key || a.key === it.key))));
   // Nhắc tay chiếm chỗ: cùng key -> bỏ ý; nhắc tay không key + chỉ một ý -> như 0.1 (không sinh thêm).
   // (Chỉ chặn TẠO MỚI; nhắc auto đã có vẫn được đối chiếu/cập nhật bình thường.)
   const manualKeys = new Set(manual.filter(m => m.key).map(m => m.key));
@@ -337,6 +355,7 @@ function applyText(note, now = Date.now()) {
   for (const it of rest) {
     if (blockFresh || list.length >= RM.MAX) break;
     const r = mkReminder(it.due, it.lead, it.intent, true, now, it.repeat);
+    if (!it.repeat && isPastToday(it.due, now)) markPast(r);
     if (it.key !== undefined) r.key = it.key;
     if (it.title !== undefined) r.title = it.title;
     if (it.line !== undefined) r.line = it.line;
@@ -463,6 +482,7 @@ function snooze(note, minutes, now = Date.now(), reminderId) {
   r.fired = false;
   r.preFired = true;
   r.done = false;
+  delete r.past;
   r.auto = false; // để lần sửa chữ sau không ghi đè giờ đã hoãn
   // note lặp: giữ r.repeat (giờ gốc nằm ở repeat.anchor nên lần sau vẫn đúng giờ)
   if (r.repeat && !Number.isFinite(r.repeat.anchor)) r.repeat.anchor = prevDue;
@@ -483,7 +503,7 @@ function overdueDue(n, now) {
   ensureReminders(n);
   let best = null;
   for (const r of n.reminders) {
-    if (!r.done && r.fired && now - r.due > NAG_AFTER && (best === null || r.due < best)) best = r.due;
+    if (!r.done && r.fired && !r.past && now - r.due > NAG_AFTER && (best === null || r.due < best)) best = r.due;
   }
   return best;
 }
@@ -554,8 +574,36 @@ function tick(notes, now, state) {
   return { events, changed: changedIds.length > 0, changedIds };
 }
 
+/**
+ * Mốc (ms epoch) sớm nhất mà tick() có việc phải làm sau `now`; Infinity nếu không có. Dùng để ngủ tới mốc kế thay vì
+ * hỏi mỗi giây (BUG-024). Phải khớp điều kiện trong tick(): trả về mốc thật, không trễ.
+ */
+function nextWake(notes, now, state) {
+  let best = Infinity;
+  const upd = t => { if (isNum(t) && t < best) best = t; };
+  let firstOverdue = Infinity;
+  for (const n of notes) {
+    ensureReminders(n);
+    for (const r of n.reminders) {
+      if (r.done) continue;
+      if (r.repeat) {
+        const nx = nextOf(r.repeat, timeOfReminder(r), r.due);
+        if (nx != null) upd(nx);
+      }
+      if (!r.fired) {
+        if (!r.preFired && r.lead > 0) upd(r.due - r.lead);
+        upd(r.due);
+      } else if (!r.past) {
+        if (r.due + NAG_AFTER + 1 < firstOverdue) firstOverdue = r.due + NAG_AFTER + 1;
+      }
+    }
+  }
+  if (firstOverdue !== Infinity) upd(Math.max(firstOverdue, ((state && state.lastNag) || 0) + NAG_EVERY));
+  return best;
+}
+
 module.exports = {
-  htmlToText, noteTitle, computeReminder, applyText, setReminder, snooze, markDone, overdueNotes, tick, rollRepeat, setRepeat,
-  ensureReminders, syncPrimary, upsertReminder, removeReminder, _setUnderstand,
+  nextWake, htmlToText, noteTitle, computeReminder, applyText, setReminder, snooze, markDone, overdueNotes, tick, rollRepeat, setRepeat,
+  ensureReminders, syncPrimary, clampLead, isPastToday, upsertReminder, removeReminder, _setUnderstand,
   NAG_AFTER, NAG_EVERY
 };

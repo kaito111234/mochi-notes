@@ -67,4 +67,50 @@ function needsMove(bounds, avoid) {
   return normAvoid(avoid).some(r => intersects(bounds, r));
 }
 
-module.exports = { placeAvoiding, needsMove, intersects, overlapArea };
+// ---- Vùng bé dự phòng (khi core chưa có ctx.pet.occupiedRect) ----
+const PET_DEFAULT_W = 300, PET_DEFAULT_H = 400;   // cửa sổ bé: ~300x397 (nhân vật + bong bóng), đáy sát đáy workArea
+
+/** Vùng bé mặc định: góc dưới phải workArea. */
+function defaultPetRect(workArea) {
+  const wa = okRect(workArea) ? workArea : { x: 0, y: 0, width: 1280, height: 720 };
+  const w = Math.min(PET_DEFAULT_W, wa.width), h = Math.min(PET_DEFAULT_H, wa.height);
+  return { x: wa.x + wa.width - w, y: wa.y + wa.height - h, width: w, height: h };
+}
+
+/**
+ * Vùng bé: 1) ctx.pet.occupiedRect() nếu core có; 2) bounds cửa sổ bé (ctx.windows.pet) nếu đang hiện;
+ * 3) bé đang bật nhưng chưa có cửa sổ -> vùng góc dưới phải mặc định; 4) bé tắt -> null.
+ * Không bao giờ ném lỗi.
+ */
+function petRectFor(ctx, workArea) {
+  try {
+    const pet = ctx && ctx.pet;
+    if (pet && typeof pet.occupiedRect === 'function') {
+      const r = pet.occupiedRect();
+      if (okRect(r)) return r;
+    }
+    const w = ctx && ctx.windows && ctx.windows.pet;
+    if (w && typeof w.isDestroyed === 'function' && !w.isDestroyed()) {
+      if (typeof w.isVisible === 'function' && w.isVisible()) {
+        const b = w.getBounds();
+        if (okRect(b)) return { x: b.x, y: b.y, width: b.width, height: b.height };
+      }
+      return null;   // cửa sổ bé có nhưng đang ẩn
+    }
+    const st = ctx && typeof ctx.settings === 'function' ? ctx.settings() : null;
+    if (st && st.mascotEnabled === false) return null;
+    return defaultPetRect(workArea);
+  } catch (_) { return null; }
+}
+
+/** Bé đang hiện (sẽ tự nói câu thoại) -> popup/chuông không lặp lại câu đó. */
+function petVisible(ctx) {
+  try {
+    const a = ctx && ctx.pet && ctx.pet.actor;
+    if (a && typeof a.visible === 'function') return !!a.visible();
+    const w = ctx && ctx.windows && ctx.windows.pet;
+    return !!(w && !w.isDestroyed() && w.isVisible());
+  } catch (_) { return false; }
+}
+
+module.exports = { placeAvoiding, needsMove, intersects, overlapArea, defaultPetRect, petRectFor, petVisible };
