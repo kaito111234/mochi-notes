@@ -23,6 +23,8 @@ function createBrain(core) {
   let tickTimer = null;
   let lastPatSay = 0;
   let seq = 0;
+  let busyExt = false;          // đang ghi nhanh/menu: không tự làm gì
+  let demo2Done = false;
 
   const body = () => core.body;
   const actor = () => core.actor;
@@ -70,11 +72,31 @@ function createBrain(core) {
     const wa = body().getWorkArea(), p = body().pos();
     const room = { left: p.x - wa.x, right: wa.x + wa.width - p.x };
     const dir = Math.random() < room.left / Math.max(1, room.left + room.right) ? 'left' : 'right';
-    body().walk({ dir, dist: rnd(80, 320) });
+    // đang đứng trên note: 60% đi quanh trong note, 40% bước ra mép rồi nhảy xuống
+    const stay = !!body().onNote() && Math.random() < 0.6;
+    body().walk({ dir, dist: rnd(80, 320), avoidCursor: true, stayOnFloor: stay, allowClimb: core.box.settings.climbEnabled !== false });
+  }
+  function waveNow() {
+    actor().play('wave', { mood: core.mode() }).then(() => { if (!body().busy() && !sleeping && core.posture() === 'idle') core.toIdle(); });
+  }
+  function pickWeighted(list) {
+    let sum = 0;
+    for (const [, w] of list) sum += w;
+    let r = Math.random() * sum;
+    for (const [k, w] of list) { r -= w; if (r <= 0) return k; }
+    return list[list.length - 1][0];
+  }
+  function act(kind) {
+    if (kind === 'wander') wander();
+    else if (kind === 'climb') body().climbWall({});
+    else if (kind === 'hop') body().hopToNote({});
+    else if (kind === 'follow') body().followCursor({});
+    else if (kind === 'sit') sit();
+    else waveNow();
   }
 
   function tick() {
-    if (!core.shown || core.stage || body().busy()) return;
+    if (!core.shown || core.stage || busyExt || body().busy()) return;
     const quietMs = Date.now() - lastTouch;
     bus.emit('pet:idleTick', { quietMs });
     if (sleeping) return;
@@ -82,10 +104,15 @@ function createBrain(core) {
     if (core.posture() === 'sit') { if (Math.random() < 0.3) wake(); return; }
     const pAct = Math.min(0.75, 0.2 + quietMs / 900000);      // yên càng lâu càng hay tự làm việc
     if (Math.random() > pAct) return;
-    const r = Math.random();
-    if (core.box.settings.walkEnabled && r < 0.5) wander();
-    else if (r < 0.8) sit();
-    else actor().play('wave', { mood: core.mode() }).then(() => { if (!body().busy() && !sleeping && core.posture() === 'idle') core.toIdle(); });
+    const opts = [];
+    if (core.box.settings.walkEnabled !== false) {            // tắt đi lại: không đi/leo/nhảy/theo trỏ
+      opts.push(['wander', 30]);
+      if (body().canClimb()) opts.push(['climb', 10]);
+      if (body().canHop()) opts.push(['hop', 12]);
+      if (body().canFollow()) opts.push(['follow', 14]);
+    }
+    opts.push(['sit', 22], ['wave', 12]);
+    act(pickWeighted(opts));
   }
 
   function say(text) { actor().say(text, { ttlMs: 4000 }); }
@@ -131,10 +158,52 @@ function createBrain(core) {
     }
   }
 
+  /** Phòng khác (ghi nhanh, menu) báo đang bận: dừng tự đi, đánh thức nếu ngủ, không xúc xắc. */
+  function setBusy(on) {
+    on = !!on;
+    if (busyExt === on) return;
+    busyExt = on;
+    if (on) {
+      seq++;
+      body().stopWalk();
+      if (sleeping || core.posture() === 'sit') wake();
+    } else touch();
+  }
+
+  // Gỡ lỗi: MOCHI_PET_DEMO2 = climb | note | follow (chạy một lần sau khi bé hiện ~2.5s).
+  function runDemo2() {
+    const what = process.env.MOCHI_PET_DEMO2;
+    if (!what || demo2Done) return;
+    demo2Done = true;
+    setTimeout(async () => {
+      try {
+        if (!core.shown) return;
+        if (what === 'climb') await body().climbWall({ maxDist: Infinity });
+        else if (what === 'follow') await body().followCursor({ force: true });
+        else if (what === 'note') {
+          if (!ctx.windows.notes.size && ctx.notes && typeof ctx.notes.createNote === 'function') {
+            try { ctx.notes.createNote({}); } catch (_) { /* bỏ qua */ }
+            await new Promise(r => setTimeout(r, 1200));
+          }
+          for (const [, w] of ctx.windows.notes) {      // dời note lên cao một chút để có chỗ nhảy
+            if (!ctx.alive(w)) continue;
+            const b = w.getBounds(), wa = body().getWorkArea();
+            w.setBounds({ x: Math.min(b.x, wa.x + wa.width - b.width - 20), y: wa.y + wa.height - 260, width: b.width, height: b.height });
+          }
+          await new Promise(r => setTimeout(r, 400));
+          const p = body().pos(), wa = body().getWorkArea();
+          let ok = await body().hopToNote({ force: true });
+          console.log('[demo2] hop', ok, p, wa.width);
+        }
+      } catch (e) { console.error('[petcore] demo2', e); }
+    }, 2500);
+  }
+
   function start() {
     if (tickTimer) return;
     tickTimer = setInterval(tick, TICK_MS);
     if (tickTimer.unref) tickTimer.unref();
+    runDemo2();
   }
   function stop() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } clearSit(); sleeping = false; }
 
@@ -142,7 +211,7 @@ function createBrain(core) {
   bus.on('app:idle', () => { if (!core.stage) sleep(); });
   bus.on('app:resume', () => { touch(); wake(); });
 
-  return { start, stop, tick, touch, wake, sleep, sit, onStage, isSleeping: () => sleeping, onHidden() { sleeping = false; clearSit(); } };
+  return { start, stop, tick, touch, wake, sleep, sit, setBusy, onStage, isSleeping: () => sleeping, onHidden() { sleeping = false; clearSit(); } };
 }
 
 module.exports = { createBrain };

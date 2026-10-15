@@ -3,6 +3,7 @@
 // Node thuần — không require electron ở top-level.
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 const MOODS = ['happy', 'normal', 'tired', 'sad'];
 const PHASES = ['single', 'start', 'loop', 'end'];
@@ -131,4 +132,65 @@ function findPack(id, dirs) {
   return found;
 }
 
-module.exports = { loadPack, packDirs, findPack, MOODS, PHASES };
+function minimalPack(dir) {
+  return {
+    id: 'mochi', name: 'Mochi', author: '', license: '', dir,
+    size: [256, 320], scale: 0.6, anchor: [128, 316], hand: [128, 170],
+    hitbox: { head: [40, 0, 176, 140], body: [40, 140, 176, 180] },
+    faces: {}, params: {}, anims: {}, warnings: ['Dùng gói tối thiểu (không nạp được gói thật)'],
+  };
+}
+
+function tryLoad(id, dirs, warnings) {
+  try {
+    const d = findPack(id, dirs);
+    if (!d) return null;
+    return loadPack(d);
+  } catch (e) { warnings.push(`Không nạp được gói "${id}": ${e && e.message}`); return null; }
+}
+
+// Nạp nhân vật: "mochi" làm gói chính, "placeholder" làm dự phòng; action/faces thiếu thì mượn
+// từ dự phòng (src = URL file:/// tuyệt đối, fit:true). Không bao giờ ném lỗi.
+function loadCharacter(ctx) {
+  const warnings = [];
+  let dirs;
+  try { dirs = packDirs(ctx); } catch (e) { dirs = [path.join(__dirname, '..', '..', '..', 'assets', 'pet')]; }
+  const fallbackDir = path.join(__dirname, '..', '..', '..', 'assets', 'pet', 'mochi');
+  const primary = tryLoad('mochi', dirs, warnings);
+  const fb = tryLoad('placeholder', dirs, warnings);
+  let pack;
+  if (!primary && !fb) {
+    pack = minimalPack(fallbackDir);
+    pack.warnings.push(...warnings);
+    pack.sources = { primary: null, fallback: 'placeholder', borrowed: [] };
+    return pack;
+  }
+  if (!primary) {
+    pack = fb;
+    pack.sources = { primary: null, fallback: 'placeholder', borrowed: [] };
+    pack.warnings = pack.warnings.concat(warnings, ['Không có gói "mochi" — dùng "placeholder" làm gói chính']);
+    return pack;
+  }
+  pack = primary;
+  pack.warnings = pack.warnings.concat(warnings);
+  const borrowed = [];
+  if (fb) {
+    const url = (rel) => pathToFileURL(path.join(fb.dir, rel)).href;
+    for (const action of Object.keys(fb.anims)) {
+      if (pack.anims[action]) continue;
+      const out = {};
+      for (const [m, phases] of Object.entries(fb.anims[action])) {
+        out[m] = {};
+        for (const [ph, list] of Object.entries(phases)) out[m][ph] = list.map((f) => ({ src: url(f.src), ms: f.ms, fit: true }));
+      }
+      pack.anims[action] = out;
+      borrowed.push(action);
+      if (fb.params[action] && !pack.params[action]) pack.params[action] = fb.params[action];
+    }
+    for (const [k, rel] of Object.entries(fb.faces)) if (!pack.faces[k]) pack.faces[k] = url(rel);
+  }
+  pack.sources = { primary: 'mochi', fallback: 'placeholder', borrowed };
+  return pack;
+}
+
+module.exports = { loadPack, loadCharacter, minimalPack, packDirs, findPack, MOODS, PHASES };

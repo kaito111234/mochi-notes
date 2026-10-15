@@ -74,6 +74,39 @@ const LINES = {
     'Cậu giỏi quá, tớ có quà cho cậu nè.',
     'Hay lắm! Tớ vui ghê.'
   ],
+  captureSaved: [
+    'Tớ ghi vào note rồi nha.',
+    'Xong, tớ ghi lại rồi nè.',
+    'Ghi rồi nha, cậu yên tâm.'
+  ],
+  captureSavedTime: [
+    'Tớ ghi rồi nha. {time} tớ nhắc cậu {title}.',
+    'Ghi xong rồi. Tới {time} tớ báo cậu {title} nha.'
+  ],
+  captureBusy: [
+    'Đợi tớ nhắc xong việc này đã nha.',
+    'Tớ đang nhắc việc, xíu nữa cậu dặn tớ sau nha.'
+  ],
+  captureFail: [
+    'Ôi, tớ ghi chưa được. Cậu thử lại giúp tớ nha.',
+    'Tớ ghi không được rồi, xin lỗi cậu. Thử lại nha.'
+  ],
+  captureDrop: [
+    'Cậu thả gì cho tớ vậy? Tớ ghi lại rồi nè.',
+    'Ồ, cậu đưa tớ cái gì đó? Tớ ghi lại rồi nha.'
+  ],
+  menuSleep: [
+    'Tớ ngủ một lát nha. Có việc tớ vẫn dậy nhắc.',
+    'Zzz, tớ chợp mắt xíu thôi. Tới giờ tớ dậy liền.'
+  ],
+  hideHour: [
+    'Tớ trốn một chút nha, có việc tớ vẫn nhắc.',
+    'Tớ đi ẩn một lúc. Tới giờ việc gì tớ vẫn ra nhắc nha.'
+  ],
+  pointNote: [
+    'Note này nè, {title}!',
+    'Là note này đó cậu, {title}.'
+  ],
   chatter: [
     'Tớ ngồi đây canh giờ cho cậu nha.',
     'Hì, hôm nay cậu làm việc chăm quá.',

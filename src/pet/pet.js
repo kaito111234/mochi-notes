@@ -4,6 +4,7 @@
   const P = window.mochi && window.mochi.pet;
   const $ = id => document.getElementById(id);
   const cv = $('cv'), root = $('root'), shaker = $('shaker');
+  const cap = $('cap'), capText = $('capText'), capLabel = $('capLabel'), capTail = $('capTail');
   const note = $('note'), bubble = $('bubble'), bShown = $('bShown'), bRest = $('bRest'), bBtns = $('bBtns'), bTail = $('bTail');
   const send = (t, d) => { try { P && P.send(t, d); } catch (e) { /* bỏ qua */ } };
 
@@ -17,7 +18,7 @@
   let pack = null, layout = { winW: 400, winH: 400, charLeft: 0, charTop: 0, scale: 1 };
   let dir = 'right', settings = { sound: true };
   let anim = null, loading = false, queued = [];
-  let curNote = null;
+  let curNote = null, climbSide = null;
   const dpr = () => window.devicePixelRatio || 1;
 
   /* ------------ hình học ------------ */
@@ -50,10 +51,10 @@
   function placeNote() {
     if (!pack || note.hidden) return;
     const h = toWin(pack.hand[0], pack.hand[1]);
-    const W = 120, H = 110, left = dir === 'left';
+    const W = note.offsetWidth || 120, H = note.offsetHeight || 110, left = dir === 'left';
     let x = left ? h[0] - W : h[0], y = h[1] - H;
-    x = Math.max(0, Math.min(layout.winW - W, x));
-    y = Math.max(0, Math.min(layout.winH - H, y));
+    x = Math.max(0, Math.min(Math.max(0, layout.winW - W), x));
+    y = Math.max(0, Math.min(Math.max(0, layout.winH - H), y));
     note.style.left = x + 'px'; note.style.top = y + 'px';
     note.classList.toggle('faceL', left);
   }
@@ -74,18 +75,25 @@
 
   /* ------------ bong bóng ------------ */
   let typeTimer = 0, ttlTimer = 0, chars = [], shownN = 0, bubbleOn = false;
-  function placeBubble() {
-    if (!bubbleOn || !pack) return;
+  let capOn = false, pendingSay = null;
+  // đặt một bong bóng (nói/nhập) trên đầu bé, kẹp trong cửa sổ; khi bám tường thì chừa thêm lề phía tường
+  function placeAbove(el, tailEl) {
+    if (!pack) return;
     const hb = boxWin(pack.hitbox && pack.hitbox.head) || { l: layout.charLeft, r: layout.charLeft + cw(), t: layout.charTop, b: layout.charTop + ch() / 3 };
-    const w = bubble.offsetWidth, h = bubble.offsetHeight, cx = (hb.l + hb.r) / 2;
-    let x = Math.max(4, Math.min(layout.winW - w - 4, cx - w / 2));
+    const w = el.offsetWidth, h = el.offsetHeight, cx = (hb.l + hb.r) / 2;
+    const mL = climbSide === 'left' ? 8 : 4, mR = climbSide === 'right' ? 8 : 4;
+    const maxX = Math.max(mL, layout.winW - w - mR);
+    const x = Math.max(mL, Math.min(maxX, cx - w / 2));
     let y = hb.t - h - 12;
-    y = Math.max(4, Math.min(layout.winH - h - 4, y));
-    bubble.style.left = x + 'px'; bubble.style.top = y + 'px';
-    const tx = Math.max(16, Math.min(w - 16, cx - x));
-    bTail.style.left = tx + 'px';
+    y = Math.max(4, Math.min(Math.max(4, layout.winH - h - 4), y));
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    tailEl.style.left = Math.max(16, Math.min(w - 16, cx - x)) + 'px';
     // đuôi chỉ xuống; nếu bong bóng nằm thấp hơn đỉnh đầu (bị kẹp) thì ẩn đuôi
-    bTail.style.display = (y + h + 4 <= hb.t + 8) ? '' : 'none';
+    tailEl.style.display = (y + h + 4 <= hb.t + 8) ? '' : 'none';
+  }
+  function placeBubble() {
+    if (capOn) placeAbove(cap, capTail);
+    if (bubbleOn) placeAbove(bubble, bTail);
   }
   function clearSay() {
     clearInterval(typeTimer); clearTimeout(ttlTimer); typeTimer = ttlTimer = 0;
@@ -96,6 +104,8 @@
     shownN = chars.length; bShown.textContent = chars.join(''); bRest.textContent = '';
   }
   function say(c) {
+    if (capOn) { pendingSay = c; return; }
+    pendingSay = null;
     clearSay();
     chars = Array.from(String(c.text == null ? '' : c.text));
     shownN = 0; bShown.textContent = ''; bRest.textContent = chars.join('');
@@ -128,8 +138,98 @@
     }
     if (c.ttlMs > 0) ttlTimer = setTimeout(() => { hush(); send('sayEnd', {}); }, c.ttlMs);
   }
-  function hush() { clearSay(); bubbleOn = false; bubble.hidden = true; }
+  function hush() { clearSay(); bubbleOn = false; bubble.hidden = true; pendingSay = null; }
   bubble.addEventListener('click', () => { if (typeTimer) revealAll(); });
+
+  /* ------------ bong bóng nhập (ghi nhanh) ------------ */
+  let draftTimer = 0;
+  function fitCap() {
+    capText.style.height = 'auto';
+    capText.style.height = Math.min(68, Math.max(32, capText.scrollHeight + 2)) + 'px';
+    placeBubble();
+  }
+  function flushDraft() {
+    if (draftTimer) { clearTimeout(draftTimer); draftTimer = 0; }
+  }
+  function openCap(c) {
+    hush();
+    capLabel.textContent = (c && c.prompt) || 'Cậu muốn tớ ghi gì?';
+    capText.value = String((c && c.draft) || '').slice(0, 2000);
+    if (!capOn) { cap.style.animation = 'none'; void cap.offsetWidth; cap.style.animation = ''; }
+    capOn = true; cap.hidden = false;
+    setIgnore(false);
+    fitCap();
+    capText.focus();
+    try { capText.setSelectionRange(capText.value.length, capText.value.length); } catch (e) { /* bỏ qua */ }
+  }
+  function closeCap(sendDraft) {
+    if (!capOn) return;
+    flushDraft();
+    if (sendDraft) send('captureDraft', { text: capText.value });
+    capOn = false; cap.hidden = true;
+    try { capText.blur(); } catch (e) { /* bỏ qua */ }
+    // trả lại click xuyên; lần rê chuột kế tiếp sẽ cập nhật lại nếu đang ở trên bé
+    hovering = false; send('hover', { on: false });
+    if (!lifted && !dragging) setIgnore(true);
+    if (pendingSay) { const s = pendingSay; pendingSay = null; say(s); }
+  }
+  function submitCap() { const t = capText.value; flushDraft(); closeCap(false); send('captureSubmit', { text: t }); }
+  function cancelCap() { const t = capText.value; flushDraft(); closeCap(false); send('captureCancel', { text: t }); }
+  capText.addEventListener('input', () => {
+    fitCap();
+    flushDraft();
+    draftTimer = setTimeout(() => { draftTimer = 0; send('captureDraft', { text: capText.value }); }, 500);
+  });
+  capText.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing && ev.keyCode !== 229) { ev.preventDefault(); submitCap(); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); cancelCap(); }
+  });
+  $('capSave').addEventListener('click', ev => { ev.stopPropagation(); submitCap(); });
+  $('capCancel').addEventListener('click', ev => { ev.stopPropagation(); cancelCap(); });
+
+  /* ------------ kéo thả chữ/link vào bé ------------ */
+  function dragKind(dt) {
+    if (!dt || !dt.types) return null;
+    const t = Array.from(dt.types);
+    if (t.includes('Files')) return null;
+    if (t.includes('text/uri-list')) return 'url';
+    if (t.includes('text/plain') || t.includes('text')) return 'text';
+    return null;
+  }
+  function endDrag(ev) {
+    dragging = false; cv.classList.remove('dropHot');
+    if (ev && ev.clientX != null && !capOn) updateIgnore(ev); else if (!capOn && !lifted) setIgnore(true);
+  }
+  function onDrag(ev) {
+    if (!dragKind(ev.dataTransfer)) return;
+    dragging = true; setIgnore(false);
+    const hot = overChar(ev.clientX, ev.clientY);
+    cv.classList.toggle('dropHot', hot);
+    if (hot) { ev.preventDefault(); try { ev.dataTransfer.dropEffect = 'copy'; } catch (e) { /* bỏ qua */ } }
+  }
+  document.addEventListener('dragenter', onDrag);
+  document.addEventListener('dragover', onDrag);
+  document.addEventListener('dragleave', ev => {
+    if (ev.relatedTarget == null) endDrag(null);
+    else cv.classList.remove('dropHot');
+  });
+  document.addEventListener('dragend', () => endDrag(null));
+  document.addEventListener('drop', ev => {
+    const dt = ev.dataTransfer, hot = overChar(ev.clientX, ev.clientY);
+    if (!dragKind(dt)) { endDrag(ev); return; }
+    ev.preventDefault();
+    if (hot) {
+      let kind = 'text', text = '';
+      try {
+        const u = dt.getData('text/uri-list');
+        const first = String(u || '').split(/\r?\n/).map(s => s.trim()).find(s => s && s[0] !== '#');
+        if (first) { text = first; kind = 'url'; } else text = dt.getData('text/plain') || '';
+      } catch (e) { text = ''; }
+      text = String(text).slice(0, 5000);
+      if (text.trim()) send('dropText', { text, kind });
+    }
+    endDrag(ev);
+  });
 
   /* ------------ âm thanh ------------ */
   let ac = null;
@@ -168,7 +268,7 @@
   }
 
   /* ------------ click xuyên ------------ */
-  let ignored = true, hovering = false, lifted = false, faded = false;
+  let ignored = true, hovering = false, lifted = false, faded = false, dragging = false;
   function setIgnore(v) {
     if (v === ignored) return;
     ignored = v;
@@ -178,7 +278,7 @@
     if (on === hovering) return;
     hovering = on; send('hover', { on });
   }
-  function overUi(t) { return !!(t && t.closest && t.closest('#bubble, #note')); }
+  function overUi(t) { return !!(t && t.closest && t.closest('#bubble, #note, #cap')); }
   function overChar(x, y) {
     if (!anim || !pack) return false;
     const rx = x - layout.charLeft, ry = y - layout.charTop;
@@ -186,6 +286,7 @@
     try { return anim.alphaAt(rx, ry) > 24; } catch (e) { return false; }
   }
   function updateIgnore(ev) {
+    if (capOn || dragging) { setIgnore(false); return; }
     if (lifted) { setIgnore(false); return; }
     if (faded) { setIgnore(true); setHover(false); return; }
     const hit = overUi(ev.target) || overChar(ev.clientX, ev.clientY);
@@ -218,7 +319,7 @@
   }
 
   /* ------------ cử chỉ nhấn ------------ */
-  let down = null;
+  let down = null, clickTimer = 0;
   cv.addEventListener('pointerdown', ev => {
     if (ev.button !== 0 || down) return;
     if (!overChar(ev.clientX, ev.clientY)) return;
@@ -242,16 +343,25 @@
     const was = down; down = null;
     try { cv.releasePointerCapture(ev.pointerId); } catch (e) { /* bỏ qua */ }
     if (was.lift) { lifted = false; cv.classList.remove('lifted'); send('drop', {}); updateIgnore(ev); }
-    else if (!cancel) send('interact', { kind: 'click' });
+    else if (!cancel) {
+      // hoãn click đơn để phân biệt với bấm đúp (mở ghi nhanh)
+      if (clickTimer) { clearTimeout(clickTimer); clickTimer = 0; send('captureOpen', {}); }
+      else clickTimer = setTimeout(() => { clickTimer = 0; send('interact', { kind: 'click' }); }, 250);
+    }
   }
   cv.addEventListener('pointerup', ev => endPress(ev, false));
   cv.addEventListener('pointercancel', ev => endPress(ev, true));
-  cv.addEventListener('contextmenu', ev => ev.preventDefault());
+  cv.addEventListener('contextmenu', ev => {
+    ev.preventDefault();
+    if (!overChar(ev.clientX, ev.clientY)) return;
+    if (clickTimer) { clearTimeout(clickTimer); clickTimer = 0; }
+    send('menu', {});
+  });
   note.addEventListener('click', () => send('noteClick', {}));
 
   document.addEventListener('pointermove', ev => { updateIgnore(ev); trackPat(ev); });
   document.addEventListener('mousemove', ev => { updateIgnore(ev); trackPat(ev); });
-  document.addEventListener('mouseleave', () => { if (!lifted) { setIgnore(true); setHover(false); } });
+  document.addEventListener('mouseleave', () => { if (!lifted && !capOn && !dragging) { setIgnore(true); setHover(false); } });
 
   /* ------------ lệnh từ main ------------ */
   async function loadPack(c) {
@@ -288,8 +398,11 @@
         placeNote(); placeBubble(); break;
       case 'say': say(c); break;
       case 'hush': hush(); break;
+      case 'capture': openCap(c); break;
+      case 'captureClose': closeCap(true); break;
+      case 'climb': climbSide = (c.side === 'left' || c.side === 'right') ? c.side : null; placeNote(); placeBubble(); break;
       case 'pointer': { // chỉ Linux: main dò con trỏ thay cho forward chuột
-        if (faded) break;
+        if (faded || capOn || dragging) break;
         const el = document.elementFromPoint(c.x, c.y);
         if (overUi(el) || overChar(c.x, c.y)) { setIgnore(false); setHover(true); }
         break;

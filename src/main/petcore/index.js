@@ -5,12 +5,19 @@ const { app, screen } = require('electron');
 const { createWindow } = require('./window.js');
 const { createBody } = require('./body.js');
 const { createBrain } = require('./brain.js');
+const { createCapture } = require('./capture.js');
+const { createMenu } = require('./menu.js');
+// Module của nhân viên khác: có thì nối, chưa có thì bỏ qua.
+function optional(file, name) {
+  try { const m = require(file); return typeof m[name] === 'function' ? m[name] : null; }
+  catch (e) { if (!e || e.code !== 'MODULE_NOT_FOUND') console.error('[petcore] lỗi nạp', file, e && e.message); return null; }
+}
 
 const POSTURES = ['idle', 'walk', 'sit', 'sleep', 'lifted', 'peek', 'work'];
 const MODES = ['happy', 'normal', 'tired', 'sad'];
 
 function defaults() {
-  return { x: null, y: null, displayId: null, posture: 'idle', settings: { alwaysVisible: true, scale: 1, walkEnabled: true } };
+  return { x: null, y: null, displayId: null, posture: 'idle', draft: '', hiddenUntil: 0, settings: { alwaysVisible: true, scale: 1, walkEnabled: true, climbEnabled: true, followCursor: true } };
 }
 function normalize(raw) {
   const d = defaults();
@@ -21,6 +28,10 @@ function normalize(raw) {
   const s = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
   if (typeof s.alwaysVisible === 'boolean') d.settings.alwaysVisible = s.alwaysVisible;
   if (typeof s.walkEnabled === 'boolean') d.settings.walkEnabled = s.walkEnabled;
+  if (typeof s.climbEnabled === 'boolean') d.settings.climbEnabled = s.climbEnabled;
+  if (typeof s.followCursor === 'boolean') d.settings.followCursor = s.followCursor;
+  if (typeof raw.draft === 'string') d.draft = raw.draft.slice(0, 2000);
+  if (num(raw.hiddenUntil) != null && raw.hiddenUntil > 0) d.hiddenUntil = raw.hiddenUntil;
   if (typeof s.scale === 'number' && isFinite(s.scale)) d.settings.scale = Math.min(2, Math.max(0.5, s.scale));
   return d;
 }
@@ -33,6 +44,7 @@ function init(ctx) {
     ctx, box, pack: null, layout: null,
     stage: false, shown: false, showSeq: 0, curPosture: 'idle', curMode: 'normal',
     window: null, body: null, brain: null, actor: null,
+    capture: null, menu: null, settingsWin: null, flash: null,
     posture: () => core.curPosture,
     mode: () => core.curMode,
     setPosture(p) {
@@ -51,6 +63,12 @@ function init(ctx) {
   core.window = createWindow(core);
   core.body = createBody(core);
   core.brain = createBrain(core);
+  core.capture = createCapture(core);
+  core.menu = createMenu(core);
+  const mkSettings = optional('./settingsWindow.js', 'createSettingsWindow');
+  const mkFlash = optional('./flash.js', 'createFlash');
+  try { if (mkSettings) core.settingsWin = mkSettings(core); } catch (e) { console.error('[petcore] settingsWindow', e && e.message); }
+  try { if (mkFlash) core.flash = mkFlash(core); } catch (e) { console.error('[petcore] flash', e && e.message); }
 
   // ---- play: Promise resolve khi animEnd cùng token (loop thì resolve ngay), an toàn 10s
   let tokenSeq = 0;
@@ -118,7 +136,25 @@ function init(ctx) {
     }, 230);
   }
 
-  function wantVisible() { return !!(box.settings.alwaysVisible && ctx.settings().mascotEnabled); }
+  function wantVisible() { return !!(box.settings.alwaysVisible && ctx.settings().mascotEnabled && Date.now() >= (box.hiddenUntil || 0)); }
+  let hideTimer = null;
+  function armHideTimer() {
+    clearTimeout(hideTimer); hideTimer = null;
+    const left = (box.hiddenUntil || 0) - Date.now();
+    if (left <= 0) { if (box.hiddenUntil) { box.hiddenUntil = 0; ctx.store.save(); } return; }
+    // setTimeout tối đa ~24 ngày; hẹn lại theo từng đoạn nếu dài hơn
+    hideTimer = setTimeout(() => { armHideTimer(); if (!box.hiddenUntil) applyVisibility(); }, Math.min(left + 50, 2147000000));
+  }
+  function hideFor(ms) {
+    ms = Number(ms);
+    if (!isFinite(ms) || ms <= 0) { box.hiddenUntil = 0; }
+    else box.hiddenUntil = Date.now() + Math.min(ms, 24 * 3600 * 1000);
+    ctx.store.save();
+    armHideTimer();
+    if (core.capture.isOpen()) core.capture.close();
+    applyVisibility();
+    return box.hiddenUntil;
+  }
   function applyVisibility(opts) {
     if (wantVisible()) { if (!core.shown) show(opts).catch(e => console.error('[petcore] show', e)); }
     else if (!core.stage && core.shown) hide();
@@ -145,6 +181,8 @@ function init(ctx) {
       core.brain.onStage(on);
     },
     goToCorner: () => core.body.goToCorner(),
+    goToNote: id => (core.body && typeof core.body.goToNote === 'function'
+      ? core.body.goToNote(id) : Promise.resolve({ ok: false, side: null })),
     on: (type, fn) => core.window.on(type, fn)
   };
   core.actor = actor;
@@ -154,10 +192,12 @@ function init(ctx) {
     const s = box.settings, prev = Object.assign({}, s);
     if (typeof patch.alwaysVisible === 'boolean') s.alwaysVisible = patch.alwaysVisible;
     if (typeof patch.walkEnabled === 'boolean') s.walkEnabled = patch.walkEnabled;
+    if (typeof patch.climbEnabled === 'boolean') s.climbEnabled = patch.climbEnabled;
+    if (typeof patch.followCursor === 'boolean') s.followCursor = patch.followCursor;
     if (typeof patch.scale === 'number' && isFinite(patch.scale)) s.scale = Math.min(2, Math.max(0.5, patch.scale));
     ctx.store.save();
     if (s.scale !== prev.scale) core.window.relayout();
-    if (!s.walkEnabled && prev.walkEnabled && !core.stage) core.body.stopWalk();
+    if (((!s.walkEnabled && prev.walkEnabled) || (s.climbEnabled === false && prev.climbEnabled !== false)) && !core.stage) core.body.stopWalk();
     if (s.alwaysVisible !== prev.alwaysVisible) applyVisibility();
     core.window.sendSettings();
     return s;
@@ -166,6 +206,20 @@ function init(ctx) {
   Object.assign(ctx.pet, {
     settings: () => box.settings,
     setSettings,
+    hideFor,
+    occupiedRect() {
+      try {
+        if (core.body && typeof core.body.occupiedRect === 'function') return core.body.occupiedRect();
+      } catch (_) { /* bỏ qua */ }
+      const w = core.window.win();
+      if (!core.shown || !w || !w.isVisible() || !core.layout) return null;
+      const b = w.getBounds(), L = core.layout;
+      return { x: b.x + L.charLeft, y: b.y + L.charTop, width: L.charW, height: L.charH };
+    },
+    flashNote(id, ms) {
+      try { return !!(core.flash && typeof core.flash.flash === 'function' && core.flash.flash(id, ms)); } catch (_) { return false; }
+    },
+    capture: core.capture,
     mode: () => core.curMode,
     actor,
     body: { pos: () => core.body.pos(), posture: () => core.curPosture }
@@ -187,7 +241,17 @@ function init(ctx) {
     if (s.sound !== prevS.sound) core.window.sendSettings();
     prevS = Object.assign({}, s);
   });
+  // ---- tin từ renderer bé
+  const safeOn = (type, fn) => core.window.on(type, d => { try { const r = fn(d); if (r && typeof r.catch === 'function') r.catch(e => console.error('[petcore]', type, e && e.message)); } catch (e) { console.error('[petcore]', type, e && e.message); } });
+  safeOn('menu', () => core.menu.popup());
+  safeOn('captureOpen', () => core.capture.open());
+  safeOn('captureSubmit', d => core.capture.submit(d.text, 'pet'));
+  safeOn('captureCancel', d => { if (typeof d.text === 'string') core.capture.setDraft(d.text); core.capture.close(); });
+  safeOn('captureDraft', d => { if (typeof d.text === 'string') core.capture.onDraft(d.text); });
+  safeOn('dropText', d => { if (typeof d.text === 'string' && d.text.trim()) return core.capture.submit(d.text, 'drop'); });
+
   bus.on('app:startup', () => {
+    armHideTimer();
     applyVisibility({ startup: true });
     if (process.env.MOCHI_PET_DEMO) setTimeout(() => runDemo(process.env.MOCHI_PET_DEMO), 1500);
   });
@@ -207,6 +271,7 @@ function init(ctx) {
 
   app.on('before-quit', () => {
     try {
+      clearTimeout(hideTimer);
       if (core.shown && core.body.placedYet()) core.body.save();
       ctx.store.flushSync();
     } catch (_) { /* bỏ qua */ }

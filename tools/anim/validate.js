@@ -7,6 +7,7 @@ const { loadPack, MOODS, PHASES } = require('../../src/main/petcore/pack');
 const png = require('./png');
 
 const REQUIRED_ERR = ['idle'];
+const OPTIONAL_WARN = ['climb', 'point', 'write']; // Đợt 2: thiếu chỉ nhắc nhẹ (engine mượn từ gói dự phòng)
 const REQUIRED_WARN = ['walk', 'sit', 'sleep', 'pat_head', 'pat_body', 'lifted', 'fall', 'land', 'peek_left', 'peek_right', 'hold_note', 'ring', 'happy', 'sad', 'shy', 'angry', 'eat', 'work', 'wave', 'startup', 'shutdown', 'say'];
 
 function validate(dir) {
@@ -40,6 +41,7 @@ function validate(dir) {
   // action bắt buộc
   for (const a of REQUIRED_ERR) if (!pack.anims[a]) errors.push(`Thiếu action bắt buộc "${a}"`);
   for (const a of REQUIRED_WARN) if (!pack.anims[a]) warnings.push(`Thiếu action "${a}" (engine sẽ rơi về idle)`);
+  for (const a of OPTIONAL_WARN) if (!pack.anims[a]) warnings.push(`Thiếu action tuỳ chọn "${a}" (sẽ mượn từ gói dự phòng "placeholder")`);
   if (pack.anims.idle && !pack.anims.idle.normal) warnings.push('idle thiếu mood normal');
   for (const a of Object.keys(pack.params)) if (!pack.anims[a]) warnings.push(`pack.json.actions.${a} không có hình tương ứng`);
   // khung

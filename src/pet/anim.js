@@ -55,6 +55,9 @@
   var MIN_MS = 16;
 
   function encodeSrc(s) { return String(s).split('/').map(encodeURIComponent).join('/'); }
+  // src tuyệt đối (file:, data:, http(s):, blob:) dùng nguyên; tương đối thì ghép baseUrl.
+  function isAbs(s) { return /^(file|data|https?|blob):/i.test(String(s)); }
+  function urlFor(base, s) { return isAbs(s) ? String(s) : base + encodeSrc(s); }
 
   function Animator(canvas, opts) {
     opts = opts || {};
@@ -127,7 +130,7 @@
       if (idx >= srcs.length) return Promise.resolve();
       var src = srcs[idx++];
       if (self.cache.has(src) && self.cache.get(src)) return worker();
-      return self._loadOne(self.baseUrl + encodeSrc(src)).then(function (img) {
+      return self._loadOne(urlFor(self.baseUrl, src)).then(function (img) {
         self.cache.set(src, img);
       }, function () {
         self.cache.set(src, null); missing.push(src);
@@ -162,6 +165,8 @@
     if (this._lastDraw) this._lastDraw();
   };
 
+  // Khung `fit: true` (mượn từ gói dự phòng) cũng được vẽ co giãn vào đúng canvas = pack.size * scale,
+  // nên _drawFrame luôn kéo ảnh phủ kín canvas; alphaAt dùng cùng hình chữ nhật đó nên vẫn đúng.
   // Vẽ một ảnh vào hình chữ nhật (px canvas); ghi layout cho alphaAt.
   Animator.prototype._paint = function (img, dx, dy, dw, dh) {
     var c = this.ctx, W = this.canvas.width, H = this.canvas.height;

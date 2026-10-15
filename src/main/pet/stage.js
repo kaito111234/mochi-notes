@@ -44,7 +44,7 @@ function create(ctx, deps = {}) {
   class Session {
     constructor(item) {
       this.item = item; this.dead = false; this.reason = null; this.finished = false;
-      this.acting = false; this.listening = false; this.events = []; this.waiters = new Set(); this.timers = new Set();
+      this.acting = false; this.pointing = null; this.listening = false; this.events = []; this.waiters = new Set(); this.timers = new Set();
     }
     cancel(reason) {
       if (this.dead) return;
@@ -200,6 +200,47 @@ function create(ctx, deps = {}) {
   }
   const btnId = ev => (ev && ev.data && ev.data.id) || null;
 
+  // ---------------------------------------------------------------- chỉ vào note
+  const POINT_FLASH_MS = 8000, POINT_RENEW_MS = 6000;
+  function noteVisible(noteId) {
+    try {
+      const reg = ctx.windows && ctx.windows.notes;
+      const w = reg && typeof reg.get === 'function' ? reg.get(noteId) : null;
+      if (!w) return false;
+      if (typeof w.isDestroyed === 'function' && w.isDestroyed()) return false;
+      if (typeof w.isVisible === 'function' && !w.isVisible()) return false;
+      if (typeof w.isMinimized === 'function' && w.isMinimized()) return false;
+      return true;
+    } catch (_) { return false; }
+  }
+  function flash(noteId, ms) {
+    try { if (ctx.pet && typeof ctx.pet.flashNote === 'function') ctx.pet.flashNote(noteId, ms); } catch (e) { log('flashNote lỗi', e && e.message); }
+  }
+  function renewPoint(sess) { if (sess.pointing && !sess.dead) flash(sess.pointing, POINT_FLASH_MS); }
+  function stopPoint(sess) {
+    const id = sess.pointing;
+    if (!id) return;
+    sess.pointing = null;
+    flash(id, 0);
+    try { bus.emit('pet:pointNote', { noteId: id, on: false }); } catch (_) { /* bỏ qua */ }
+  }
+  /** Đi tới cạnh note + chỉ tay. Đặt sess.pointing nếu thành công; mọi lỗi/treo (6s) thì không đặt, để rơi về đường cũ. */
+  async function tryPoint(sess, actor, noteId) {
+    if (!actor || typeof actor.goToNote !== 'function') return false;
+    let res = null;
+    try {
+      const p = Promise.resolve(actor.goToNote(noteId)).then(r => r, () => null);
+      res = await sess.wait(T(6000), { promise: p, timeoutValue: null, errorValue: null });
+    } catch (e) { if (e instanceof Cancelled) throw e; res = null; }
+    if (!res || !res.ok || !noteVisible(noteId)) return false;
+    sess.pointing = noteId;
+    call(actor, 'play', 'point', { loop: true });
+    flash(noteId, POINT_FLASH_MS);
+    sess.every(T(POINT_RENEW_MS), () => renewPoint(sess));
+    try { bus.emit('pet:pointNote', { noteId, on: true }); } catch (_) { /* bỏ qua */ }
+    return true;
+  }
+
   // ---------------------------------------------------------------- diễn
   async function ready(sess, actor) {
     if (typeof actor.isReady === 'function' && actor.isReady()) return true;
@@ -224,13 +265,27 @@ function create(ctx, deps = {}) {
     if (!(await ready(sess, actor))) { if (must) fallbackNotify(item); return; }
     hook(actor);
     dirty = true;
+    if (must) {   // ghi nhanh đang mở: tạm gác (nháp được giữ) để nhường chỗ cho nhắc lịch
+      try { const cap = ctx.pet && ctx.pet.capture; if (cap && typeof cap.isOpen === 'function' && cap.isOpen() && typeof cap.suspend === 'function') cap.suspend(); } catch (e) { log('capture.suspend lỗi', e && e.message); }
+    }
     call(actor, 'setStage', true);
     if (STAGE_KINDS.has(kind)) {
-      await sess.wait(T(6000), { promise: Promise.resolve(call(actor, 'goToCorner')), timeoutValue: undefined, errorValue: undefined });
+      let target = null;
+      if (kind === 'pre' || kind === 'due') target = p.noteId || null;
+      else if (kind === 'nag') { const od = S.overdueNotes(ctx.store.data.notes, now()); target = od.length ? od[0].id : null; }
+      if (target && noteVisible(target)) await tryPoint(sess, actor, target);
+      if (!sess.pointing) {
+        await sess.wait(T(6000), { promise: Promise.resolve(call(actor, 'goToCorner')), timeoutValue: undefined, errorValue: undefined });
+      }
     }
     sess.check();
     const A = (n, ...a) => call(actor, n, ...a);
     const pulse = () => { A('shake', true); sess.after(T(700), () => A('shake', false)); };
+    // chỉ vào note (nếu đang chỉ) hoặc giơ tờ note như Đợt 1
+    const hold = (sheet, anim) => {
+      if (sess.pointing) { A('play', 'point', { loop: true }); return; }
+      A('holdNote', sheet); A('play', anim || 'hold_note', { loop: true });
+    };
     const open = id => { if (id && ctx.findNote(id)) { try { ctx.notes.showNote(id); } catch (e) { log(e && e.message); } } };
 
     switch (kind) {
@@ -239,8 +294,7 @@ function create(ctx, deps = {}) {
         if (!n || !n.reminder) return;
         const v = varsFor(item, n);
         const left = n.reminder.due - now();
-        A('holdNote', sheetFor('pre', n, left > 0 ? 'Còn ' + P.dur(left) : 'Sắp tới giờ rồi'));
-        A('play', 'hold_note', { loop: true });
+        hold(sheetFor('pre', n, left > 0 ? 'Còn ' + P.dur(left) : 'Sắp tới giờ rồi'));
         A('sound', 'ding');
         A('say', lineFor('pre', v).text, { ttlMs: 20000, buttons: [{ id: 'ok', label: 'Biết rồi' }, { id: 'open', label: 'Mở note', primary: true }] });
         sess.listen();
@@ -257,8 +311,7 @@ function create(ctx, deps = {}) {
           { id: 'snooze', label: 'Hoãn 10 phút' },
           { id: 'open', label: 'Mở note' }
         ];
-        A('holdNote', sheetFor('due', n, 'Tới giờ rồi!'));
-        A('play', 'hold_note', { loop: true });
+        hold(sheetFor('due', n, 'Tới giờ rồi!'));
         A('sound', 'ding'); pulse();
         A('say', lineFor('due', v).text, { buttons });
         sess.listen();
@@ -269,6 +322,7 @@ function create(ctx, deps = {}) {
             again++;
             A('say', lineFor('due_again', varsFor(item, ctx.findNote(p.noteId) || n)).text, { buttons });
             pulse(); A('sound', 'ding');
+            renewPoint(sess);
             continue;
           }
           const id = ev.type === 'noteClick' ? 'open' : btnId(ev);
@@ -279,6 +333,7 @@ function create(ctx, deps = {}) {
             try { ctx.notes.completeNote(p.noteId); } catch (e) { log(e && e.message); }
             sess.acting = false;
             emitAction(sess, 'done');
+            stopPoint(sess);
             sess.listening = false;
             A('holdNote', null); A('shake', false);
             A('say', lineFor(late ? 'done_late' : 'done', v).text, { ttlMs: 1600 });
@@ -291,6 +346,7 @@ function create(ctx, deps = {}) {
             try { ctx.notes.snoozeNote(p.noteId, 10); } catch (e) { log(e && e.message); }
             sess.acting = false;
             emitAction(sess, 'snooze');
+            stopPoint(sess);
             sess.listening = false;
             A('holdNote', null); A('shake', false);
             A('say', lineFor('snooze', v).text, { ttlMs: 1400 });
@@ -307,8 +363,7 @@ function create(ctx, deps = {}) {
         if (!od.length) return;
         const first = od[0];
         const v = varsFor(item, first); v.count = String(od.length);
-        A('holdNote', sheetFor('due', first, 'Quá hạn ' + P.dur(now() - first.reminder.due)));
-        A('play', 'hold_note', { loop: true });
+        hold(sheetFor('due', first, 'Quá hạn ' + P.dur(now() - first.reminder.due)));
         A('say', lineFor('nag', v).text, { ttlMs: 15000, buttons: [{ id: 'see', label: 'Để tớ xem', primary: true }, { id: 'later', label: 'Để sau' }] });
         sess.listen();
         const ev = await sess.next(T(16000));
@@ -415,6 +470,7 @@ function create(ctx, deps = {}) {
       if (!(e instanceof Cancelled)) log('perform lỗi', item.kind, e && e.stack || e);
     }
     sess.cancel('done');
+    stopPoint(sess);
     cur = null;
     if (dirty) { const a = actorOf(); if (a) lightClean(a); }
     if (!sess.finished && sess.reason === 'preempt') queue.push(item);   // quay lại hàng đợi (ttl xét ở takeNext)

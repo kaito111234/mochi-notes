@@ -1,6 +1,6 @@
 'use strict';
-// Sinh gói hình TẠM "mochi" từ 18 ảnh bán thân trong assets/mascot (chỉ đọc).
-// Dùng: node tools/anim/make-placeholder.js [outDir]   (mặc định assets/pet/mochi)
+// Sinh gói hình TẠM "placeholder" từ 18 ảnh bán thân trong assets/mascot (chỉ đọc).
+// Dùng: node tools/anim/make-placeholder.js [outDir]   (mặc định assets/pet/placeholder)
 // Tất định (không random). Chạy lại sẽ xoá sạch thư mục con cũ + pack.json trong outDir.
 const fs = require('fs');
 const path = require('path');
@@ -8,7 +8,7 @@ const png = require('./png');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const SRC = path.join(ROOT, 'assets', 'mascot');
-const OUT = path.resolve(process.argv[2] || path.join(ROOT, 'assets', 'pet', 'mochi'));
+const OUT = path.resolve(process.argv[2] || path.join(ROOT, 'assets', 'pet', 'placeholder'));
 
 // ---------- Hằng số bố cục (toạ độ trên canvas) ----------
 const W = 288, H = 344, CX = 144;
@@ -242,6 +242,32 @@ put('say', 'normal', 'loop', rng(4).map((i) => [140, render({
   face: i % 2 ? 'happy' : 'normal', bustSy: breath(i, 4), arms: ['down', { e: [18, 8], h: [[22, 28, 22, 16][i], -8] }],
 }, { dy: i === 1 ? -1 : 0 })]));
 
+// ---------- Action Đợt 2 ----------
+// climb: bám tường bên PHẢI (hình gốc quay mặt về tường phải; engine lật khi bám tường trái).
+// Thân dịch sát mép phải canvas, nghiêng về phía tường, tay với lên so le, chân đạp so le.
+put('climb', 'normal', 'loop', rng(6).map((i) => {
+  const t = TAU * i / 6, s = S(t), c = C(t);
+  const up = (v) => ({ e: [20, -10], h: [30, -34 - 12 * v] });
+  return [110, render({
+    face: i % 3 === 2 ? 'surprised' : 'normal', bustRot: 6, bustDx: 4,
+    legs: [{ knee: [CX - 4, 290], foot: [CX + 22 + 6 * s, FOOT_Y - 14 - Math.max(0, c) * 14] }, { knee: [CX + 10, 290], foot: [CX + 38 - 6 * s, FOOT_Y - 14 - Math.max(0, -c) * 14] }],
+    arms: [up(s), up(-s)],
+  }, { dx: 30, dy: -Math.round(3 * Math.abs(s)), rot: 8 })];
+}));
+// point: chỉ tay sang phải
+put('point', 'normal', 'start', [
+  [90, render({ face: 'normal', bustRot: 2, arms: ['down', { e: [18, 4], h: [30, -6] }] })],
+  [90, render({ face: 'happy', bustRot: 3, arms: ['down', { e: [24, -2], h: [52, -8] }] })],
+]);
+put('point', 'normal', 'loop', rng(4).map((i) => [150, render({
+  face: i % 2 ? 'happy' : 'normal', bustRot: 4, bustDx: 2, arms: ['down', { e: [26, -2], h: [[52, 58, 52, 46][i], -8 - (i % 2 ? 2 : 0)] }],
+}, { dx: [0, 2, 3, 2][i], rot: 2 })]));
+// write: cúi ghi chép, gật nhẹ
+put('write', 'normal', 'loop', rng(4).map((i) => [200, render({
+  face: i === 3 ? 'happy' : 'normal', bustRot: 5 + [0, 2, 3, 2][i], bustDy: [3, 5, 6, 5][i], bob: 2,
+  arms: [{ e: [12, 18], h: [-2, 32] }, { e: [14, 14], h: [[8, 12, 16, 12][i], 30 + (i % 2 ? 2 : 0)] }],
+})]));
+
 // ---------- Ghi ra đĩa ----------
 function rmClean(dir) {
   fs.mkdirSync(dir, { recursive: true });
@@ -261,7 +287,7 @@ const faces = {};
 for (const n of names) { fs.copyFileSync(path.join(SRC, n + '.png'), path.join(OUT, 'faces', n + '.png')); faces[n] = `faces/${n}.png`; }
 
 const pack = {
-  id: 'mochi', name: 'Mochi', author: 'Joiha (hình tạm sinh tự động từ art/source)', license: 'Nội bộ Joiha',
+  id: 'placeholder', name: 'Mochi (hình tạm)', author: 'Joiha (hình tạm sinh tự động từ art/source)', license: 'Nội bộ Joiha',
   size: [W, H], scale: 0.6, anchor: [CX, FLOOR],
   hitbox: { head: [60, 26, 168, 172], body: [96, 206, 96, 132] },
   hand: HAND,

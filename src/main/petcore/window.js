@@ -6,7 +6,8 @@ const { pathToFileURL } = require('url');
 const { BrowserWindow, ipcMain, screen } = require('electron');
 
 // Các loại tin renderer -> main được phép (docs/rooms/core/ARCH.md mục 2).
-const ALLOWED = new Set(['ready', 'packReady', 'animEnd', 'lift', 'drop', 'interact', 'button', 'sayEnd', 'noteClick', 'hover']);
+const ALLOWED = new Set(['ready', 'packReady', 'animEnd', 'lift', 'drop', 'interact', 'button', 'sayEnd', 'noteClick', 'hover',
+  'menu', 'captureOpen', 'captureSubmit', 'captureCancel', 'captureDraft', 'dropText']);
 
 /** Gói tối thiểu khi gói thật lỗi/thiếu: engine sẽ vẽ khung giữ chỗ. */
 function minimalPack(dir) {
@@ -21,7 +22,9 @@ function minimalPack(dir) {
 function loadCorePack(ctx) {
   const fallbackDir = path.join(ctx.paths.src, '..', 'assets', 'pet', 'mochi');
   try {
-    const { loadPack, packDirs, findPack } = require('./pack.js');
+    const P = require('./pack.js');
+    if (typeof P.loadCharacter === 'function') return P.loadCharacter(ctx);
+    const { loadPack, packDirs, findPack } = P;
     const dir = findPack('mochi', packDirs(ctx)) || fallbackDir;
     return loadPack(dir);
   } catch (e) {
@@ -35,7 +38,7 @@ function computeLayout(pack, settings) {
   const scale = (pack.scale || 1) * (settings.scale || 1);
   const charW = Math.ceil(pack.size[0] * scale), charH = Math.ceil(pack.size[1] * scale);
   const winW = Math.max(charW + 40, 300);
-  const winH = charH + 190;               // chỗ cho bong bóng + tờ note phía trên
+  const winH = charH + 230;               // chỗ cho bong bóng (kể cả bong bóng nhập) + tờ note phía trên
   return { winW, winH, charLeft: Math.round((winW - charW) / 2), charTop: winH - charH, scale, charW, charH };
 }
 
@@ -181,6 +184,11 @@ function createWindow(core) {
     win: () => (alive() ? win : null),
     isReady: () => ready && alive(),
     whenReady: () => { ensure(); return readyPromise; },
+    setFocusable(on) { if (alive()) { try { win.setFocusable(!!on); } catch (_) { /* bỏ qua */ } } },
+    focus() {
+      if (!alive()) return;
+      try { win.setFocusable(true); win.focus(); win.webContents.focus(); } catch (_) { /* bỏ qua */ }
+    },
     setLevel(stage) { if (alive()) win.setAlwaysOnTop(true, stage ? 'screen-saver' : 'floating'); },
     destroy() { if (alive()) win.destroy(); }
   };
