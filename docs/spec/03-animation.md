@@ -36,3 +36,8 @@ Phòng persona viết bảng yêu cầu vẽ cho đúng danh sách này (`docs/a
 
 ## Bảng hành động Đợt 3
 Bảng hành động đầy đủ, tham số action (`seatY`, `tip`, `gripX`, `edgeY/edgeX`, `wallX`, `release`, `speed`…) và hitbox của gói `mochi` nằm ở `art/ACTIONS.md` (art sở hữu, là nguồn chuẩn). Gói `mochi` 400×400, scale 0.6, đủ 23 action hợp đồng + 14 action 2B; core đọc `pack.note.anchor`/`pack.json.actions` theo bảng đó.
+
+## Chốt cách đổi đồ (điều hành, sau Đợt 3)
+- **Khe thân** (`body`, `outer`): phòng art **dựng sẵn gói theo bộ đồ** `assets/pet/mochi@<outfitId>/` (đủ mọi action, cùng canvas/anchor với `mochi`). Core nạp gói theo `game:outfit.worn.body/outer`; thiếu action thì lấy từ `mochi` rồi `placeholder`.
+- **Khe nhỏ** (`hat`, `hairclip`, `glasses`, `neck`, `hand`, `back`): art xuất ảnh lớp `assets/wardrobe/<itemId>/<slot>.png` + điểm neo; `pack.json` của gói có `slots: {head:[x,y], neck:[x,y], hand_r:[x,y], back:[x,y]}` theo từng khung hoặc theo action. Core vẽ chồng thời gian thực theo điểm neo.
+- Mặc định khi chưa có đồ: gói `mochi` gốc.
