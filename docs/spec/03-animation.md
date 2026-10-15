@@ -37,7 +37,8 @@ Phòng persona viết bảng yêu cầu vẽ cho đúng danh sách này (`docs/a
 ## Bảng hành động Đợt 3
 Bảng hành động đầy đủ, tham số action (`seatY`, `tip`, `gripX`, `edgeY/edgeX`, `wallX`, `release`, `speed`…) và hitbox của gói `mochi` nằm ở `art/ACTIONS.md` (art sở hữu, là nguồn chuẩn). Gói `mochi` 400×400, scale 0.6, đủ 23 action hợp đồng + 14 action 2B; core đọc `pack.note.anchor`/`pack.json.actions` theo bảng đó.
 
-## Chốt cách đổi đồ (điều hành, sau Đợt 3)
-- **Khe thân** (`body`, `outer`): phòng art **dựng sẵn gói theo bộ đồ** `assets/pet/mochi@<outfitId>/` (đủ mọi action, cùng canvas/anchor với `mochi`). Core nạp gói theo `game:outfit.worn.body/outer`; thiếu action thì lấy từ `mochi` rồi `placeholder`.
-- **Khe nhỏ** (`hat`, `hairclip`, `glasses`, `neck`, `hand`, `back`): art xuất ảnh lớp `assets/wardrobe/<itemId>/<slot>.png` + điểm neo; `pack.json` của gói có `slots: {head:[x,y], neck:[x,y], hand_r:[x,y], back:[x,y]}` theo từng khung hoặc theo action. Core vẽ chồng thời gian thực theo điểm neo.
+## Chốt cách đổi đồ (điều hành, cập nhật theo đề xuất 6 của art)
+- **Cách chính**: dựng gói theo tổ hợp đồ **ngay trên máy người dùng**, lưu cache `userData/pets/mochi@<body>+<outer>[+phụ kiện]/`. Art cung cấp `tools/rig/lib/pack-builder.js` (`buildPack({rigDir, wardrobe, out, render})`); core cung cấp `render` (Electron offscreen), chạy nền ưu tiên thấp, trong lúc dựng bé mặc bộ cũ, xong thì đổi gói với hiệu ứng thay đồ ngắn. Cache tối đa ~6 tổ hợp, xoá cái ít dùng. Gói cài đặt mang theo `art/rig/mochi/**`, `assets/wardrobe/**`, `tools/rig/lib/**`, `tools/rig/actions/**`.
+- **Dự phòng/ngay lập tức**: art dựng sẵn `idle, walk, sit, hold_note` cho 8 bộ trang phục (`assets/pet/mochi@<outfitId>/`, ~1,5 MB/bộ); action khác lấy từ gói `mochi`.
+- Phụ kiện khe nhỏ (hat, hairclip, glasses, neck, hand, back) cũng qua cùng cơ chế dựng (thứ tự lớp xen kẽ tóc–tay–áo nên không chồng ảnh thời gian thực).
 - Mặc định khi chưa có đồ: gói `mochi` gốc.
