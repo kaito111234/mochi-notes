@@ -169,9 +169,7 @@
    <ul class="chips"><li>Free</li><li>MIT open source</li><li>No account needed</li><li>Data stays on your PC</li></ul>
   </div>
   <div class="hero-art">
-   <div class="note n1" aria-hidden="true">Họp team<br>9h sáng mai</div>
-   <img class="pet" src="../images/mochi-walk.gif" width="200" height="200" alt="Mochi, the desktop pet, walking">
-   <div class="note n2" aria-hidden="true">☐ Mua sữa<br>☑ Gửi báo cáo</div>
+   <video class="demo hero-video" autoplay muted loop playsinline preload="auto" poster="../videos/demo-hero.webp" width="960" height="540" aria-label="Mochi standing on a sticky note on the desktop, waving hello"><source src="../videos/demo-hero.webm" type="video/webm"></video>
   </div>
  </div>
 </section>
@@ -195,6 +193,18 @@
  </div>
 </section>
 
+<section id="demo" class="sec">
+ <div class="wrap">
+  <h2>Watch Mochi in action</h2>
+  <p class="sub">Three clips recorded right on the desktop: reminders, commands typed in a note, and everyday life.</p>
+  <div class="demos">
+   <figure><video class="demo" muted loop playsinline preload="none" poster="../videos/demo-remind.webp" width="960" height="540" aria-label="Mochi flies out for a big reminder, then flies back after you tap Done"><source src="../videos/demo-remind.webm" type="video/webm"></video><figcaption><strong>Reminders:</strong> when time is up she flies to the middle of the screen and slaps the glass until you tap &quot;Done&quot;.</figcaption></figure>
+   <figure><video class="demo" muted loop playsinline preload="none" poster="../videos/demo-command.webp" width="960" height="540" aria-label="Mochi tidies finished notes into the trash on command"><source src="../videos/demo-command.webm" type="video/webm"></video><figcaption><strong>Commands:</strong> type &quot;bé ơi, dọn dẹp&quot; (&quot;clean up&quot;) in a note and she bins the finished ones.</figcaption></figure>
+   <figure><video class="demo" muted loop playsinline preload="none" poster="../videos/demo-life.webp" width="960" height="540" aria-label="Mochi drinking tea, reading and sleeping in a bed"><source src="../videos/demo-life.webm" type="video/webm"></video><figcaption><strong>Daily life:</strong> sipping tea, reading, sleeping under a blanket.</figcaption></figure>
+  </div>
+ </div>
+</section>
+
 <section id="screenshots" class="sec alt">
  <div class="wrap">
   <h2>App screenshots</h2>
@@ -213,7 +223,6 @@
   <div>
    <h2>Mochi has plenty of moves</h2>
    <p>Mochi is a reminder assistant and a lovable desktop pet: walking, running, sleeping, reading, drinking tea, dancing. Try typing &quot;bé ơi, múa&quot; (dance).</p>
-   <img class="run" src="../images/mochi-run.gif" width="140" height="140" alt="Mochi running" loading="lazy">
    <h3>Reminder examples</h3>
    <p>Type these in a note and Mochi understands the time:</p>
    <ul class="ex"><li><code>9h sáng mai họp</code></li><li><code>nhắc 15 phút nữa</code></li><li><code>họp 3h chiều nay</code></li><li><code>15h gọi khách</code></li></ul>
@@ -266,5 +275,13 @@
   <p class="small">Mochi Notes © Joiha · <a href="../" hreflang="vi" lang="vi">Tiếng Việt</a></p>
  </div>
 </footer>
+<script>
+(function(){var v=[].slice.call(document.querySelectorAll('video.demo'));if(!v.length)return;
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(rm){v.forEach(function(x){x.removeAttribute('autoplay');x.pause();x.controls=true;});return;}
+if(!('IntersectionObserver' in window)){v.forEach(function(x){x.play&&x.play().catch(function(){});});return;}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){var x=e.target;if(e.isIntersecting){var p=x.play();if(p&&p.catch)p.catch(function(){});}else{x.pause();}});},{threshold:.35});
+v.forEach(function(x){io.observe(x);});})();
+</script>
 </body>
 </html>

@@ -14,7 +14,7 @@
   <img alt="Electron" src="https://img.shields.io/badge/built%20with-Electron-47848f?logo=electron&logoColor=white">
 </p>
 
-<img src="docs/images/mochi-walk.gif" alt="Bé Mochi đi bộ" width="140">&nbsp;&nbsp;<img src="docs/images/mochi-run.gif" alt="Bé Mochi chạy" width="140">
+<img src="docs/images/demo-hero.gif" alt="Bé Mochi đứng trên tờ note trên desktop, vẫy tay chào" width="640">
 
 <p><a href="https://kaito111234.github.io/mochi-notes/"><img alt="Trang web Mochi Notes" src="https://img.shields.io/badge/Trang%20web-kaito111234.github.io%2Fmochi--notes-ee6a9a?style=for-the-badge&logo=githubpages&logoColor=white"></a></p>
 
@@ -26,6 +26,7 @@
 
 - [Giới thiệu](#giới-thiệu)
 - [Tính năng](#tính-năng)
+- [Xem bé hoạt động](#xem-bé-hoạt-động)
 - [Ảnh chụp](#ảnh-chụp)
 - [Cài đặt](#cài-đặt)
 - [Hướng dẫn nhanh](#hướng-dẫn-nhanh)
@@ -51,6 +52,19 @@
 - **Tự cập nhật** qua GitHub Releases.
 - **Hướng dẫn lần đầu** ngắn 6 bước cho người mới.
 - **Riêng tư và nhẹ**: dữ liệu lưu cục bộ, không tài khoản, không theo dõi; gỡ cài đặt không xoá note.
+
+## Xem bé hoạt động
+
+<table align="center">
+<tr>
+<td align="center" width="50%"><img src="docs/images/demo-remind.gif" alt="Tới giờ, bé Mochi bay ra giữa màn hình, đập tay lên kính cho tới khi bấm Xong rồi" width="100%"><br><sub><b>Nhắc việc:</b> tới giờ bé bay ra giữa màn hình, đập tay "bốp" tới khi bạn bấm "Xong rồi"</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-command.gif" alt="Gõ &quot;bé ơi, dọn dẹp&quot; trong note, bé chạy tới dọn note đã xong vào thùng rác" width="100%"><br><sub><b>Ra lệnh:</b> gõ "bé ơi, dọn dẹp", bé tự dọn note đã xong vào thùng rác</sub></td>
+</tr>
+<tr>
+<td align="center" width="50%"><img src="docs/images/demo-life.gif" alt="Bé Mochi uống trà, đọc sách và ngủ trong giường" width="100%"><br><sub><b>Đời sống:</b> uống trà, đọc sách, ngủ trong giường đắp chăn</sub></td>
+<td></td>
+</tr>
+</table>
 
 ## Ảnh chụp
 
@@ -173,7 +187,7 @@ docs/          hướng dẫn phát hành, ký số, ảnh README
 
 Tăng version bằng `npm version X.Y.Z --no-git-tag-version`, commit, rồi đẩy tag `vX.Y.Z`. Workflow [release.yml](.github/workflows/release.yml) tự build trên GitHub Actions và đưa tệp lên Releases (kèm `latest.yml` cho tự cập nhật và `SHA256SUMS.txt`). Chi tiết: [docs/release.md](docs/release.md). CI chạy test mỗi lần push/PR ([ci.yml](.github/workflows/ci.yml)).
 
-Dựng lại ảnh động trong README: `node tools/make-gif.js assets/pet/mochi/walk_side/normal/loop docs/images/mochi-walk.gif --size 200`.
+Dựng lại ảnh động trong README: ghép khung PNG của từng cửa sổ app lên nền desktop giả rồi chạy `node tools/make-gif.js <thư-mục-khung> docs/images/demo-hero.gif --scene --size 640` (tên khung `NNNN_ms.png`).
 
 ## Đóng góp
 
@@ -214,6 +228,19 @@ Cảm ơn [Electron](https://www.electronjs.org/), [electron-builder](https://ww
 - **Private**: local data only, no account, uninstall keeps your notes.
 
 </details>
+
+### Watch Mochi in action
+
+<table align="center">
+<tr>
+<td align="center" width="50%"><img src="docs/images/demo-remind.gif" alt="At reminder time Mochi flies to the middle of the screen and slaps the glass until you tap Done" width="100%"><br><sub><b>Reminders:</b> she flies out, slaps the glass, and leaves once you tap "Done"</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-command.gif" alt="Typing a command in a note, Mochi runs over and tidies finished notes into the trash" width="100%"><br><sub><b>Commands:</b> type "bé ơi, dọn dẹp" ("Mochi, clean up") and she bins finished notes</sub></td>
+</tr>
+<tr>
+<td align="center" width="50%"><img src="docs/images/demo-life.gif" alt="Mochi drinking tea, reading and sleeping in a bed" width="100%"><br><sub><b>Daily life:</b> tea, reading, sleeping under a blanket</sub></td>
+<td></td>
+</tr>
+</table>
 
 <p align="center"><img src="docs/images/screenshot-notes.png" alt="Notes, Mochi and the toolbar" width="100%"></p>
 

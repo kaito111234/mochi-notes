@@ -169,9 +169,7 @@
    <ul class="chips"><li>Miễn phí</li><li>Mã nguồn mở MIT</li><li>Không cần tài khoản</li><li>Dữ liệu nằm trên máy</li></ul>
   </div>
   <div class="hero-art">
-   <div class="note n1" aria-hidden="true">Họp team<br>9h sáng mai</div>
-   <img class="pet" src="images/mochi-walk.gif" width="200" height="200" alt="Bé Mochi, thú cưng desktop, đang đi bộ">
-   <div class="note n2" aria-hidden="true">☐ Mua sữa<br>☑ Gửi báo cáo</div>
+   <video class="demo hero-video" autoplay muted loop playsinline preload="auto" poster="videos/demo-hero.webp" width="960" height="540" aria-label="Bé Mochi đứng trên tờ note trên desktop, vẫy tay chào"><source src="videos/demo-hero.webm" type="video/webm"></video>
   </div>
  </div>
 </section>
@@ -195,6 +193,18 @@
  </div>
 </section>
 
+<section id="demo" class="sec">
+ <div class="wrap">
+  <h2>Xem bé Mochi hoạt động</h2>
+  <p class="sub">Ba cảnh quay ngay trên desktop: nhắc việc, ra lệnh trong note và cuộc sống thường ngày của bé.</p>
+  <div class="demos">
+   <figure><video class="demo" muted loop playsinline preload="none" poster="videos/demo-remind.webp" width="960" height="540" aria-label="Bé Mochi nhắc việc to giữa màn hình rồi bay về khi bấm Xong rồi"><source src="videos/demo-remind.webm" type="video/webm"></video><figcaption><strong>Nhắc việc:</strong> tới giờ bé bay ra giữa màn hình, đập tay &quot;bốp&quot; cho tới khi bạn bấm &quot;Xong rồi&quot;.</figcaption></figure>
+   <figure><video class="demo" muted loop playsinline preload="none" poster="videos/demo-command.webp" width="960" height="540" aria-label="Bé Mochi dọn note đã xong vào thùng rác khi được ra lệnh"><source src="videos/demo-command.webm" type="video/webm"></video><figcaption><strong>Ra lệnh:</strong> gõ &quot;bé ơi, dọn dẹp&quot; trong note, bé chạy tới bỏ note đã xong vào thùng rác.</figcaption></figure>
+   <figure><video class="demo" muted loop playsinline preload="none" poster="videos/demo-life.webp" width="960" height="540" aria-label="Bé Mochi uống trà, đọc sách và ngủ trong giường"><source src="videos/demo-life.webm" type="video/webm"></video><figcaption><strong>Đời sống:</strong> uống trà, đọc sách, ngủ trong giường đắp chăn.</figcaption></figure>
+  </div>
+ </div>
+</section>
+
 <section id="anh" class="sec alt">
  <div class="wrap">
   <h2>Ảnh chụp ứng dụng</h2>
@@ -213,7 +223,6 @@
   <div>
    <h2>Bé Mochi biết nhiều động tác</h2>
    <p>Mochi vừa là trợ lý ảo nhắc việc, vừa là một desktop pet đáng yêu: đi, chạy, ngủ, đọc sách, uống trà, múa hát. Gõ thử &quot;bé ơi, múa&quot; xem sao.</p>
-   <img class="run" src="images/mochi-run.gif" width="140" height="140" alt="Bé Mochi chạy" loading="lazy">
    <h3>Ví dụ câu nhắc</h3>
    <p>Gõ vào note, bé tự hiểu giờ và nhắc:</p>
    <ul class="ex"><li><code>9h sáng mai họp</code></li><li><code>nhắc 15 phút nữa</code></li><li><code>họp 3h chiều nay</code></li><li><code>15h gọi khách</code></li></ul>
@@ -266,5 +275,13 @@
   <p class="small">Mochi Notes © Joiha · <a href="en/" hreflang="en" lang="en">English</a></p>
  </div>
 </footer>
+<script>
+(function(){var v=[].slice.call(document.querySelectorAll('video.demo'));if(!v.length)return;
+var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(rm){v.forEach(function(x){x.removeAttribute('autoplay');x.pause();x.controls=true;});return;}
+if(!('IntersectionObserver' in window)){v.forEach(function(x){x.play&&x.play().catch(function(){});});return;}
+var io=new IntersectionObserver(function(es){es.forEach(function(e){var x=e.target;if(e.isIntersecting){var p=x.play();if(p&&p.catch)p.catch(function(){});}else{x.pause();}});},{threshold:.35});
+v.forEach(function(x){io.observe(x);});})();
+</script>
 </body>
 </html>

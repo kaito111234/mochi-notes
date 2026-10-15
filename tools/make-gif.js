@@ -3,6 +3,7 @@
 // Dựng GIF động từ một thư mục khung PNG (tên NNNN_ms.png, ms = thời lượng khung), không cần ffmpeg hay thư viện ngoài.
 // Dùng để làm ảnh cho README:
 //   node tools/make-gif.js assets/pet/mochi/walk_side/normal/loop docs/images/mochi-walk.gif --size 200
+//   Khung hình chữ nhật đầy đủ (demo): node tools/make-gif.js <thư-mục-khung> <ra.gif> --scene --size 640 [--every 1] [--dither 10]
 //   node tools/make-gif.js <thư-mục-khung> <ra.gif> [--size 200] [--bg ffffff|transparent] [--no-crop]
 // Gồm: giải mã PNG (RGBA 8-bit, không xen kẽ) bằng zlib, thu nhỏ trung bình diện tích, cắt vừa nhân vật,
 // lượng tử hoá median-cut 256 màu, mã hoá LZW; rồi tự đọc lại GIF (giải mã LZW) để kiểm header/khung/số điểm ảnh.
@@ -247,6 +248,113 @@ function verifyGif(buf, size, expected) {
   return n;
 }
 
+
+// ------------------------------------------------------------------ chế độ --scene: khung hình chữ nhật đầy đủ (demo màn hình)
+// Thu nhỏ theo chiều rộng, một bảng màu chung 255 màu + dither Bayer 4x4 nhẹ (cùng điểm ảnh -> cùng chỉ số, nên tối ưu khung trùng hiệu quả),
+// mỗi khung chỉ mã hoá hình chữ nhật thay đổi so với khung trước (chỉ số trong suốt = giữ nguyên), kiểm lại bằng cách giải mã & dựng lại từng khung.
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function scaleRgb(img, W, H) {
+  const rgb = Buffer.alloc(W * H * 3), kx = img.w / W, ky = img.h / H;
+  for (let oy = 0; oy < H; oy++) for (let ox = 0; ox < W; ox++) {
+    const x0 = ox * kx, x1 = x0 + kx, y0 = oy * ky, y1 = y0 + ky;
+    let r = 0, g = 0, b = 0, ws = 0;
+    for (let y = Math.floor(y0); y < Math.ceil(y1); y++) {
+      const wy = Math.min(y + 1, y1) - Math.max(y, y0);
+      for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
+        const w = wy * (Math.min(x + 1, x1) - Math.max(x, x0)), i = (Math.min(y, img.h - 1) * img.w + Math.min(x, img.w - 1)) * 4;
+        r += img.rgba[i] * w; g += img.rgba[i + 1] * w; b += img.rgba[i + 2] * w; ws += w;
+      }
+    }
+    const o = (oy * W + ox) * 3; rgb[o] = Math.round(r / ws); rgb[o + 1] = Math.round(g / ws); rgb[o + 2] = Math.round(b / ws);
+  }
+  return rgb;
+}
+function ditherIdx(rgb, W, H, palette, amp) {
+  const out = new Uint8Array(W * H), cache = new Map();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const o = y * W + x, t = (BAYER[(y & 3) * 4 + (x & 3)] - 7.5) / 16 * amp;
+    const c = [0, 1, 2].map(k => Math.max(0, Math.min(255, Math.round(rgb[o * 3 + k] + t))));
+    const key = (c[0] << 16) | (c[1] << 8) | c[2];
+    let idx = cache.get(key);
+    if (idx === undefined) {
+      let bd = Infinity; idx = 0;
+      for (let i = 0; i < palette.length; i++) {
+        const dr = palette[i][0] - c[0], dg = palette[i][1] - c[1], db = palette[i][2] - c[2], d = dr * dr * 2 + dg * dg * 4 + db * db * 3;
+        if (d < bd) { bd = d; idx = i; }
+      }
+      cache.set(key, idx);
+    }
+    out[o] = idx;
+  }
+  return out;
+}
+function encodeScene(W, H, palette, idxFrames, delays) {
+  const T = palette.length;                       // chỉ số trong suốt
+  const bits = 8, gct = Buffer.alloc(3 << bits);
+  palette.forEach((c, i) => { gct[i * 3] = c[0]; gct[i * 3 + 1] = c[1]; gct[i * 3 + 2] = c[2]; });
+  const head = Buffer.alloc(13);
+  head.write('GIF89a', 0, 'latin1'); head.writeUInt16LE(W, 6); head.writeUInt16LE(H, 8); head[10] = 0x80 | 0x70 | 7; head[11] = 0; head[12] = 0;
+  const parts = [head, gct, Buffer.from([0x21, 0xff, 0x0b]), Buffer.from('NETSCAPE2.0', 'latin1'), Buffer.from([3, 1, 0, 0, 0])];
+  idxFrames.forEach((f, n) => {
+    let x0 = 0, y0 = 0, x1 = W - 1, y1 = H - 1;
+    if (n > 0) {
+      const p = idxFrames[n - 1]; x0 = W; y0 = H; x1 = -1; y1 = -1;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (f[y * W + x] !== p[y * W + x]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (x1 < 0) { x0 = 0; y0 = 0; x1 = 0; y1 = 0; }
+    }
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, sub = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const v = f[(y0 + y) * W + x0 + x];
+      sub[y * w + x] = n > 0 && v === idxFrames[n - 1][(y0 + y) * W + x0 + x] ? T : v;
+    }
+    const gce = Buffer.alloc(8);
+    gce[0] = 0x21; gce[1] = 0xf9; gce[2] = 4; gce[3] = (1 << 2) | 1;           // giữ nguyên + có trong suốt
+    gce.writeUInt16LE(Math.max(2, Math.round(delays[n] / 10)), 4); gce[6] = T; gce[7] = 0;
+    const desc = Buffer.alloc(10);
+    desc[0] = 0x2c; desc.writeUInt16LE(x0, 1); desc.writeUInt16LE(y0, 3); desc.writeUInt16LE(w, 5); desc.writeUInt16LE(h, 7);
+    parts.push(gce, desc, Buffer.from([bits]), subBlocks(lzwEncode(sub, bits)));
+  });
+  parts.push(Buffer.from([0x3b]));
+  return Buffer.concat(parts);
+}
+function verifyScene(buf, W, H, idxFrames, T) {
+  let pos = 13; const flags = buf[10]; if (flags & 0x80) pos += 3 << ((flags & 7) + 1);
+  let n = 0; const canvas = new Uint8Array(W * H);
+  while (pos < buf.length) {
+    const b = buf[pos];
+    if (b === 0x3b) { pos++; break; }
+    if (b === 0x21) { pos += 2; while (buf[pos]) pos += buf[pos] + 1; pos++; continue; }
+    const x0 = buf.readUInt16LE(pos + 1), y0 = buf.readUInt16LE(pos + 3), w = buf.readUInt16LE(pos + 5), h = buf.readUInt16LE(pos + 7), lf = buf[pos + 9];
+    pos += 10; if (lf & 0x80) pos += 3 << ((lf & 7) + 1);
+    const minBits = buf[pos++], chunks = [];
+    while (buf[pos]) { chunks.push(buf.subarray(pos + 1, pos + 1 + buf[pos])); pos += buf[pos] + 1; }
+    pos++;
+    const px = lzwDecode(Buffer.concat(chunks), minBits, w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const v = px[y * w + x]; if (v !== T) canvas[(y0 + y) * W + x0 + x] = v; }
+    for (let i = 0; i < canvas.length; i++) if (canvas[i] !== idxFrames[n][i]) throw new Error('khung ' + n + ' lệch điểm ảnh ' + i);
+    n++;
+  }
+  if (n !== idxFrames.length || pos !== buf.length) throw new Error('số khung/độ dài không khớp');
+  return n;
+}
+function sceneMain(dir, outFile, opt) {
+  const names = fs.readdirSync(dir).filter(n => /^\d{4}_\d+\.png$/.test(n)).sort();
+  if (!names.length) throw new Error('không có khung NNNN_ms.png trong ' + dir);
+  const step = Math.max(1, opt.every || 1);
+  const sel = names.filter((_, i) => i % step === 0);
+  const first = decodePng(fs.readFileSync(path.join(dir, sel[0])));
+  const W = opt.size, H = Math.round(first.h * W / first.w);
+  const rgbs = sel.map(n => scaleRgb(decodePng(fs.readFileSync(path.join(dir, n))), W, H));
+  const delays = sel.map(n => +/_(\d+)\.png$/.exec(n)[1] * step);
+  const palette = buildPalette(rgbs.map(rgb => ({ rgb })), 255);
+  const idx = rgbs.map(rgb => ditherIdx(rgb, W, H, palette, opt.dither == null ? 10 : opt.dither));
+  const buf = encodeScene(W, H, palette, idx, delays);
+  fs.mkdirSync(path.dirname(outFile), { recursive: true });
+  fs.writeFileSync(outFile, buf);
+  const n = verifyScene(buf, W, H, idx, palette.length);
+  console.log(`OK ${path.basename(outFile)}: ${W}x${H}, ${n} khung, ${palette.length} màu, ${(buf.length / 1024).toFixed(0)} KB (đã giải mã lại và so khớp từng điểm ảnh)`);
+}
+
 // ------------------------------------------------------------------ main
 function main() {
   const args = process.argv.slice(2), pos = [], opt = { size: 200, bg: 'ffffff', crop: true };
@@ -254,10 +362,14 @@ function main() {
     if (args[i] === '--size') opt.size = +args[++i];
     else if (args[i] === '--bg') opt.bg = args[++i].replace('#', '').toLowerCase();
     else if (args[i] === '--no-crop') opt.crop = false;
+    else if (args[i] === '--scene') opt.scene = true;
+    else if (args[i] === '--every') opt.every = +args[++i];
+    else if (args[i] === '--dither') opt.dither = +args[++i];
     else pos.push(args[i]);
   }
   if (pos.length < 2) { console.error('Dùng: node tools/make-gif.js <thư-mục-khung> <ra.gif> [--size 200] [--bg ffffff|transparent] [--no-crop]'); process.exit(2); }
   const dir = path.resolve(pos[0]), outFile = path.resolve(pos[1]);
+  if (opt.scene) return sceneMain(dir, outFile, opt);
   const names = fs.readdirSync(dir).filter(n => /^\d{4}_\d+\.png$/.test(n)).sort();
   if (!names.length) throw new Error('không có khung NNNN_ms.png trong ' + dir);
   const imgs = names.map(n => decodePng(fs.readFileSync(path.join(dir, n))));
