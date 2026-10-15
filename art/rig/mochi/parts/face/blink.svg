@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
 <g id="blush"><ellipse cx="158" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity=".7"/><ellipse cx="242" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity=".7"/></g>
-<g id="eye_l"><path d="M159 186Q173 197 187 186" fill="none" stroke="#1F2A44" stroke-width="3.4" stroke-linecap="round"/><path d="M159 187C155 185 153 183 152 180" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/></g>
-<g id="eye_r"><path d="M213 186Q227 197 241 186" fill="none" stroke="#1F2A44" stroke-width="3.4" stroke-linecap="round"/><path d="M241 187C245 185 247 183 248 180" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/></g>
+<g id="eye_l"><path d="M186 184Q173 195 160 184" fill="none" stroke="#1F2A44" stroke-width="3.6" stroke-linecap="round"/><path d="M160 184C157 183 155 182 154 179.500" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/></g>
+<g id="eye_r"><path d="M214 184Q227 195 240 184" fill="none" stroke="#1F2A44" stroke-width="3.6" stroke-linecap="round"/><path d="M240 184C243 183 245 182 246 179.500" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/></g>
 <g id="mouth"><path d="M194 208.5Q200 212.5 206 208.5" fill="none" stroke="#1F2A44" stroke-width="1.8" stroke-linecap="round"/></g>
 </svg>
