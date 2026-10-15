@@ -19,6 +19,15 @@ Cảm hứng người dùng gửi: xấp note giấy kem lốm đốm mực, ô 
 - Không dùng tài nguyên có bản quyền; ghi nguồn + giấy phép phông chữ trong `assets/fonts/LICENSES.md`.
 
 ## Trạng thái
+_Cập nhật 2026-10-15 — lượt Đợt 3 (theo tin nhắn phòng điều hành)._ Mục 1–4 của tin nhắn đã làm xong ở lượt 2 (xem bên dưới); lượt này làm phần còn lại:
+- **Mẫu ngẫu nhiên cho note mới** (tuỳ chọn): settings `randomPaper: boolean` (mặc định false). Main `paperLogic.pickRandomPaper/metaForNewNote` (rng tham số, test tất định) chọn mẫu thiết kế (bỏ nhóm plain, bỏ `hiddenPapers`, tránh lặp mẫu vừa dùng), hết mẫu → `defaultPaper`. Danh sách mẫu đọc `assets/paper/*/paper.json` lúc khởi động. Bộ chọn: công tắc "Mẫu ngẫu nhiên cho note mới". Test paper 28 ca xanh. Kiểm app thật: 4 note mới ra 4 mẫu khác nhau; tắt → về mặc định.
+- **Thanh công cụ nhìn rõ trên mọi mẫu**: thanh định dạng dưới có nền "kính giấy" (màu giấy 88% + blur + viền + bóng), icon màu chữ của mẫu; nút thanh trên có nền đầu giấy ~72%, hiện rõ khi rê/focus; trang trí góc dưới mờ khi gõ/rê thanh. Mẫu plain-* giữ y 0.1. Đã kiểm app thật 5 mẫu (+Mini): mọi nút nằm trên cùng, bấm được.
+- **Kiểm tương phản tự động** (`build-catalog --strict`): chữ thân ≥4.5 với mọi màu nền/gradient, icon thanh ≥3 với nền thân và `bg.head`, tiêu đề ≥3. 24 mẫu thiết kế đều đạt (thấp nhất chữ 6.6, tiêu đề 3.9) — không phải chỉnh màu. Mẫu dark: chữ trong vùng tô sáng hiển thị màu tối (chỉ hiển thị).
+- **Chữ tránh trang trí góc trên phải**: `paper.js reserveTr` đo hộp bao các hình `tr`, `#editor::before` float phải (≤42% bề rộng) — dòng kẻ vẫn khớp, kể cả zoom.
+- Ảnh: `r3-toolbar-grid.png` (31 mẫu, thanh hiện), `r3-toolbar-real.png` (app thật), `r3-random.png`, `paper-grid.png` (chụp lại đủ 31 mẫu). Gallery có ô "Hiện thanh công cụ" (`?bar=1`).
+- Còn nhẹ: chưa kiểm riêng checklist + placeholder trên mẫu có hình `tr`; dòng trạng thái "Note mới: ngẫu nhiên (dự phòng: …)" dài, phải cuộn ở panel nhỏ; e2e đỏ còn lại không thuộc paper (như lượt 2).
+- Đề xuất thêm cho điều hành: `01-data.md` ghi `paper.settings.randomPaper: boolean` cùng `hiddenPapers`.
+
 _Cập nhật 2026-10-15 (lượt 2 của phòng). Đợt 2 xong từ lượt 1 (tóm tắt cuối mục). Hợp đồng nội bộ: `docs/rooms/paper/DESIGN.md`._
 
 **Lượt 2 — đã xong** (commit trên `room/paper`, `npm test` xanh, `build-catalog --strict` xanh)
@@ -56,7 +65,7 @@ _Tóm tắt lượt 1 (Đợt 2)_: hệ mẫu giấy `assets/paper/<id>/paper.js
 
 ## Đề xuất cho phòng điều hành
 1. ~~Nạp module `paper` trong `main.js`~~ — đã gộp. ~~Ownership `src/main/paper/**`, ngăn `paper` trong 01-data, sự kiện `note:checkItem` trong 02-events~~ — đã có.
-2. `docs/spec/01-data.md`: thêm `paper.settings.hiddenPapers: string[]` (mặc định `[]`).
+2. `docs/spec/01-data.md`: thêm `paper.settings.hiddenPapers: string[]` (mặc định `[]`) và `paper.settings.randomPaper: boolean` (mặc định false).
 3. Phòng notes (`noteWindows.js`): tuỳ chọn cửa sổ note trong suốt (`transparent: true`, nền do renderer vẽ) để mép xé/góc gập/nghiêng/bóng đổ thật; `backgroundColor` lúc mở theo màu mẫu.
 4. Phòng notes (`transferLogic.js` sanitizer khi nhập): giữ `data-ck="0|1"` trên DIV/LI để nhập/xuất không mất ô tick (chưa làm).
 5. Phòng notes: `snoozeItem` khi nhắc chưa tới giờ nên tính từ `max(due, now)` (paper đã tự bù ở renderer; nên sửa gốc để bé/toast cũng đúng). IPC kẹp 7 ngày.

@@ -212,9 +212,8 @@
   function reserveTr(root, items) {
     if (!root || !items.length) return;
     function upd() {
-      var W = 0, H = 0, main = items[0];
-      items.forEach(function (it) { if (it.w > main.w) main = it; }); // chỉ chừa chỗ cho hình lớn nhất; hình nhỏ đi kèm chấp nhận đè nhẹ
-      [main].forEach(function (it) {
+      var W = 0, H = 0; // hộp bao mọi hình 'tr' (CSS giới hạn bề rộng tối đa 40% để note nhỏ không bị bóp)
+      items.forEach(function (it) {
         var h = it.el.naturalWidth > 0 ? it.w * it.el.naturalHeight / it.el.naturalWidth : it.w;
         W = Math.max(W, it.dx + it.w + 6 - 12); H = Math.max(H, it.dy - 2 + h + 2);
       });

@@ -140,5 +140,9 @@ body.has-paper:has(.fmtwrap:hover) .paper-layer [data-pos="bl"], body.has-paper:
 
 /* chữ ở các dòng đầu chảy tránh trang trí góc trên phải (float giả, cao = bội số dòng nên không lệch dòng kẻ) */
 .has-paper[data-tr] #editor:not(.empty)::before {
-  content: ""; float: right; width: min(var(--tr-w, 0px), 40%); height: calc(var(--tr-h, 0px) - var(--pad-top, 0px)); pointer-events: none;
+  content: ""; float: right; width: min(var(--tr-w, 0px), 42%); height: calc(var(--tr-h, 0px) - var(--pad-top, 0px)); pointer-events: none;
 }
+
+/* mẫu nền tối: chữ nằm trong vùng tô sáng (màu pastel) phải tối để đọc được — chỉ hiển thị, không đổi dữ liệu */
+.has-paper.paper-dark #editor mark,
+.has-paper.paper-dark #editor span[style*="background-color"]:not([style*="transparent"]) { color: #1f1f1f; }
