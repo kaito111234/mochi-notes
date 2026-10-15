@@ -14,14 +14,14 @@ const hug = (k = 1) => ({
   upper_arm_r: { r: r1(20 * k) },  forearm_r: { r: r1(18 * k) },  hand_r: { r: r1(-8 * k) },
 });
 const HUGZ = {};
-const SIT = 44;
+const SIT = 43;
 
 function sitBones(o = {}) {
   return {
     hips: { y: SIT + (o.hipsDy || 0) },
     chest: { sy: o.sy || 1, sx: o.sx || 1, r: o.chestR || 0 },
     head: { r: o.headR === undefined ? 5 : o.headR, y: o.headY === undefined ? 8 : o.headY, x: o.headX === undefined ? 0 : o.headX },
-    hair_back: { r: o.hb || 0 }, sidelock_l: { r: o.sl || 0 }, sidelock_r: { r: -(o.sl || 0) },
+    hair_back: { r: o.hb || 0, y: -16 }, sidelock_l: { r: o.sl || 0, y: -12 }, sidelock_r: { r: -(o.sl || 0), y: -12 },
     ahoge: { r: o.ah === undefined ? 10 : o.ah }, ribbon: { r: o.rb || 0 },
     ...legs(1), ...hug(1),
   };
@@ -44,7 +44,7 @@ const loop = [0, 1, 2, 3].map((i) => {
   return {
     ms: MSL[i], face: 'sleep', z: HUGZ,
     bones: sitBones({ sy: b, sx: r1(1 - (b - 1) * 0.5), headY: 8 + (b - 1) * -60 * 0.5 + 0, hb: r1(1.2 * lag), sl: r1(-1.6 * lag), ah: r1(10 + 2 * lag), rb: r1(1.5 * lag) }),
-    swap: { hand_l: 'hold', hand_r: 'hold' },
+    swap: { hand_l: 'hold', hand_r: 'hold', hair_back: 'sit' },
     show: [PLUSH(0, r1(30 - (b - 1) * 40))].concat(FX[i]),
   };
 });
@@ -59,23 +59,23 @@ const start = [
   { ms: 250, face: 'sleepy',
     bones: { hips: { y: 20 }, chest: { sy: 0.98, r: 1 }, head: { r: 4, y: 4 }, ahoge: { r: 8 }, hair_back: { r: -1.5 }, sidelock_l: { r: 2 }, sidelock_r: { r: -2 },
       ...legs(0.5), upper_arm_l: { r: -8 }, forearm_l: { r: -26 }, upper_arm_r: { r: 8 }, forearm_r: { r: 26 } },
-    swap: { hand_l: 'hold', hand_r: 'hold' }, show: [PLUSH(0, 24, 0.0)] },
+    swap: { hand_l: 'hold', hand_r: 'hold', hair_back: 'sit' }, show: [PLUSH(0, 24, 0.0)] },
   { ms: 250, face: 'sleepy', z: HUGZ,
     bones: { ...sitBones({ headR: 3, headY: 4, hb: -2, sl: 2.5, ah: 8, hipsDy: 0 }) },
-    swap: { hand_l: 'hold', hand_r: 'hold' }, show: [PLUSH(0, 30)] },
-  { ms: 250, face: 'sleep', z: HUGZ, bones: L0.bones, swap: L0.swap, show: [PLUSH(0, 30)] },
+    swap: { hand_l: 'hold', hand_r: 'hold', hair_back: 'sit' }, show: [PLUSH(0, 30)] },
+  { ms: 250, face: 'sleep', z: HUGZ, bones: L0.bones, swap: L0.swap, show: [PLUSH(0, 30), { ...Z('zzz', 0, 0), opacity: 0.45 }] },
 ];
 
 // ---- end: giật mình -> mơ màng -> đứng dậy, mèo biến mất ở khung cuối
 const end = [
   { ms: 260, face: 'surprised', z: HUGZ,
     bones: sitBones({ headR: -2, headY: 0, sy: 1.02, hb: 2, sl: -3, ah: -10 }),
-    swap: { hand_l: 'hold', hand_r: 'hold' },
+    swap: { hand_l: 'hold', hand_r: 'hold', hair_back: 'sit' },
     show: [PLUSH(0, 30), { id: 'fx_surprise', file: 'fx/surprise.svg', bone: 'head', z: 215 }] },
   { ms: 260, face: 'sleepy', z: HUGZ,
     bones: { hips: { y: 18 }, chest: { sy: 0.99 }, head: { r: 3, y: 3 }, ahoge: { r: 8 }, hair_back: { r: -1 }, sidelock_l: { r: 1.5 }, sidelock_r: { r: -1.5 },
       ...legs(0.45), upper_arm_l: { r: -10 }, forearm_l: { r: -36 }, upper_arm_r: { r: 10 }, forearm_r: { r: 36 } },
-    swap: { hand_l: 'hold', hand_r: 'hold' }, show: [PLUSH(0, 16, 0.6)] },
+    swap: { hand_l: 'hold', hand_r: 'hold', hair_back: 'sit' }, show: [PLUSH(0, 16, 0.6)] },
   { ms: 260, face: 'normal', hide: ['plush'],
     bones: { hips: { y: 0 }, chest: { sy: 1 }, head: { r: 0, y: 0 },
       ...standArms },

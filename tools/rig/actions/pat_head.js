@@ -23,7 +23,7 @@ function cfgMood(c) {
         head: { r: r1(dir[i] * (c.headR) ), y: r1(dip[i] * c.dipK), x: r1(dir[i] * 0.8) },
         hair_back: { r: r1(-2.2 * dir[i] + 1.2 * lag) },
         sidelock_l: { r: r1(3 * lag) }, sidelock_r: { r: r1(-3 * lag) },
-        ahoge: { r: r1(c.ahoge + dir[i] * 13) },
+        ahoge: { r: r1(c.ahoge + dir[i] * 18) },
         ribbon: { r: r1(-3 * dir[i]) },
         ...ARMS(1 + 0.04 * (i % 2)),
       },
@@ -64,7 +64,7 @@ function cfgMood(c) {
 module.exports = {
   action: 'pat_head',
   moods: {
-    normal: cfgMood({ loopFace: ['closed_happy', 'closed_happy', 'closed_happy', 'closed_happy'], bounce: 0, headR: 3, dipK: 1, ahoge: 0, blush: true, hearts: false }),
-    happy: cfgMood({ loopFace: ['closed_happy', 'laugh', 'closed_happy', 'laugh'], bounce: -1.5, headR: 3.5, dipK: 1.3, ahoge: -4, blush: false, hearts: true }),
+    normal: cfgMood({ loopFace: ['closed_happy', 'closed_happy', 'closed_happy', 'closed_happy'], bounce: 0, headR: 5.5, dipK: 1, ahoge: 0, blush: true, hearts: false }),
+    happy: cfgMood({ loopFace: ['closed_happy', 'laugh', 'closed_happy', 'laugh'], bounce: -1.5, headR: 5.5, dipK: 1.3, ahoge: -4, blush: false, hearts: true }),
   },
 };
