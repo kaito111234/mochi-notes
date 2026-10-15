@@ -49,9 +49,22 @@
 
   const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 
-  function splitText(text) {
-    const lines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    return { title: (lines[0] || '').slice(0, 120), excerpt: lines.slice(1).join(' ').slice(0, 240) };
+  // html -> chuỗi nhiều dòng (div/p/br/li/h* ngắt dòng); chỉ dùng DOMParser, không chạy script
+  function htmlLines(html) {
+    try {
+      const doc = new DOMParser().parseFromString('<body>' + String(html) + '</body>', 'text/html');
+      doc.querySelectorAll('script,style').forEach(x => x.remove());
+      doc.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+      doc.querySelectorAll('li').forEach(li => li.prepend('- '));
+      doc.querySelectorAll('div,p,li,h1,h2,h3,h4,h5,h6,tr,blockquote,pre,ul,ol').forEach(b => b.append('\n'));
+      return doc.body.textContent;
+    } catch (_) { return ''; }
+  }
+  const cleanLine = l => l.replace(/^\s*(?:[-*•]\s*)?\[[ xX]?\]\s*/, '').replace(/^\s*[-*•]\s+/, '').replace(/\s+/g, ' ').trim();
+  function splitText(text, html) {
+    const raw = typeof html === 'string' && html ? htmlLines(html) : String(text || '');
+    const lines = raw.split(/\r?\n/).map(cleanLine).filter(Boolean);
+    return { title: (lines[0] || '').slice(0, 120), excerpt: lines.slice(1).join(' · ').slice(0, 240) };
   }
 
   function ago(t) {
@@ -82,7 +95,7 @@
   }
   function openRems(n) { return remList(n).filter(r => r && !r.done).sort((a, b) => a.due - b.due); }
   const hasRem = n => remList(n).length > 0;
-  function remTitle(n, r) { return r.title || splitText(n.text).title || 'Note'; }
+  function remTitle(n, r) { return r.title || splitText(n.text, n.html).title || 'Note'; }
   function remText(r) {
     if (r.done) return 'đã xong';
     const diff = r.due - Date.now();
@@ -175,7 +188,7 @@
           w.appendChild(b);
         });
         box.appendChild(w);
-      } else if (sg === 'none') box.appendChild(el('p', 'rem-none', 'Tớ chưa có gợi ý nào cho note này.'));
+      } else if (sg === 'none') box.appendChild(el('p', 'rem-none', 'Bé Mochi chưa có gợi ý nào cho note này.'));
       else {
         const b = el('button', 'btn sm', sg === 'loading' ? 'Đang xem…' : 'Gợi ý');
         b.type = 'button'; b.dataset.act = 'suggest'; if (sg === 'loading') b.disabled = true;
@@ -185,11 +198,61 @@
     return box;
   }
 
+  // ---------- mẫu giấy của note (dải màu + nền xem trước) ----------
+  // Catalog mẫu: assets/paper/catalog.js (window.MochiPaperCatalog). Mẫu của từng note: api.paper.get(id).meta.paper.
+  const papersById = new Map();
+  try { ((window.MochiPaperCatalog && window.MochiPaperCatalog.papers) || []).forEach(p => { if (p && p.id) papersById.set(p.id, p); }); } catch (_) { /* không có catalog: dùng màu note */ }
+  const paperCache = new Map(); // noteId -> { id: paperId|null, at }
+  const PAPER_TTL = 10000;
+  const safeCss = v => (typeof v === 'string' && /^[#a-zA-Z0-9(),.%\s-]{1,60}$/.test(v)) ? v : null;
+  const paperLines = p => {
+    const L = p.lines || {}, c0 = safeCss(L.color), c = c0 && 'color-mix(in srgb, ' + c0 + ' 55%, transparent)';
+    if (!c || !L.kind || L.kind === 'none') return '';
+    const st = 20;
+    if (L.kind === 'dots') return 'radial-gradient(' + c + ' 1px, transparent 1.5px) 0 0 / 14px 14px';
+    if (L.kind === 'grid') return 'linear-gradient(' + c + ' 1px, transparent 1px) 0 0 / 16px 16px, linear-gradient(90deg, ' + c + ' 1px, transparent 1px) 0 0 / 16px 16px';
+    return 'repeating-linear-gradient(to bottom, transparent 0, transparent ' + (st - 1) + 'px, ' + c + ' ' + (st - 1) + 'px, ' + c + ' ' + st + 'px)';
+  };
+  function applyPaper(card, n) {
+    if (!card) return;
+    const pid = (paperCache.get(n.id) || {}).id || ('plain-' + n.color);
+    const p = papersById.get(pid);
+    ['--stripe', '--card-bg', '--card-img', '--text', '--muted'].forEach(k => card.style.removeProperty(k));
+    card.classList.remove('has-paper');
+    const std = 'var(--c-' + (COLORS.includes(n.color) ? n.color : 'yellow') + ')';
+    if (!p || !p.bg || !safeCss(p.bg.color)) { card.style.setProperty('--stripe', std); return; }
+    const bg = safeCss(p.bg.color), head = safeCss(p.bg.head), ink = safeCss(p.ink), hc = p.header && safeCss(p.header.color);
+    let stripe;
+    if (String(p.id).startsWith('plain-')) stripe = std;
+    else stripe = hc || (head && head !== 'same' ? head : null) || (ink ? 'color-mix(in srgb, ' + ink + ' 35%, ' + bg + ')' : std);
+    const g = Array.isArray(p.bg.gradient) && p.bg.gradient.length > 1 && p.bg.gradient.every(safeCss) ? 'linear-gradient(135deg, ' + p.bg.gradient.join(', ') + ')' : '';
+    const lines = paperLines(p);
+    card.classList.add('has-paper');
+    card.style.setProperty('--stripe', stripe);
+    card.style.setProperty('--card-bg', bg);
+    const img = [lines, g].filter(Boolean).join(', ');
+    if (img) card.style.setProperty('--card-img', img);
+    if (ink) { card.style.setProperty('--text', ink); card.style.setProperty('--muted', 'color-mix(in srgb, ' + ink + ' 65%, ' + bg + ')'); }
+  }
+  function loadPaper(n) {
+    if (!api.paper || typeof api.paper.get !== 'function') return;
+    const c = paperCache.get(n.id);
+    if (c && Date.now() - c.at < PAPER_TTL) return;
+    paperCache.set(n.id, { id: c ? c.id : null, at: Date.now() });
+    Promise.resolve(api.paper.get(n.id)).then(r => {
+      const id = (r && r.meta && typeof r.meta.paper === 'string' && r.meta.paper) || null;
+      const old = (paperCache.get(n.id) || {}).id || null;
+      paperCache.set(n.id, { id, at: Date.now() });
+      if (id !== old) applyPaper(document.querySelector('.card[data-id="' + n.id + '"]'), n);
+    }).catch(() => { /* giữ màu note */ });
+  }
+
   function buildCard(n) {
-    const { title, excerpt } = splitText(n.text);
+    const { title, excerpt } = splitText(n.text, n.html);
     const card = el('article', 'card ' + (n.visible ? 'is-shown' : 'is-hidden'));
     card.dataset.id = n.id;
-    card.style.setProperty('--stripe', 'var(--c-' + (COLORS.includes(n.color) ? n.color : 'yellow') + ')');
+    applyPaper(card, n);
+    loadPaper(n);
 
     const body = el('button', 'card-body');
     body.type = 'button';
@@ -328,7 +391,7 @@
     if (list.length) return;
     const q = $('q').value.trim();
     if (!notes.length) {
-      empty.append(icon('note'), el('h3', null, 'Chưa có note nào'), el('p', null, 'Bấm dấu + để dán note đầu tiên. Tớ sẽ giúp cậu nhớ giờ.'));
+      empty.append(icon('note'), el('h3', null, 'Chưa có note nào'), el('p', null, 'Bấm dấu + để dán note đầu tiên. Bé Mochi sẽ giúp bạn nhớ giờ.'));
       const b = el('button', 'btn primary', 'Tạo note mới');
       b.type = 'button'; b.dataset.act = 'new';
       empty.appendChild(b);
@@ -461,7 +524,7 @@
         if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
         renderCards(); break;
       case 'rdone': guard(api.notes2.doneItem(id, btn.dataset.rid)); break;
-      case 'rsnooze': guard(api.notes2.snoozeItem(id, btn.dataset.rid, 10), 'Hoãn 10 phút nha'); break;
+      case 'rsnooze': guard(api.notes2.snoozeItem(id, btn.dataset.rid, 10), 'Đã hoãn 10 phút'); break;
       case 'suggest':
         suggs.set(id, 'loading'); renderCards();
         Promise.resolve(api.alarms.insight(id)).then(v => {
@@ -471,13 +534,13 @@
         break;
       case 'apply':
         Promise.resolve(api.alarms.applySuggestion(id, btn.dataset.sid)).then(r => {
-          toast((r && r.message) || (r && r.ok === false ? 'Chưa làm được' : 'Xong rồi nha'), !!(r && r.ok === false));
+          toast((r && r.message) || (r && r.ok === false ? 'Chưa làm được' : 'Xong rồi'), !!(r && r.ok === false));
           suggs.delete(id); renderCards();
         }).catch(() => toast('Chưa làm được', true));
         break;
       case 'delete': {
         confirmId = null;
-        const title = splitText((notes.find(n => n.id === id) || {}).text).title;
+        const title = (() => { const x = notes.find(n => n.id === id) || {}; return splitText(x.text, x.html).title; })();
         Promise.resolve(api.deleteNote(id)).then(() => {
           if (hasTrash()) toast('Đã chuyển vào thùng rác', false, { label: 'Hoàn tác', run: () => guard(api.notes2.trashRestore(id), 'Đã khôi phục' + (title ? ' "' + title.slice(0, 30) + '"' : '')) });
         }).catch(() => toast('Chưa làm được', true));
@@ -520,7 +583,7 @@
     const its = (v && v.items || []).filter(i => i && i.due);
     if (!its.length) return '';
     const parts = its.slice(0, 3).map(i => (i.time ? i.time + ' ' : '') + (i.title || ''));
-    return 'Tớ hiểu: ' + its.length + ' việc · ' + parts.join(' · ') + (its.length > 3 ? '…' : '');
+    return 'Bé hiểu: ' + its.length + ' việc · ' + parts.join(' · ') + (its.length > 3 ? '…' : '');
   }
   qc.addEventListener('input', () => {
     clearTimeout(qcTimer);
@@ -545,9 +608,9 @@
     const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const fallback = () => api.createNote({ html: text.split(/\r?\n/).map(l => '<div>' + esc(l) + '</div>').join('') });
     if (api.alarms && api.alarms.quickCapture) {
-      Promise.resolve(api.alarms.quickCapture(text)).then(r => toast((r && r.reply) || 'Tớ ghi rồi nha'))
-        .catch(() => { fallback(); toast('Tớ ghi rồi nha'); });
-    } else { fallback(); toast('Tớ ghi rồi nha'); }
+      Promise.resolve(api.alarms.quickCapture(text)).then(r => toast((r && r.reply) || 'Đã ghi note'))
+        .catch(() => { fallback(); toast('Đã ghi note'); });
+    } else { fallback(); toast('Đã ghi note'); }
   });
 
   $('panel').addEventListener('click', e => {

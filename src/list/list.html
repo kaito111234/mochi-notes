@@ -107,7 +107,7 @@
                 <button type="button" role="radio" data-v="chime" aria-checked="true">Chuông ngân</button>
                 <button type="button" role="radio" data-v="bell" aria-checked="false">Chuông</button>
                 <button type="button" role="radio" data-v="soft" aria-checked="false">Nhẹ nhàng</button>
-                <button type="button" role="radio" data-v="custom" aria-checked="false">File của cậu</button>
+                <button type="button" role="radio" data-v="custom" aria-checked="false">File của bạn</button>
               </div>
               <div class="snd-custom" id="alSndCustom" hidden>
                 <select id="alSndFile" aria-label="File âm thanh đã có"></select>
@@ -128,7 +128,7 @@
 
     <section class="list-view tab-view" id="memoView" role="tabpanel" aria-labelledby="tabMemos" hidden>
       <form class="memo-add" id="mmAdd" autocomplete="off">
-        <input id="mmText" type="text" maxlength="500" placeholder="Dặn tớ điều gì đó..." aria-label="Nội dung dặn dò">
+        <input id="mmText" type="text" maxlength="500" placeholder="Dặn bé Mochi điều gì đó..." aria-label="Nội dung dặn dò">
         <div class="memo-add-row">
           <select id="mmWhen" aria-label="Thời điểm"></select>
           <label class="chk"><input type="checkbox" id="mmOnce"><span>Chỉ một lần</span></label>
@@ -173,6 +173,7 @@
           <button class="row" type="button" role="switch" aria-checked="false" data-key="mascotIdle"><span class="row-text"><span class="row-title">Bé luôn ngồi ở góc màn hình</span></span><span class="switch" aria-hidden="true"></span></button>
           <button class="row" type="button" role="switch" aria-checked="false" data-key="sound"><span class="row-text"><span class="row-title">Âm thanh nhắc</span></span><span class="switch" aria-hidden="true"></span></button>
           <button class="row" type="button" role="switch" aria-checked="false" data-key="glass"><span class="row-text"><span class="row-title">Nền kính Windows 11</span></span><span class="switch" aria-hidden="true"></span></button>
+          <button class="row" type="button" role="switch" aria-checked="false" data-key="noteTransparent"><span class="row-text"><span class="row-title">Cửa sổ note trong suốt (mép xé, góc gập thật — thử nghiệm)</span><span class="row-desc">Các note đang mở sẽ được mở lại theo kiểu mới</span></span><span class="switch" aria-hidden="true"></span></button>
           <button class="row" type="button" role="switch" aria-checked="false" data-key="startup"><span class="row-text"><span class="row-title">Khởi động cùng Windows</span></span><span class="switch" aria-hidden="true"></span></button>
         </div>
         <button class="btn primary wide" id="btnSummon" type="button">Gọi bé ra thử</button>
@@ -214,7 +215,7 @@
           <div><dt><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>R</kbd></dt><dd>Đặt nhắc lịch</dd></div>
           <div><dt><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Cỡ chữ: to, nhỏ, mặc định</dd></div>
         </dl>
-        <p class="tip">Mẹo: gõ giờ tự nhiên trong note, ví dụ "họp 3h chiều nay", "nộp báo cáo thứ 6", "gọi khách 20 phút nữa" là tớ tự nhắc.</p>
+        <p class="tip">Mẹo: gõ giờ tự nhiên trong note, ví dụ "họp 3h chiều nay", "nộp báo cáo thứ 6", "gọi khách 20 phút nữa" là bé Mochi tự nhắc.</p>
       </div>
       <div class="sheet" id="bkSheet" role="dialog" aria-modal="true" aria-label="Khôi phục từ bản sao lưu" aria-hidden="true" inert>
         <div class="sheet-in">
@@ -236,6 +237,7 @@
 </div>
 <script src="../shared/parse.js"></script>
 <script src="../shared/recur.js"></script>
+<script src="../../assets/paper/catalog.js"></script>
 <script src="list.js"></script>
 <script src="alarms.js"></script>
 <script src="memos.js"></script>

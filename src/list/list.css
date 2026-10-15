@@ -100,6 +100,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   position: relative; border-radius: 12px; background: var(--surface); box-shadow: var(--shadow);
   border: 1px solid var(--line); overflow: hidden; transition: transform .12s, box-shadow .12s;
 }
+.card.has-paper .card-body { color: var(--text); }
+.card.has-paper { background-color: var(--card-bg); background-image: var(--card-img, none); }
 .card:hover { transform: translateY(-1px); }
 .card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--stripe, var(--c-yellow)); }
 .card-body {
