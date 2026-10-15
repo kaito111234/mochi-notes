@@ -5,7 +5,8 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "dist:win": "electron-builder --win zip --x64"
+    "dist:win": "electron-builder --win zip --x64",
+    "test": "node --test src/main/persona/test/*.test.js"
   },
   "keywords": [],
   "author": "Joiha",
@@ -21,7 +22,10 @@
     "files": [
       "src/**/*",
       "assets/**/*",
-      "package.json"
+      "package.json",
+      "!src/**/test/**",
+      "!src/**/tools/**",
+      "!src/**/__tests__/**"
     ],
     "directories": {
       "output": "dist"

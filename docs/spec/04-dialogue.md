@@ -33,3 +33,9 @@ Main công bố `ctx.persona.pick(event, vars)` (phòng persona) — tự lấy 
 
 ## Giọng văn
 Xưng "tớ", gọi "cậu". Ngại ngùng, dịu dàng, hơi bướng, thích mèo và đồ ngọt (theo bảng nhân vật). Ngắn (≤ 80 ký tự với bong bóng thường, ≤ 120 với nhắc lịch). Không emoji. Nhắc lịch phải rõ việc gì, giờ nào trước khi dễ thương.
+
+## Bổ sung (điều hành chốt sau Đợt 1)
+- `cond.weekday`: 0=CN … 6=T7 (như `Date.getDay()`). `cond.hour` không vòng qua nửa đêm — muốn 23h–4h thì tách 2 câu.
+- Câu có `cond.intent` khớp intent hiện tại được ưu tiên tuyệt đối so với câu chung.
+- `memo` dùng `{title}` = nội dung lời dặn.
+- Phân vai: persona tự phát `persona:line` cho tương tác, chào buổi, chatter, done/snooze, alarm_stop/alarm_snooze, reward/levelup, note_created. **Core** khi lên sân khấu cho `alarm/due/pre/memo/nag` gọi `ctx.persona.pick(kind, {title, time, left, label, count, intent})`, `left` dạng "10 phút".

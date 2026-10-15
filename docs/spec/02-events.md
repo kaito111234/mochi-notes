@@ -9,12 +9,12 @@
 | Tên | Phát bởi | Payload |
 |---|---|---|
 | `alarm:ring` | notes | `{alarmId, label, noteId?}` |
-| `alarm:stopped` / `alarm:snoozed` | notes | `{alarmId, minutes?}` |
+| `alarm:stopped` / `alarm:snoozed` | notes | `{alarmId, label, minutes?}` |
 | `memo:due` | notes | `{memoId, text, when}` |
-| `pet:interact` | core | `{kind: 'click'\|'pat-head'\|'pat-body'\|'lift'\|'drop'\|'feed', itemId?}` |
+| `pet:interact` | core | `{kind: 'click'\|'pat-head'\|'pat-body'\|'lift'\|'drop'\|'feed', itemId?, itemName?}` |
 | `pet:posture` | core | `{posture: 'idle'\|'walk'\|'sit'\|'sleep'\|'lifted'\|'peek'\|'work'}` |
 | `pet:idleTick` | core | `{quietMs}` — mỗi 15s khi bé rảnh, `quietMs` = thời gian chưa ai tương tác |
-| `game:mode` | game | `{mode: 'happy'\|'normal'\|'tired'\|'sad'}` |
+| `game:mode` | game | `{mode: 'happy'\|'normal'\|'tired'\|'sad', energy, mood, level}` |
 | `game:reward` | game | `{candy, exp, affection, reason}` |
 | `game:levelup` | game | `{level}` |
 | `persona:line` | persona | `{text, face?, anim?, priority, ttlMs?}` — yêu cầu bé nói |
