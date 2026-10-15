@@ -56,7 +56,7 @@ body:hover .ib, body.win-focus .ib, body.pop .ib, .ib:focus-visible { opacity: .
 .body { flex: 1; min-height: 0; display: flex; position: relative; }
 #editor {
   flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; outline: none; position: relative;
-  padding: 8px 12px; font-size: 15px; line-height: 1.5; caret-color: var(--fg);
+  padding: 8px 12px; font-size: calc(15px * var(--zoom, 1)); line-height: 1.5; caret-color: var(--fg);
   overflow-wrap: break-word; word-break: break-word; -webkit-app-region: no-drag;
 }
 #editor.empty::before { content: attr(data-placeholder); position: absolute; left: 12px; top: 8px; color: rgba(var(--fg-rgb), .5); pointer-events: none; }
@@ -95,7 +95,7 @@ body.editing .fmt, .fmt:focus-within { opacity: 1; pointer-events: auto; }
 .fb { position: relative; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 4px; }
 .fb:hover { background: rgba(var(--fg-rgb), .12); }
 .fb.on, .fb[aria-expanded="true"] { background: rgba(var(--fg-rgb), .2); }
-.fb:last-child { margin-left: auto; }
+.fb#btnRem { margin-left: auto; }
 .hlbar { position: absolute; left: 7px; right: 7px; bottom: 3px; height: 3px; border-radius: 2px; background: #ffe066; box-shadow: 0 0 0 .5px rgba(0,0,0,.35); }
 
 /* ---- popover ---- */
@@ -153,4 +153,35 @@ body[data-color="charcoal"] .err { color: #ff8a80; }
 .hsw[data-hl="blue"] { --c: #8fcbff; } .hsw[data-hl="purple"] { --c: #cfa8ff; }
 .hsw.last { box-shadow: 0 0 0 2px rgb(var(--bg-rgb)), 0 0 0 3.5px rgba(var(--fg-rgb), .7); }
 
+/* ---- tìm trong note ---- */
+::highlight(mochi-find) { background-color: #ffd23f; color: #1f1f1f; }
+::highlight(mochi-find-cur) { background-color: #ff8a3d; color: #1f1f1f; }
+.findbar {
+  flex: none; display: flex; align-items: center; gap: 2px; padding: 3px 4px 3px 12px;
+  background: rgba(var(--fg-rgb), .07); border-bottom: 1px solid rgba(var(--fg-rgb), .15);
+}
+.findbar input { width: 60px; min-width: 40px; flex: 1; height: 26px; font: inherit; font-size: 13px; color: var(--fg); background: transparent; border: 0; outline: none; }
+.fcount { font-size: 12px; color: rgba(var(--fg-rgb), .65); min-width: 34px; text-align: right; white-space: nowrap; }
+.findbar .fb { width: 26px; height: 26px; }
+.findbar.none .fcount { color: #c42b1c; }
+body[data-color="charcoal"] .findbar.none .fcount { color: #ff8a80; }
+
+/* ---- nhãn thoáng qua (cỡ chữ, thông báo nhỏ) ---- */
+.toast {
+  position: absolute; right: 10px; bottom: 40px; z-index: 9; padding: 3px 10px; font-size: 12.5px; border-radius: 12px; pointer-events: none;
+  background: rgba(var(--fg-rgb), .82); color: rgb(var(--bg-rgb));
+}
+
+/* ---- khoá chỉ đọc ---- */
+body.locked .fmt { opacity: 1; pointer-events: auto; }
+body.locked #btnLock { background: rgba(var(--fg-rgb), .2); }
+body.locked #editor { cursor: default; caret-color: transparent; }
+body.locked .fb[data-cmd], body.locked #btnHl { opacity: .35; pointer-events: none; }
+.mi kbd { font: inherit; font-size: 11.5px; color: rgba(var(--fg-rgb), .55); }
+#lockInd { opacity: .75; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* panel nhắc gọn cho cửa sổ nhỏ */
+.panel .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.panel .fld { margin-bottom: 6px; }
