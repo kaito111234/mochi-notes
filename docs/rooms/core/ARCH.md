@@ -117,3 +117,73 @@ Nút: pre (Biết rồi / Mở note), due (Xong rồi / Hoãn 10 phút / Mở no
 Bé bị tắt (`store.settings.mascotEnabled=false`) hoặc cửa sổ không sẵn sàng sau 5s: kind ≥ memo (60) → thông báo Windows dự phòng (như 0.1). Không bao giờ bỏ nhắc lịch vì game/thoại.
 Nghe bus: `memo:due`, `alarm:ring` (chống trùng nếu phòng notes vừa gọi enqueue/stage cho cùng alarmId trong 60s), `alarm:stopped` (huỷ), `persona:line` (→ chatter/reward theo priority), `note:deleted` (bỏ khỏi hàng đợi).
 Câu thoại: `ctx.persona.pick(event, vars)` nếu có, không thì `lines.js` (câu mặc định của core).
+
+---
+# Đợt 2 — chia việc nội bộ & hợp đồng mới (trưởng phòng chốt 2026-10-15)
+
+## Sơ đồ file & chủ Đợt 2
+| Nhân viên | File (chỉ sửa file của mình) |
+|---|---|
+| P. Gói hình | `src/main/petcore/pack.js`, `src/pet/anim.js`, `tools/anim/**`, `assets/pet/placeholder/**` (mới). **Không đụng `assets/pet/mochi/**`** (của phòng art). |
+| R. Renderer bé | `src/pet/pet.html`, `src/pet/pet.css`, `src/pet/pet.js` |
+| W. Cửa sổ + ghi nhanh + menu | `src/main/petcore/window.js`, `src/main/petcore/index.js`, `src/main/petcore/capture.js` (mới), `src/main/petcore/menu.js` (mới) |
+| M. Cửa sổ phụ | `src/pet/settings.html|css|js` (mới), `src/pet/flash.html|css|js` (mới), `src/main/petcore/settingsWindow.js` (mới), `src/main/petcore/flash.js` (mới) |
+| B. Thân & não | `src/main/petcore/body.js`, `src/main/petcore/brain.js` |
+| S. Sân khấu | `src/main/pet/stage.js`, `src/main/pet/lines.js`, `src/main/pet/ipcPet.js`, `src/main/pet/mascotWindow.js` |
+| Trưởng phòng | `src/main/preload.js` (khối core), `docs/rooms/core*` |
+
+## P. Gói hình: mochi + placeholder
+- Gói tạm chuyển sang `assets/pet/placeholder/` (`pack.json.id = "placeholder"`), sinh bằng `node tools/anim/make-placeholder.js` (mặc định ghi vào placeholder). Thêm action mới cho Đợt 2: `climb` (bám tường, hình gốc quay mặt về phía tường bên PHẢI — body lật khi bám tường trái), `point` (chỉ tay sang phải), `write` (cầm bút ghi chép, dùng khi ghi nhanh).
+- `pack.js` xuất thêm `loadCharacter(ctx) -> Pack`: nạp `mochi` (tìm trong `packDirs`) làm gói chính; nạp `placeholder` làm gói dự phòng; action nào gói chính thiếu (hoặc thiếu hẳn gói chính) thì lấy từ dự phòng. Khung lấy từ dự phòng có `src` là **URL tuyệt đối** `file:///…` và `fit: true` (renderer vẽ co giãn khung đó vào đúng `pack.size`). `faces` thiếu cũng lấy từ dự phòng (URL tuyệt đối). Thêm `pack.sources = {primary: 'mochi'|null, fallback: 'placeholder', borrowed: [action…]}`. Không bao giờ ném lỗi: thiếu cả hai → gói tối thiểu (như `minimalPack`).
+- `anim.js`: `src` tuyệt đối (bắt đầu `file:`/`data:`) dùng nguyên; tương đối thì ghép `baseUrl`. Khung `fit` vẽ `drawImage(img, 0, 0, size[0], size[1])`. `alphaAt` vẫn đúng.
+
+## IPC renderer bé — bổ sung Đợt 2 (preload không đổi: vẫn `mochi.pet.send/onCmd/ignore`)
+Lệnh main → renderer:
+| op | trường | ý nghĩa |
+|---|---|---|
+| `capture` | `draft, prompt` | mở bong bóng nhập (ô nhập 1–3 dòng, nhãn `prompt` mặc định "Cậu muốn tớ ghi gì?", điền sẵn `draft`), renderer `ignore(false)`, focus ô nhập. Enter = gửi, Shift+Enter = xuống dòng, Esc = huỷ. |
+| `captureClose` | — | đóng bong bóng nhập (do main, ví dụ nhắc lịch chen ngang) — renderer gửi lại `captureDraft {text}` trước khi đóng |
+| `climb` | `side: 'left'\|'right'\|null` | (tuỳ chọn) renderer chỉ cần biết để đặt bong bóng khỏi tràn; có thể bỏ qua |
+Tin renderer → main (thêm vào `ALLOWED` trong window.js):
+`menu {}` (chuột phải trên thân bé), `captureOpen {}` (bấm đúp thân bé — renderer hoãn click đơn ~250ms để phân biệt), `captureSubmit {text}`, `captureCancel {text}`, `captureDraft {text}` (gõ, hãm 500ms), `dropText {text, kind:'text'|'url'}` (kéo thả chữ/link vào bé).
+
+## W. Cửa sổ/ghi nhanh/menu (main)
+- `window.js`: `loadCorePack` dùng `pack.loadCharacter(ctx)`; `ALLOWED` thêm các tin trên; trả thêm `setFocusable(bool)`, `focus()`; `computeLayout` giữ chiều cao đủ cho bong bóng nhập (~ +40px nếu cần).
+- `capture.js` `createCapture(core) -> { open(), close(), suspend(), isOpen(), submit(text, source) }`:
+  open: nếu sân khấu đang bận mức ≥ 60 thì bé nói "Đợi tớ nhắc xong việc này đã nha" và thôi; còn lại `core.brain.setBusy(true)`, play `write` loop, `window.setFocusable(true)`, gửi `{op:'capture', draft: box.draft}`, `focus()`.
+  submit: text rỗng → đóng. Gọi `ctx.notes.quickCapture(text, {source:'pet'|'drop'})` nếu có (kỳ vọng trả `{note, insight}` hoặc note); không có → `ctx.notes.createNote({html: escape(text) với <br>})`. Xoá nháp. Đọc lại: có `note.reminders[]`/`note.reminder.due` → "Tớ ghi rồi nha. HH:MM tớ nhắc cậu {title}" (ưu tiên `ctx.persona.pick('note_created', {title, time})`), không có giờ → "Tớ ghi vào note rồi nha." Play `happy` rồi idle. Lỗi → "Ơ, tớ ghi không được…" + log.
+  close/suspend: gửi `captureClose`, `setFocusable(false)`, `brain.setBusy(false)`; nháp lưu ở `box.draft` (chuỗi ≤ 2000 ký tự, lưu khi `captureDraft`/`captureCancel`).
+  `dropText`: submit trực tiếp với source 'drop'.
+- `menu.js` `createMenu(core) -> { popup() }` (Menu gốc Electron, `popup({window})`): Ghi nhanh · Note mới · Danh sách note · Báo thức… · Ẩn/hiện tất cả note · ─ · Cho bé ngủ · Ẩn bé 1 giờ · Bé đi lại (checkbox) · Cỡ bé (75/100/125%) · Cài đặt bé… Gọi `ctx.notes.createNote({})`, `ctx.list.open()`, `ctx.list.open('alarms')`, `ctx.notes.toggleAll()`, `core.brain.sleep()`, `ctx.pet.hideFor(3600000)`, `ctx.pet.setSettings`, `core.settingsWin.open()`. Sau khi đổi cài đặt gọi `ctx.tray.rebuild && ctx.tray.rebuild()`.
+- `index.js`: ngăn `pet` thêm `draft: ''`, `hiddenUntil: 0` (normalize chịu dữ liệu cũ); settings thêm `climbEnabled: true`, `followCursor: true` (bool). Đăng ký thêm:
+  ```js
+  ctx.pet.hideFor(ms)          // ẩn bé tới hiddenUntil (lưu), hết giờ tự hiện lại; nhắc lịch vẫn lên sân khấu bình thường
+  ctx.pet.occupiedRect()       // {x,y,width,height} DIP của phần thân bé đang hiện (+ bong bóng/tờ note nếu đang hiện) hoặc null khi ẩn  -> core.body.occupiedRect()
+  ctx.pet.flashNote(noteId, ms) // viền nháy quanh cửa sổ note -> core.flash.flash(noteId, ms); trả boolean
+  ctx.pet.capture              // = core.capture (open/close/suspend/isOpen)
+  actor.goToNote(noteId) -> Promise<{ok, side:'left'|'right'|null}>   // -> core.body.goToNote
+  ```
+  `wantVisible()` thêm điều kiện `Date.now() >= box.hiddenUntil`. Nối `core.capture = createCapture(core)`, `core.menu = createMenu(core)`, `core.settingsWin = createSettingsWindow(core)`, `core.flash = createFlash(core)`; nghe `menu` → `core.menu.popup()`, `captureOpen` → `core.capture.open()`, v.v.
+
+## M. Cửa sổ phụ
+- `settingsWindow.js` `createSettingsWindow(core) -> { open() }`: cửa sổ nhỏ (360×420, khung thường, không thu phóng, một bản), tải `src/pet/settings.html`. `ipcMain.handle('pet:getSettings')` → `Object.assign({}, core.box.settings)`; `ipcMain.handle('pet:setSettings', patch)` → `core.ctx.pet.setSettings(patch)` rồi `ctx.tray.rebuild()`; trả settings mới. Chỉ chấp nhận từ webContents của cửa sổ cài đặt.
+- Renderer cài đặt dùng `window.mochi.pet.getSettings()` / `setSettings(patch)` (trưởng phòng thêm vào preload). Mục: Bé luôn ở trên desktop · Cho bé đi lại · Cho bé leo tường · Thỉnh thoảng đi theo con trỏ · Cỡ bé (75/100/125/150%). CSP chặt như các trang khác, không inline script.
+- `flash.js` `createFlash(core) -> { flash(noteId, ms=4000), stop() }`: tìm `ctx.windows.notes.get(noteId)`; không có/ẩn → false. Tạo (dùng lại) một cửa sổ trong suốt, click xuyên hoàn toàn (`setIgnoreMouseEvents(true)`), không focus, luôn nổi, phủ khít bounds note + 6px mỗi phía, tải `src/pet/flash.html` (viền bo tròn hồng nhạt nhấp nháy bằng CSS animation). Bám theo note nếu note di chuyển (kiểm 250ms trong lúc nháy). Hết `ms` thì ẩn. Không preload cần thiết (trang tĩnh).
+
+## B. Thân & não
+- Toạ độ, vật lý giữ như Đợt 1. Mới:
+  - **Leo tường**: khi đi chạm mép trái/phải workArea (và `climbEnabled`, `walkEnabled`), đôi khi (xác suất) leo lên: play `climb` loop, `face` hướng về tường, chân bám mép (x = mép ± nửa thân), y giảm dần; dừng ở độ cao ngẫu nhiên, nghỉ, rồi tụt xuống hoặc buông ra rơi (`fall`→`land`). Posture phát `walk` khi leo. Nhấc lên khi đang leo hoạt động bình thường.
+  - **Đi trên note**: sàn đã gồm cạnh trên note; khi đứng trên note thì đi trong khoảng bề ngang note; tới mép note thì hoặc quay lại, hoặc nhảy xuống (rơi tới sàn dưới). Thỉnh thoảng nhảy lên note gần (nếu note thấp hơn mép trên màn hình đủ chỗ). Ngồi trên note (`sit`). Note di chuyển/đóng → watch 1s xử lý rơi (đã có).
+  - **Đi theo con trỏ một đoạn** (`followCursor`, `walkEnabled`): thỉnh thoảng khi con trỏ ở gần (≤ 400px, cùng màn hình) và bé rảnh, đi tới cách con trỏ ~80px theo phương ngang trong ≤ 6s rồi dừng. Không bao giờ để cửa sổ bé che con trỏ: nếu con trỏ nằm trong `occupiedRect` khi bé tự đi (không phải người dùng rê lên thân) thì dừng/quay đi.
+  - **Nấp mép**: giữ như Đợt 1.
+  - `goToNote(noteId) -> Promise<{ok, side}>`: cửa sổ note đang hiện → đi (nhanh) hoặc nhảy tới sàn ngay cạnh note (bên còn chỗ trên màn hình; ưu tiên bên phải), quay mặt về phía note; `ok:false` nếu note không hiện.
+  - `occupiedRect()`: bounds phần nhân vật (charLeft/charTop/charW/charH theo layout, đổi sang toạ độ màn hình); `null` khi ẩn. Phát `bus.emit('pet:moved', {rect})` khi bé dừng sau di chuyển/rơi/nhấc thả và trong khi di chuyển tối đa 4 lần/s.
+  - Sửa lỗi tờ note sát mép phải: `goToCorner` chừa lề để tờ note (rộng ~ 220px CSS, gắn tại `pack.hand`) và bong bóng không ra khỏi workArea.
+  - **Nhớ vị trí**: lưu `box.x/y/displayId` (debounce 2s) sau mỗi lần dừng, không chỉ lúc thoát; khởi động đặt lại đúng chỗ nếu vẫn nằm trong một workArea.
+  - Não: `brain.setBusy(on)` (đang ghi nhanh/menu: dừng tự đi, đánh thức nếu ngủ, không xúc xắc); xúc xắc tick 15s thêm lựa chọn leo/đi lên note/theo con trỏ, tôn trọng `walkEnabled` (tắt → chỉ idle/ngồi/ngủ). CPU khi đứng yên: không timer nào < 1s ngoài lúc chuyển động.
+
+## S. Sân khấu
+- Nhắc note (`pre`/`due`/`nag`) mà note có cửa sổ đang hiện (`ctx.windows.notes.get(id)` sống, visible, không minimize): `actor.goToNote(id)` → nếu ok: play `point` loop, `ctx.pet.flashNote(id, …)` (nháy suốt lúc diễn, tắt khi xong), **không** giơ tờ note, bong bóng + nút như cũ; phát `bus.emit('pet:pointNote', {noteId, on})`. Không ok/không hiện → như Đợt 1 (`goToCorner` + `hold_note`).
+- Trước khi diễn mức ≥ 60: `ctx.pet.capture && ctx.pet.capture.isOpen() && ctx.pet.capture.suspend()` (nháp được giữ).
+- Lỗi tờ note sát mép phải: phần này B sửa trong `goToCorner`; S chỉ đảm bảo gọi đúng.
+- Câu mặc định cho ghi nhanh (`captureSaved`, `captureSavedTime`, `captureBusy`, `captureFail`) thêm vào `lines.js` để W dùng: `lines.pick(key, vars)` (giữ API cũ của lines.js).

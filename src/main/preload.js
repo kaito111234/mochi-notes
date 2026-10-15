@@ -94,7 +94,9 @@ api.notes2 = {
 api.pet = {
   onCmd: cb => on('pet:cmd', cb),                                  // cb(cmd) — xem docs/rooms/core/ARCH.md
   send: (type, data) => ipcRenderer.send('pet:msg', String(type), data === undefined ? {} : data),
-  ignore: v => ipcRenderer.send('pet:ignore', !!v)                 // true = click xuyên qua
+  ignore: v => ipcRenderer.send('pet:ignore', !!v),                // true = click xuyên qua
+  getSettings: () => inv('pet:getSettings'),                      // (cửa sổ cài đặt bé) -> pet.settings
+  setSettings: patch => inv('pet:setSettings', patch || {})        // -> pet.settings mới
 };
 // ===== HẾT PHÒNG core =====
 // ===== BẮT ĐẦU PHÒNG game (kênh 'game:*') =====
