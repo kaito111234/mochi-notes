@@ -47,7 +47,7 @@ Mọi công cụ nhận `--rig <rig.json>` (mặc định `art/rig/mochi/rig.jso
 
 ## Thêm mới
 - **Action**: tạo file trong `actions/`, chạy `build.js --only <tên>`, xem bằng `sheet.js --contact <tên>`. Chân phải giữ ở anchor (đường đỏ y=392 trong lưới).
-- **Mặt**: thêm khoá vào `faces` của rig.json (phòng điều hành), vẽ `parts/face/<khoá>.svg` (+ `.over.svg`), dùng `"face":"<khoá>"`; `faces.js` dựng ảnh bán thân 256×256 cho 18 khoá đầu (cắt canvas [110,64,180,180]).
+- **Mặt**: thêm khoá vào `faces` của rig.json (phòng điều hành), vẽ `parts/face/<khoá>.svg` (+ `.over.svg`), dùng `"face":"<khoá>"`; `faces.js` dựng ảnh bán thân 256×256 cho 18 khoá đầu (cắt canvas [92,60,216,216]).
 - **Đạo cụ / hiệu ứng**: đặt `parts/props/<id>.svg` hoặc `parts/fx/<id>.svg` (viewBox 400×400, vẽ ở toạ độ tư thế gốc nếu `bone` là xương, hoặc tuỳ ý nếu `none/canvas`), rồi `show` trong khung. Mỗi `id` trong SVG nên có tiền tố tên file.
 - Thử khi chưa có hình thật: tạo bộ phận giả (hình chữ nhật đúng toạ độ RIG-SPEC) trong thư mục tạm và trỏ bằng `--parts`.
 

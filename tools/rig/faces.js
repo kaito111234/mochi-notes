@@ -6,7 +6,7 @@ const path = require('path');
 const { loadRig } = require('./lib/rig');
 const { ROOT, parseArgs, resolveFromRoot, renderJobs } = require('./lib/util');
 
-const CROP = [110, 64, 180, 180];
+const CROP = [92, 60, 216, 216]; // từ chóp ahoge tới ngực, mặt ~70% chiều cao
 
 function faceJobs(R, outDir) {
   const jobs = [], missing = [];
