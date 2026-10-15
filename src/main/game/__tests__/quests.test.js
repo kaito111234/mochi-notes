@@ -123,7 +123,7 @@ test('listView: dạng hiển thị', () => {
   quests.checkAchievements(b, THU);
   const v = quests.listView(b, THU);
   assert.strictEqual(v.daily.length, 3);
-  assert.deepStrictEqual(v.daily[2], { id: 'daily.pat1', name: 'Xoa đầu bé', progress: 1, goal: 1, claimed: false, reward: { candy: 30, exp: 20 } });
+  assert.deepStrictEqual(v.daily[2], { id: 'daily.pat1', name: 'Xoa đầu Mochi', progress: 1, goal: 1, claimed: false, reward: { candy: 30, exp: 20 } });
   assert.strictEqual(v.weekly[0].goal, 15);
   assert.strictEqual(v.achievements.length, quests.ACHIEVEMENTS.length);
   assert.ok(Object.keys(v.achievements[0]).sort().join() === 'at,desc,icon,id,name,reward,unlocked');

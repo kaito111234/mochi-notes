@@ -142,7 +142,7 @@ function createGame(ctx, opts) {
       if (!enabled() || !validId(p.noteId)) return;
       const t = now();
       const note = ctx.findNote ? ctx.findNote(p.noteId) : null;
-      const r = economy.onDone(box, { noteId: p.noteId, onTime: p.onTime, note, now: t });
+      const r = economy.onDone(box, { noteId: p.noteId, reminderId: p.reminderId, onTime: p.onTime, note, now: t });
       if (r) quests.progress(box, 'done', 1, t);
       settle([r]);
     },
@@ -320,6 +320,7 @@ function createGame(ctx, opts) {
       if (!economy.spend(box, food.price)) return fail('Chưa đủ xu');
       const r = stats.feed(box, food, t);
       const reward = economy.firstUse(box, 'feed', t);
+      emit('game:fed', { foodId: food.id, name: food.name });
       const line = speak('feed', food.name, `Ngon quá, cảm ơn cậu đã cho tớ ${food.name}!`, 'happy');
       settle([reward]);
       return { ok: true, factor: r.factor, line: line.text, view: view() };
@@ -353,7 +354,7 @@ function createGame(ctx, opts) {
       try { return channels[ch](...args); } catch (e) {
         logErr(ch, e);
         return ch === 'game:pull' || ch === 'game:feed' || ch === 'game:exchange' || ch === 'game:claim'
-          ? { ok: false, reason: 'Có lỗi nhỏ, cậu thử lại nhé', results: [], view: view() } : view();
+          ? { ok: false, reason: 'Có lỗi nhỏ, bạn thử lại nhé', results: [], view: view() } : view();
       }
     };
   }
@@ -391,7 +392,8 @@ function init(ctx) {
   ctx.game = {
     open: tab => { try { winMod().open(ctx, typeof tab === 'string' ? tab : ''); } catch (e) { console.error('[game] mở cửa sổ:', e); } },
     view: () => game.view(),
-    enabled: () => game.enabled()
+    enabled: () => game.enabled(),
+    setEnabled: on => game.actions.setEnabled(!!on)
   };
   try {
     const { ipcMain } = require('electron');

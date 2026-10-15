@@ -23,7 +23,7 @@ function weekKey(ms) {
 const DAILY = Object.freeze([
   { id: 'daily.done3', kind: 'done', name: 'Xong 3 note', goal: 3, reward: { candy: 30, exp: 20 } },
   { id: 'daily.tidy1', kind: 'tidy', name: 'Dọn 1 note hết hạn', goal: 1, reward: { candy: 30, exp: 20 } },
-  { id: 'daily.pat1', kind: 'pat', name: 'Xoa đầu bé', goal: 1, reward: { candy: 30, exp: 20 } }
+  { id: 'daily.pat1', kind: 'pat', name: 'Xoa đầu Mochi', goal: 1, reward: { candy: 30, exp: 20 } }
 ]);
 const WEEKLY = Object.freeze([
   { id: 'weekly.done15', kind: 'done', name: 'Xong 15 note trong tuần', goal: 15, reward: { candy: 150, exp: 80 } }
@@ -109,8 +109,8 @@ const ACHIEVEMENTS = [
   { id: 'streak_30', name: 'Tháng bền bỉ', desc: 'Giữ chuỗi 30 ngày', icon: 'fire', reward: 400, test: b => streak(b) >= 30 },
   { id: 'pull_10', name: 'Thích quay quà', desc: 'Quay gacha 10 lượt', icon: 'gift', reward: 40, test: b => pulls(b) >= 10 },
   { id: 'legend', name: 'Ánh sao huyền thoại', desc: 'Sở hữu một món Huyền thoại', icon: 'sparkle', reward: 200, test: (b, cat) => hasLegend(b, cat) },
-  { id: 'feed_10', name: 'Bé no bụng', desc: 'Cho bé ăn 10 lần', icon: 'cake', reward: 40, test: b => c(b, 'feeds') >= 10 },
-  { id: 'pat_50', name: 'Bàn tay ấm', desc: 'Xoa đầu bé 50 lần', icon: 'heart', reward: 60, test: b => c(b, 'pats') >= 50 },
+  { id: 'feed_10', name: 'Mochi no bụng', desc: 'Cho Mochi ăn 10 lần', icon: 'cake', reward: 40, test: b => c(b, 'feeds') >= 10 },
+  { id: 'pat_50', name: 'Bàn tay ấm', desc: 'Xoa đầu Mochi 50 lần', icon: 'heart', reward: 60, test: b => c(b, 'pats') >= 50 },
   { id: 'worn_5', name: 'Thời trang đủ bộ', desc: 'Mặc đủ 5 khe cùng lúc', icon: 'shirt', reward: 60, test: b => wornSlots(b) >= 5 },
   { id: 'collect_20', name: 'Tủ đồ đầy ắp', desc: 'Gom 20 món đồ', icon: 'paw', reward: 100, test: b => distinctItems(b) >= 20 },
   { id: 'tidy_10', name: 'Mèo dọn dẹp', desc: 'Dọn 10 note', icon: 'cat', reward: 40, test: b => c(b, 'trashed') >= 10 },
