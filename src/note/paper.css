@@ -112,3 +112,9 @@ body.locked .paper-layer [data-pos="bl"], body.locked .paper-layer [data-pos="br
 /* nút thanh trên nổi rõ khi đè lên trang trí */
 .has-paper .topbar .ib:hover { background: linear-gradient(rgba(var(--fg-rgb), .12), rgba(var(--fg-rgb), .12)), rgb(var(--head-rgb)); }
 .has-paper .topbar .ib[aria-expanded="true"] { background: linear-gradient(rgba(var(--fg-rgb), .2), rgba(var(--fg-rgb), .2)), rgb(var(--head-rgb)); }
+
+/* thanh trên luôn nằm trên trang trí; trang trí 'tr' hạ xuống dưới hàng nút (--tb-r = chiều cao thanh trên) để không che ×, …, đếm checklist */
+.has-paper .topbar > :not(.paper-head) { position: relative; z-index: 2; }
+.has-paper:not(.glass) .topbar .ib:is(:hover, :focus-visible) { opacity: 1; }
+.has-paper { --tb-r: calc(var(--topbar-h, 32px) - 2px); }
+.ppthumb .ppt-in.has-paper { --tb-r: 0px; }

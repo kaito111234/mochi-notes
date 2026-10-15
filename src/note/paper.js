@@ -201,7 +201,7 @@
       case 'bottom': s.left = 'calc(50% + ' + dx + 'px)'; s.bottom = dy + 'px'; tf = 'translateX(-50%) '; break;
       case 'left': s.left = dx + 'px'; s.top = 'calc(50% + ' + dy + 'px)'; tf = 'translateY(-50%) '; break;
       case 'right': s.right = dx + 'px'; s.top = 'calc(50% + ' + dy + 'px)'; tf = 'translateY(-50%) '; break;
-      default: s.right = dx + 'px'; s.top = dy + 'px'; // tr
+      default: s.right = dx + 'px'; s.top = 'calc(' + dy + 'px + var(--tb-r, 0px))'; // tr: hạ xuống dưới hàng nút thanh trên
     }
     if (w && el.tagName === 'IMG') s.width = w + 'px';
     if (rot) tf += 'rotate(' + r1(rot) + 'deg)';

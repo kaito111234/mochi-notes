@@ -657,7 +657,12 @@
     try {
       if (b.dataset.a === 'edit') { showForm(rid); return; }
       if (b.dataset.a === 'done') r = await N2.doneItem(id, rid);
-      else if (b.dataset.a === 'snooze') { r = await N2.snoozeItem(id, rid, 10); toast('Hoãn 10 phút', 1000); }
+      else if (b.dataset.a === 'snooze') {
+        // snoozeItem đặt due = bây giờ + phút; nhắc chưa tới giờ thì hoãn tính từ giờ hẹn (không làm nhắc sớm hơn)
+        const it = (note.reminders || []).find(x => x && x.id === rid);
+        const ahead = it && it.due > Date.now() ? Math.ceil((it.due - Date.now()) / 60000) : 0;
+        r = ahead + 10 > 7 * 24 * 60 && it ? await N2.setReminderItem(id, rid, { due: it.due + 600000, lead: it.lead, repeat: it.repeat, title: it.title }) : await N2.snoozeItem(id, rid, ahead + 10); toast('Hoãn 10 phút', 1000);
+      }
       else if (b.dataset.a === 'del') r = await N2.removeReminderItem(id, rid);
     } catch (_) {}
     if (r && r.id) applyNote(r, { noHtml: true });
