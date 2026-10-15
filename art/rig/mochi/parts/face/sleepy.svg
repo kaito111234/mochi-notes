@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<defs><linearGradient id="sleepy-iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6B55"/><stop offset=".5" stop-color="#4FA37A"/><stop offset="1" stop-color="#A6E3BE"/></linearGradient></defs>
+<g id="blush"><ellipse cx="158" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity="0.65"/><ellipse cx="242" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity="0.65"/></g>
+<g id="eye_l">
+<clipPath id="sleepy-clip_l"><path d="M186 177C182 168 167 166.5 160 180C160 194 165 201 173 201C182 201 186 192 186 177Z"/></clipPath>
+<clipPath id="sleepy-lid_l"><polygon points="150 188.38 196 186.62 196 215 150 215"/></clipPath>
+<g clip-path="url(#sleepy-clip_l)"><g clip-path="url(#sleepy-lid_l)">
+<path d="M186 177C182 168 167 166.5 160 180C160 194 165 201 173 201C182 201 186 192 186 177Z" fill="#E9F5EE"/>
+<g transform="translate(0 0)">
+<ellipse cx="173" cy="185" rx="14" ry="18" fill="url(#sleepy-iris)"/>
+<ellipse cx="173" cy="187" rx="4" ry="6" fill="#2B3A4F" opacity=".85"/>
+</g></g></g>
+<path d="M160 188Q173 187 186 187" fill="none" stroke="#1F2A44" stroke-width="4.2" stroke-linecap="round"/>
+<path d="M160 188C157 187 155 186 154 183.5" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M168 201Q163 200 160 195" fill="none" stroke="#1F2A44" stroke-width="1.4" stroke-linecap="round"/>
+</g>
+<g id="eye_r">
+<clipPath id="sleepy-clip_r"><path d="M214 177C218 168 233 166.5 240 180C240 194 235 201 227 201C218 201 214 192 214 177Z"/></clipPath>
+<clipPath id="sleepy-lid_r"><polygon points="250 188.38 204 186.62 204 215 250 215"/></clipPath>
+<g clip-path="url(#sleepy-clip_r)"><g clip-path="url(#sleepy-lid_r)">
+<path d="M214 177C218 168 233 166.5 240 180C240 194 235 201 227 201C218 201 214 192 214 177Z" fill="#E9F5EE"/>
+<g transform="translate(0 0)">
+<ellipse cx="227" cy="185" rx="14" ry="18" fill="url(#sleepy-iris)"/>
+<ellipse cx="227" cy="187" rx="4" ry="6" fill="#2B3A4F" opacity=".85"/>
+</g></g></g>
+<path d="M240 188Q227 187 214 187" fill="none" stroke="#1F2A44" stroke-width="4.2" stroke-linecap="round"/>
+<path d="M240 188C243 187 245 186 246 183.5" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M232 201Q237 200 240 195" fill="none" stroke="#1F2A44" stroke-width="1.4" stroke-linecap="round"/>
+</g>
+<g id="mouth"><path d="M196.5 209Q200 211.5 203.5 209" fill="none" stroke="#1F2A44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

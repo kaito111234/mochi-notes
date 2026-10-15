@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<defs><linearGradient id="normal-iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6B55"/><stop offset=".5" stop-color="#4FA37A"/><stop offset="1" stop-color="#A6E3BE"/></linearGradient></defs>
+<g id="blush"><ellipse cx="158" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity=".7"/><ellipse cx="242" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity=".7"/></g>
+<g id="eye_l">
+<clipPath id="normal-clip_l"><path d="M186 177C182 168 167 166.5 160 180C160 194 165 201 173 201C182 201 186 192 186 177Z"/></clipPath>
+<path d="M186 177C182 168 167 166.5 160 180C160 194 165 201 173 201C182 201 186 192 186 177Z" fill="#E9F5EE"/>
+<g clip-path="url(#normal-clip_l)">
+<ellipse cx="173" cy="185" rx="14" ry="18" fill="url(#normal-iris)"/>
+<ellipse cx="173" cy="187" rx="4" ry="6" fill="#2B3A4F" opacity=".85"/>
+</g>
+<circle cx="168.5" cy="177.5" r="3.6" fill="#FFFFFF"/><circle cx="177.5" cy="194" r="1.8" fill="#FFFFFF"/>
+<path d="M186 177C182 168 167 166.5 160 180" fill="none" stroke="#1F2A44" stroke-width="4" stroke-linecap="round"/>
+<path d="M160 180C157 179 155 178 154 175.500" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M168 201Q163 200 160 195" fill="none" stroke="#1F2A44" stroke-width="1.4" stroke-linecap="round"/>
+</g>
+<g id="eye_r">
+<clipPath id="normal-clip_r"><path d="M214 177C218 168 233 166.5 240 180C240 194 235 201 227 201C218 201 214 192 214 177Z"/></clipPath>
+<path d="M214 177C218 168 233 166.5 240 180C240 194 235 201 227 201C218 201 214 192 214 177Z" fill="#E9F5EE"/>
+<g clip-path="url(#normal-clip_r)">
+<ellipse cx="227" cy="185" rx="14" ry="18" fill="url(#normal-iris)"/>
+<ellipse cx="227" cy="187" rx="4" ry="6" fill="#2B3A4F" opacity=".85"/>
+</g>
+<circle cx="222.5" cy="177.5" r="3.6" fill="#FFFFFF"/><circle cx="231.5" cy="194" r="1.8" fill="#FFFFFF"/>
+<path d="M214 177C218 168 233 166.5 240 180" fill="none" stroke="#1F2A44" stroke-width="4" stroke-linecap="round"/>
+<path d="M240 180C243 179 245 178 246 175.500" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M232 201Q237 200 240 195" fill="none" stroke="#1F2A44" stroke-width="1.4" stroke-linecap="round"/>
+</g>
+<g id="mouth"><path d="M194 208.5Q200 212.5 206 208.5" fill="none" stroke="#1F2A44" stroke-width="1.8" stroke-linecap="round"/></g>
+</svg>
