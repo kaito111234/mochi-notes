@@ -1,3 +1,13 @@
+## list — lượt 3 (main mới, notes Đợt 3 đổi giao diện danh sách)
+- Lệnh: `bash test/e2e/run.sh test/e2e/list.test.js`. Kết quả: 15 test, 11 pass, 4 fail (3c, 3e, 3f, 3g đều là lỗi cũ). Chạy 2 lần: lần 1 (trước sửa) còn thêm list-2 và 3d đỏ do bấm/chờ không ổn định.
+- list-2 (ĐỎ MỚI -> sửa test, kèm lỗi nhẹ N-list-4): thẻ mới có hàng nút `.actions` (Chi tiết, Cất đi, Xoá) hiện khi rê chuột, nằm tuyệt đối góc phải trên. Playwright bấm GIỮA `.card-body` -> rê chuột làm hiện nút, nút "Chi tiết" nằm đúng giữa thẻ (cửa sổ 420px) nên chặn click (`<button data-act="expand"> intercepts pointer events`, ảnh test/e2e/out/list-2-LOI.png). Đổi test: bấm vào `.card-title` (nơi người dùng thật bấm), kỳ vọng giữ nguyên (mở lại về đúng vị trí cũ 120). Thêm helper `settle()` chờ thẻ đứng yên (3d cũng từng đỏ "element is not stable" khi tải nặng, nay xanh).
+- N-list-4 (Nhẹ, notes, src/list/list.css:127-130 + list.js:~297 `acts.append(more, toggle, del)`): nút hover phủ giữa thẻ khi cửa sổ hẹp; bấm vào giữa thẻ mở "Chi tiết" thay vì mở note. Gợi ý: đặt nút hover ở hàng riêng/hạn chế bề rộng, hoặc bấm vào thẻ ở vùng giữa vẫn mở note.
+- Ca đỏ cũ, nguyên nhân VẪN NHƯ CŨ (không sửa cho xanh):
+  - 3c, 3e = BUG-035 (N-list-1): "mất mẫu giấy sau khi khôi phục: null". src/main/paper/index.js:106-110 (`note:deleted` xoá `noteMeta[id]`) và :37 (dọn meta mồ côi khi khởi động) vẫn y như cũ (dòng 106-113 -> 106-110, ~27 -> 37).
+  - 3g = BUG-036 (N-list-2): footer `.bottombar` chặn click "Hoàn tác"; src/list/list.css:337-340 (`.toast {... pointer-events:none}`), :377 `.toast .toast-act` vẫn thiếu `pointer-events:auto`.
+  - 3f = BUG-037 (N-list-3): hộp xác nhận ở cửa sổ note vẫn "Xoá note này? Note sẽ bị xoá hẳn, không khôi phục được." (src/note/note.html:110).
+- Kiểm theo bảng notes (ca MỚI list-l3-1, XANH 2/2): BUG-027 ĐÃ SỬA THẬT: chip "Đang hiện 3 / Đã cất 0 -> Đã cất 1", nút thẻ "Cất đi" -> "Hiện lên" sau khi cất, không còn "Đang dán/Đang cất". BUG-028 (phần giao diện danh sách) ĐÃ SỬA: toàn văn + tooltip của danh sách không có "tớ/cậu" (assert regex). Ảnh: docs/rooms/qa/img/l3-list-dang-hien-da-cat.png.
+
 ## list — lượt 2 (main @70ebdd3, sau gộp paper Đợt 2 + notes Đợt 2B)
 - Lệnh: `bash test/e2e/run.sh test/e2e/list.test.js` (~6 phút trên máy tải nặng). Kết quả: 14 test, 10 pass, 4 fail (3c, 3e, 3f, 3g), 0 skip. Chạy lại 2 lần, cùng kết quả.
 - Lượt 1: list-3c đỏ vì "không có thùng rác". Lượt 2: giao diện đã đổi có chủ ý (docs/rooms/notes.md Đợt 2B: xoá = xoá mềm 30 ngày, chip "Thùng rác (N)", Khôi phục / Xoá hẳn / Dọn sạch xác nhận 2 bước, toast "Hoàn tác"). Ca 3c cũ chỉ là grep mã nguồn (xanh giả sau khi có thùng) nên đã VIẾT LẠI thành ca hành vi thật.

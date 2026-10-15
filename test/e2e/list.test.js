@@ -72,7 +72,9 @@ test('list-2: cất bằng nút X, mở từ danh sách -> đúng vị trí cũ'
     const bBefore = n.bounds;
     const lp = await app.openList();
     await waitFor(async () => (await titles(lp)).includes('Họp với khách'), { msg: 'vẫn có trong danh sách' });
-    await lp.click('.card[data-id="n_hop"] .card-body');
+    // Đợt 3: nút "Chi tiết" (hiện khi rê chuột) phủ giữa thẻ -> bấm vào TIÊU ĐỀ như người dùng (xem N-list-4)
+    await settle(lp, '.card[data-id="n_hop"]');
+    await lp.click('.card[data-id="n_hop"] .card-title');
     await app.page('note.html?id=n_hop');
     await waitFor(() => noteWins(app) === 3);
     const b = await app.main(c => { const w = c.windows.notes.get('n_hop'); return w.getBounds(); });
@@ -127,8 +129,17 @@ const seedTrash = () => {
 };
 const trashTitles = p => p.$$eval('#cards .trash-card .card-title', els => els.map(e => e.textContent));
 const trashOf = app => app.main(c => JSON.parse(JSON.stringify(c.store.section('trash').items)));
+// chờ khung của phần tử đứng yên (2 lần đo liên tiếp trùng nhau) — máy tải nặng thì chuyển động kéo dài
+async function settle(lp, sel) {
+  let prev = '';
+  await waitFor(async () => {
+    const b = await lp.evaluate(s => { const e = document.querySelector(s); if (!e) return ''; const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(','); }, sel);
+    const ok = b && b === prev; prev = b; if (!ok) await sleep(250); return ok;
+  }, { timeout: 20000, interval: 150, msg: 'danh sách đứng yên' });
+}
 async function deleteFromList(lp, id) {
   await sleep(700);   // chờ danh sách ngừng chuyển động sau lần xoá trước
+  await settle(lp, '.card[data-id="' + id + '"]');
   await lp.hover('.card[data-id="' + id + '"]');
   await lp.click('.card[data-id="' + id + '"] [data-act="ask"]');
   await lp.click('.card[data-id="' + id + '"] [data-act="delete"]');
@@ -308,5 +319,26 @@ test('list-6: Ctrl+Alt+L mở danh sách, mở lần 2 chỉ 1 cửa sổ', { ti
     assert.strictEqual(app.pages('list.html').length, 1);
     const wins = await app.main((c, e) => e.BrowserWindow.getAllWindows().filter(w => w.webContents.getURL().includes('list.html')).length);
     assert.strictEqual(wins, 1);
+  });
+});
+
+// Đợt 3 (BUG-027/028): chữ Đang hiện/Đã cất, Cất đi/Hiện lên; giao diện danh sách gọi "bạn", không xưng tớ/cậu
+test('list-l3-1: chữ Đang hiện/Đã cất + Cất đi/Hiện lên; giao diện không xưng tớ/cậu', { timeout: 120000 }, async () => {
+  await withApp('list-l3-1', { seed: seed(), waitNotes: 3 }, async app => {
+    const lp = await app.openList();
+    await waitFor(async () => (await titles(lp)).length === 3);
+    const chips = await lp.$$eval('#chips .chip', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    assert.ok(chips.some(c => /^Đang hiện 3/.test(c)) && chips.some(c => /^Đã cất 0/.test(c)), 'chip: ' + chips);
+    assert.ok(!chips.some(c => /Đang dán|Đang cất/.test(c)), 'còn chữ cũ: ' + chips);
+    const lbl = async id => lp.$eval('.card[data-id="' + id + '"] [data-act="hide"], .card[data-id="' + id + '"] [data-act="show"]', e => e.textContent.trim());
+    assert.strictEqual(await lbl('n_cho'), 'Cất đi');
+    await lp.hover('.card[data-id="n_cho"]');
+    await lp.click('.card[data-id="n_cho"] [data-act="hide"]');
+    await waitFor(async () => (await app.notes()).find(n => n.id === 'n_cho').visible === false, { msg: 'cất note' });
+    await waitFor(async () => /Đã cất 1/.test(await lp.textContent('#chips')), { msg: 'chip Đã cất 1' });
+    await waitFor(async () => (await lbl('n_cho')) === 'Hiện lên', { msg: 'nút Hiện lên' });
+    await app.shot('list-l3-1');
+    const txt = await lp.evaluate(() => document.body.innerText + ' ' + [...document.querySelectorAll('[title]')].map(e => e.title).join(' '));
+    assert.ok(!/\b(tớ|cậu)\b/i.test(txt), 'giao diện danh sách còn xưng tớ/cậu: ' + (txt.match(/.{0,20}\b(tớ|cậu)\b.{0,20}/i) || [''])[0]);
   });
 });

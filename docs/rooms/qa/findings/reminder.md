@@ -1,3 +1,17 @@
+## reminder — lượt 3 (main sau Đợt 3, nhánh room/qa)
+- Lệnh: `bash test/e2e/run.sh test/e2e/reminder.test.js` (~4 phút). Kết quả: 19 test, **17 pass, 2 fail** (ca 7 và ca 7c mới). Các ca khác (1, 1b, 2a-c, 3, 4, 5, 6, 7b, 8) xanh; BUG-012 và BUG-025 trên main: **ĐÃ SỬA** (ca 1b, ca 8 xanh).
+- Ca 7 đỏ 4/4 lần (full log + 2 lần chạy lại + 1 lần chạy chẩn đoán). Ca 7c (mới, tất định hơn) đỏ 1/1.
+
+### N-reminder-2 (ca 7): Xong nhắc 1 làm MẤT nhắc 2 của cùng note đang xếp hàng trên sân khấu
+- Mức: **Nặng** (nhắc không hiện; chỉ còn thông báo "nhắc dai" sau khi quá hạn) — Phòng: core (`src/main/pet/mascotWindow.js:27` `dropNote`, `:13` `sameNote`, `:45-46` nghe `reminder:done`/`reminder:snoozed`)
+- Nguyên nhân (đã dò bằng test chẩn đoán): khi nhắc 1 đang lên sân khấu mà nhắc 2 của CÙNG note tới hạn, nhắc 2 vào hàng đợi (`fired=true`). Bấm Xong nhắc 1 -> `completeNote` phát `reminder:done {noteId, reminderId}` -> `noteResolved` gọi `dropNote(noteId)` -> `stage.cancelWhere(sameNote)` huỷ MỌI mục sân khấu của note, bỏ qua `reminderId`. Hàng đợi về 0, nhắc 2 `fired=true, done=false` mãi mãi, bé không bao giờ nói. Không phải do bé bận nói, không phải do đổi tên kind/payload. Không đổi ở Đợt 3: lỗi cũ từ Đợt 1 (`fd1e8c4`) nhưng lộ ra vì vòng nhắc mới ngủ tới mốc kế (trần 15 s) làm hai nhắc hay chín cùng một nhịp tick; lượt 2 ca 7 xanh do hai nhắc cách nhau đủ xa.
+- Cũng liên quan: `src/main/pet/stage.js:271-ish` `validItem` chỉ xét `n.reminder` (nhắc chính) chứ không xét `item.payload.reminderId`; và `stage.js:279/291` `completeNote(p.noteId)` / `snoozeNote(p.noteId, 10)` không truyền `reminderId` (xong/hoãn nhầm nhắc chính thay vì nhắc đang hiện). Đề xuất: `dropNote` nhận `reminderId` (chỉ huỷ mục cùng reminderId; không có reminderId mới huỷ cả note), và truyền `p.reminderId` vào `completeNote/snoozeNote`.
+- Tái hiện: `bash test/e2e/run.sh test/e2e/reminder.test.js` (ca 7 và 7c). Ca 7c: 2 nhắc cùng note, due +2 s / +4 s, `wakeReminderLoop()`, chờ nhắc 2 `fired`, bấm Xong nhắc 1 -> chờ nhắc 2 lên sân khấu: hết giờ.
+- Kỳ vọng: nhắc 2 lên sân khấu ngay sau nhắc 1. Thực tế: `stage.current()=null, size()=0`, nhắc 2 `fired=true done=false`, chip note "quá hạn N giây".
+- Ảnh: `docs/rooms/qa/img/l3-reminder-2gio-sat-LOI.png`.
+
+---
+
 ## reminder — lượt 2 (main @20ec6c9, notes Đợt 2)
 - Lệnh: `bash test/e2e/run.sh test/e2e/reminder.test.js` (~4 phút). Kết quả: 17 test (kể cả 6 subtest ca 1): **13 pass, 4 fail** (subtest "thứ 6 tuần sau 10h30 họp", "nửa tiếng nữa uống thuốc", ca cha 1, ca 1b) + ca 8 (BUG-025) đỏ chạy riêng -> tổng thực tế 5 đỏ (3 lỗi thật: N-reminder-1, BUG-009, BUG-012, BUG-025).
 - Ca "họp 3h chiều nay", "gọi khách 2 phút nữa", "mai 9h", "8h tối nay", Xong/Hoãn/Mở note, note ẩn vẫn nhắc, nhắc lặp mỗi sáng, thông báo dự phòng khi bé tắt, hai nhắc xếp hàng: ĐỀU XANH.

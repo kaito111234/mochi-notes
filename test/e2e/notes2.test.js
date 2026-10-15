@@ -421,7 +421,7 @@ test('notes2-6: không dấu/viết tắt gõ trong note thật -> chip đúng',
     // ghi nhanh không dấu trong danh sách
     const lp = await app.openList();
     await lp.fill('#qcIn', 'hop 9h sang mai, 2h chieu goi khach');
-    await waitFor(async () => /Bé hiểu/.test(await lp.textContent('#qcPrev')), { msg: 'xem trước không dấu' });
+    await waitFor(async () => /Bé hiểu/.test(await lp.textContent('#qcPrev')), { timeout: 40000, msg: 'xem trước không dấu' });
     const prev = await lp.textContent('#qcPrev');
     assert.ok(/Bé hiểu: 2 việc/.test(prev) && /09:00/.test(prev) && /14:00/.test(prev), prev);
   });

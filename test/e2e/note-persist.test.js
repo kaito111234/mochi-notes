@@ -220,7 +220,7 @@ test('4. lần chạy đầu: note vàng hướng dẫn có nội dung (cả tro
     let firstFilledAt = null;
     while (Date.now() - t0 < 5000) {
       const t = await edText(pg);
-      if (t.includes('Chào bạn')) { firstFilledAt = Date.now() - t0; break; }
+      if (t.includes('Chào cậu')  /* Đợt 3: lời bé xưng tớ/cậu (BUG-028), đổi có chủ ý */) { firstFilledAt = Date.now() - t0; break; }
       await sleep(100);
     }
     await app.shot('np-4-note-mau');

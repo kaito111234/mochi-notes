@@ -262,6 +262,32 @@ test('7. note "họp 1 phút nữa / gọi khách 3 phút nữa": đủ 2 nhắc
   });
 });
 
+test('7c. hai nhắc cùng note chín sát nhau (nhắc 2 tới khi nhắc 1 còn trên sân khấu): Xong nhắc 1 không làm mất nhắc 2', { timeout: 120000 }, async () => {
+  // Tái hiện tất định cho ca 7: mascotWindow.dropNote huỷ mọi mục sân khấu của note (bỏ qua reminderId) khi reminder:done.
+  await run('l3-reminder-2gio-sat', 6, async app => {
+    const { id, page } = await H.newNoteViaShortcut(app);
+    await H.typeInto(page, 'họp 1 phút nữa');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('gọi khách 3 phút nữa');
+    await H.sleep(1200);
+    const rs = await remsOf(app, id);
+    assert.strictEqual(rs.length, 2, 'cần 2 nhắc');
+    const [ra, rb] = rs.map(r => r.id);
+    await app.main((c, e, a) => {
+      const x = c.findNote(a.id); const now = Date.now();
+      x.reminders.find(r => r.id === a.ra).due = now + 2000; x.reminders.find(r => r.id === a.rb).due = now + 4000;
+      for (const r of x.reminders) { r.preFired = true; r.fired = false; r.done = false; }
+      c.store.save(); c.notes.wakeReminderLoop(); return true;
+    }, { id, ra, rb });
+    await waitFor(async () => { const s = await H.stageNow(app); return s && s.kind === 'due' && s.payload.reminderId === ra; }, { timeout: 20000, msg: 'nhắc 1 lên sân khấu' });
+    await waitFor(async () => (await remsOf(app, id)).find(r => r.id === rb).fired === true, { timeout: 20000, msg: 'nhắc 2 đã fired (xếp hàng)' });
+    await H.sleep(1000);
+    await H.clickPetButton(app, 'done');
+    await waitFor(async () => (await remsOf(app, id)).find(r => r.id === ra).done === true, { timeout: 8000, msg: 'nhắc 1 done' });
+    await waitFor(async () => { const s = await H.stageNow(app); return s && s.payload && s.payload.reminderId === rb; }, { timeout: 20000, msg: 'nhắc 2 lên sân khấu (bị mất khỏi hàng đợi?)' });
+  });
+});
+
 test('7b. note bị cất (visible=false) có 2 giờ: cả hai nhắc vẫn kêu đúng hạn', { timeout: 120000 }, async () => {
   await run('l2-reminder-2gio-an', 6, async app => {
     const { id, page } = await H.newNoteViaShortcut(app);

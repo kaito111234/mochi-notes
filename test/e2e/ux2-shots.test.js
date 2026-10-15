@@ -163,3 +163,49 @@ test('ux2-8: Cài đặt các nhóm', { timeout: 120000 }, async () => {
     console.log('cao cài đặt', h);
   });
 });
+
+// ---- Lượt 3 (sau Đợt 3): ảnh l3 ----
+const GSEED = (worn) => ({ version: 2, settings: {}, game: { stats: { candy: 300, exp: 120, energy: 80, mood: 70, affection: 10, streak: { count: 3, lastDay: '' } },
+  inventory: { items: { hat_cat_beanie: { count: 1, firstAt: now }, hat_beret: { count: 1, firstAt: now }, body_hoodie_cat: { count: 1, firstAt: now }, body_sweater: { count: 1, firstAt: now } }, shards: 3, worn: worn || {}, outfits: [], foodLog: [] } } });
+
+test('ux3-1: danh sách mới (xem trước, dải màu) + Cài đặt noteTransparent', { timeout: 150000 }, async () => {
+  const cols = ['yellow', 'green', 'blue', 'pink', 'purple', 'charcoal'];
+  const notes = cols.map((c, i) => mkNote('l' + i, '<div>Note số ' + i + ' họp khách 9h</div><div>Mua gạo, trứng</div><div>Gọi anh Nam</div>', { color: c, bounds: { x: 20 + i * 40, y: 20 + i * 30, width: 300, height: 220 } }));
+  await withApp('ux3-1', { seed: { notes, settings: QUIET }, waitNotes: 6 }, async app => {
+    const l = await app.openList(); await loaded(l);
+    await pshot(l, 'l3-01-list');
+    await l.click('#btnSettings').catch(() => {}); await sleep(700);
+    await l.evaluate(() => { const b = document.querySelector('[data-key="noteTransparent"]'); if (b) b.scrollIntoView(); });
+    await sleep(300); await pshot(l, 'l3-02-caidat-transparent');
+    await l.click('[data-key="noteTransparent"]').catch(() => {}); await sleep(3500);
+    const p = await app.noteWindow('l0').catch(() => null);
+    await app.shot('ux2' + TAG + '-l3-03-note-transparent');
+    if (p) await pshot(p, 'l3-03-note0-transparent');
+  });
+});
+
+test('ux3-2: Phòng — tab Album, điểm danh, túi đồ ăn', { timeout: 150000 }, async () => {
+  await withApp('ux3-2', { seed: Object.assign(GSEED(), { notes: [mkNote('a', '<div>x</div>')] }) , waitNotes: 1 }, async app => {
+    await app.main(c => { c.game.open(); return true; });
+    const r = await app.page('room.html'); await loaded(r);
+    const names = await r.$$eval('#tablist button', bs => bs.map(b => b.textContent.trim()));
+    console.log('tab phòng', JSON.stringify(names));
+    const btns = await r.$$('#tablist button');
+    for (let i = 0; i < btns.length; i++) { await btns[i].click(); await sleep(1100); await pshot(r, 'l3-10-phong-' + i); }
+    await r.emulateMedia({ colorScheme: 'dark' }); await sleep(400);
+    for (let i = 0; i < btns.length; i++) { await btns[i].click(); await sleep(900); await pshot(r, 'l3-11-phong-toi-' + i); }
+    assert.ok(btns.length >= 5);
+  });
+});
+
+test('ux3-3: bé với gói hình 37 action và đồ đang mặc', { timeout: 150000 }, async () => {
+  const seed = Object.assign(GSEED({ hat: 'hat_cat_beanie', body: 'body_hoodie_cat' }), { notes: [mkNote('n1', '<div>Gọi điện</div>')], settings: Object.assign({}, QUIET, { mascotEnabled: true, mascotIdle: true }) });
+  await withApp('ux3-3', { seed, waitNotes: 1 }, async app => {
+    await sleep(5000);
+    await app.shot('ux2' + TAG + '-l3-20-be-mac-do');
+    for (const a of ['happy', 'sleep', 'eat', 'hold_note']) {
+      await app.main((c, e, act) => { try { c.pet.actor.play(act, { loop: true }); } catch (x) {} return true; }, a).catch(() => {});
+      await sleep(1800); await app.shot('ux2' + TAG + '-l3-21-be-' + a);
+    }
+  });
+});

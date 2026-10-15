@@ -1,3 +1,12 @@
+## paper-game — lượt 3 (main sau Đợt 3)
+- Lệnh: `bash test/e2e/run.sh test/e2e/paper-game.test.js`. Kết quả: 13 test, **11 pass, 2 fail** (ca 1, ca 2 giữ đỏ có chủ ý).
+- Ca 5 từng đỏ vì có thêm tab Album (Đợt 3, có chủ ý, phím 6): đã cập nhật danh sách tab thành `Tủ đồ, Máy gacha, Cửa hàng, Nhiệm vụ, Thống kê, Album` -> XANH (gacha trừ 50 xu đúng, tính cả thưởng "lần đầu dùng gacha"; mặc/cởi kẹp tóc phát `game:outfit` đúng).
+- Ca 5b MỚI (xanh): điểm danh ô 1 = +20 xu, nút đổi "Mai quay lại nhé", `checkin.todayDone`; cửa hàng "Mua ×1" vào túi trừ đúng giá, "Cho ăn" từ túi giảm 1 và không trừ xu (chỉ cộng thưởng "lần đầu cho ăn" +20 nếu có). Ảnh test ở `test/e2e/out/l3-game-5b-*.png`.
+- Ca 1 (BUG-038): CÒN. File xuất JSON chỉ có khoá `app,kind,version,exportedAt,notes,alarms,noteMeta`, không có `paper`; nhập lại vào app sạch mẫu giấy = null.
+- Ca 2 (BUG-039): CÒN. Dữ liệu localStorage cũ `mochi.paper.meta.*` không được chuyển vào ngăn `paper`.
+
+---
+
 # QA lượt 2 — tích hợp paper↔main và game (Phòng của Mochi)
 
 File test: `test/e2e/paper-game.test.js` (12 test). Chạy: `bash test/e2e/run.sh test/e2e/paper-game.test.js`.

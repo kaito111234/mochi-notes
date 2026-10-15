@@ -171,6 +171,43 @@ test('đóng gói: bé nạp gói hình, Phòng của Mochi mở được', { sk
   await waitFor(() => room.evaluate(() => document.body.innerText.trim().length > 20), { msg: 'nội dung phòng' });
 });
 
+test('đóng gói: assets/wardrobe có item.json hợp lệ + SVG không rỗng (37 action/tủ đồ)', { skip: SKIP, timeout: 60000 }, async () => {
+  const r = await main((c, e, root, req) => {
+    const fs = req('fs'), path = req('path');
+    const dir = path.join(root, 'assets/wardrobe');
+    const out = []; let items = 0, svgs = 0;
+    for (const d of fs.readdirSync(dir)) {
+      const sub = path.join(dir, d);
+      if (!fs.statSync(sub).isDirectory()) continue;
+      items++;
+      try { const j = JSON.parse(fs.readFileSync(path.join(sub, 'item.json'), 'utf8')); if (j.id !== d) out.push('id lệch: ' + d + ' vs ' + j.id); if (!j.slot) out.push('thiếu slot: ' + d); }
+      catch (err) { out.push('item.json lỗi ' + d + ': ' + err.message); }
+      for (const f of fs.readdirSync(sub)) if (/\.svg$/.test(f)) { svgs++; const t = fs.readFileSync(path.join(sub, f), 'utf8'); if (!/<svg[\s>]/.test(t) || t.length < 80) out.push('svg rỗng/hỏng: ' + d + '/' + f); }
+    }
+    return { out, items, svgs };
+  }, APP);
+  assert.ok(r.items >= 10 && r.svgs > 50, `ít dữ liệu: ${r.items} món, ${r.svgs} svg`);
+  assert.deepStrictEqual(r.out, [], r.out.join('\n'));
+});
+
+test('đóng gói: lần lượt mở đủ 6 tab Phòng của Mochi (kể cả Album), không tab-error/404', { skip: SKIP, timeout: 120000 }, async () => {
+  await main(c => { c.game.open(); return true; });
+  const room = await waitFor(() => pages('room.html')[0], { msg: 'room.html' });
+  watch(room);
+  await waitFor(() => room.evaluate(() => document.querySelectorAll('#tablist > *').length >= 6), { msg: '>=6 tab' });
+  const before = problems.length;
+  const ids = await room.evaluate(() => [...document.querySelectorAll('#tablist > *')].map(b => b.dataset.tab));
+  assert.ok(ids.includes('album'), 'thiếu tab album: ' + ids.join(','));
+  for (const id of ids) {
+    await room.evaluate(i => document.querySelector('#tablist [data-tab="' + i + '"]').click(), id);
+    await sleep(500);
+    const st = await room.evaluate(i => { const p = document.getElementById('tab-' + i); return { shown: p && !p.hidden, err: !!(p && p.querySelector('.tab-error')), len: p ? p.innerText.trim().length : 0 }; }, id);
+    assert.ok(st.shown && !st.err && st.len > 5, `tab ${id}: ${JSON.stringify(st)}`);
+  }
+  await sleep(500);
+  assert.deepStrictEqual(problems.slice(before), [], 'tài nguyên lỗi khi mở tab');
+});
+
 test('đóng gói: kho thoại nạp được và chọn được câu', { skip: SKIP, timeout: 30000 }, async () => {
   const r = await main(c => ({ n: c.persona && c.persona.lines ? c.persona.lines.length : -1, line: c.persona && c.persona.pick ? c.persona.pick('click', {}) : null }));
   assert.ok(r.n > 50, 'kho thoại có ' + r.n + ' câu');

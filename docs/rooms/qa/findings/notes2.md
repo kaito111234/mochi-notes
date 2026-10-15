@@ -1,3 +1,7 @@
+## notes2 — lượt 3 (main mới)
+- Lệnh: `bash test/e2e/run.sh test/e2e/notes2.test.js`. Kết quả: 11 test, 11 pass, 0 fail. Chạy 2 lần (lần 1 trước, lần 2 sau sửa timeout), đều xanh.
+- notes2-6 (ĐỎ MỚI trong bộ đầy đủ -> LỖI KHUNG/TẢI, không phải lỗi thật): "Hết giờ chờ xem trước không dấu" = đợi `#qcPrev` "Bé hiểu: 2 việc" quá 10s lúc cả bộ E2E chạy nặng trên 2 CPU. Kiểm riêng: `understand('hop 9h sang mai, 2h chieu goi khach')` ra đúng 2 việc 09:00/14:00; list.js:586 vẫn "Bé hiểu"; không đổi hành vi từ Đợt 3. Xanh 2/2 khi chạy riêng. Chỉ nới `waitFor` xem trước lên 40s; kỳ vọng giữ nguyên. Nếu đỏ lại khi tải thấp thì mở lỗi.
+
 # QA lượt 2 — phòng notes Đợt 2/2B (test mới)
 
 File test: `test/e2e/notes2.test.js` (11 test). Chạy: `bash test/e2e/run.sh test/e2e/notes2.test.js`.

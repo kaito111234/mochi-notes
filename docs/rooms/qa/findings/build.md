@@ -1,3 +1,13 @@
+## Lượt 3 — kiểm lại đóng gói (main @8371afb, art nén + assets/wardrobe + 37 action)
+- Build: `npx electron-builder --win zip --x64 --config.directories.output=/home/claude/qa-dist` CHẠY ĐƯỢC, 2m10s (lượt 2: ~3 phút). Zip 114.275.728 B (~114 MB, lượt 2: 115 MB), win-unpacked 243 MB (lượt 2: 233), app.asar 14.447.930 B (14,4 MB; lượt 2: 14,7 MB) -> giảm rất ít vì tăng thêm wardrobe + mascot; thành phần bé: assets/pet nay 12,2 MB (trước 10,9 MB, thêm 37 action nhưng nén). Chủ yếu vẫn là runtime Electron.
+- app.asar: 1196 mục, 497 PNG. Gốc chỉ `/assets /src /package.json`. KHÔNG lọt test/docs/art/tools/scripts/__tests__/mock/node_modules, không có nguồn SVG rig (art/rig). `.md` thừa còn 2: `assets/fonts/LICENSES.md` (giữ), `assets/paper/deco/README.md` (thừa, nhỏ). `.txt` OFL các phông: giữ.
+- KB theo thư mục: assets/pet 12208, mascot 1516, src 1236 (main 520, note 180, game 180, shared 120), fonts 720, wardrobe 648, paper 308, game 296, dialogue 148. 10 file lớn nhất: dialogue/vi.json 144 KB, 8 ảnh mascot ~83-87 KB, icon.ico 86 KB. Không file lớn bất thường.
+- assets/wardrobe (648 KB, 10+ món x item.json + SVG phần rig): `grep` trong src/ KHÔNG thấy mã nào nạp đường dẫn này (tab Tủ đồ vẫn dùng icon assets/game + preview.js) -> hiện là hàng chờ chưa dùng, vào gói đúng nhưng chưa có tác dụng; cần phòng art/game xác nhận sẽ nạp.
+- packaged.test.js: thêm 2 test (wardrobe item.json/SVG hợp lệ; mở đủ 6 tab kể cả Album, không tab-error, không tài nguyên lỗi). Chạy: 9 test, 8 xanh, 1 ĐỎ (~33 s). Tab Album mở được trong gói. Không thiếu file ở phông/deco/icon game/khung+mặt bé/wardrobe.
+- **BUG-040 (N-build-1) CÒN**: `src/game/preview.js:8` vẫn `FRAME={happy:'140',normal:'150',tired:'220',sad:'200'}`; file thật `0001_160.png`...; 404 `idle/happy/loop/0001_140.png`, `idle/normal/loop/0001_150.png` (ERR_FILE_NOT_FOUND) khi mở Phòng của Mochi, cả nguồn lẫn gói. Test đỏ ở "không có tài nguyên lỗi trong toàn phiên".
+- package.json `build`: CHƯA nhận đề xuất nào: không có nsis (target chỉ zip), `win.icon` còn `assets/icon.png` (chưa icon.ico), chưa `!**/*.md`/`!assets/icon.ico`, chưa `compression`, `signAndEditExecutable:false` giữ nguyên. NSIS vẫn chưa kiểm được trên Linux (cần Windows/CI). Đề xuất lượt 2 (mục 1-5 bên dưới) còn hiệu lực.
+
+---
 ## build — đóng gói & bộ cài (lượt 2, main @70ebdd3)
 Output để ngoài repo: `/home/claude/qa-dist`. File tạo: `build/nsis.json` (đề xuất), `test/e2e/packaged.test.js`, file này.
 

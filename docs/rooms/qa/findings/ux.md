@@ -1,3 +1,35 @@
+## LƯỢT 3 — ux: rà trải nghiệm sau Đợt 3 (main @8371afb)
+
+- Lệnh: `bash test/e2e/run.sh test/e2e/ux2-shots.test.js` (13 test, 13 pass; test chỉ chụp). Thêm 3 test: ux3-1 (danh sách + Cài đặt bật `noteTransparent`), ux3-2 (Phòng 6 tab sáng/tối, seed game 300 xu), ux3-3 (bé + đồ mặc seed, play happy/sleep/eat/hold_note). Ảnh chọn: `docs/rooms/qa/img/l3-ux-*.png` (8 ảnh).
+- Ổn: danh sách có dải màu trái + xem trước 2 dòng, chip lọc "Đang hiện/Đã cất" dễ hiểu (l3-ux-danh-sach-moi); Phòng có 6 tab, tab Album (6/56 món, 0/9 bộ, tiến độ từng bộ, "Thưởng 100 xu khi đủ bộ") rõ (l3-ux-phong-album); Cửa hàng có "Túi đồ ăn" trống kèm câu hướng dẫn + "Mua vào túi x1/x5" + "Mua & cho ăn" (l3-ux-phong-cua-hang-tui-do-an); `noteTransparent` bật được, 6 note mở lại bình thường, chữ/nút/dải gợi ý không vỡ (l3-ux-note-transparent); bé ăn/ngủ (ôm mèo)/vui/giơ note hiển thị đẹp, hết nền trắng.
+- Điểm danh: không thấy khối điểm danh ở 6 tab khi seed `checkin` trống (chỉ thấy streak "3 ngày liên tiếp" ở thẻ trái) — chưa xác nhận được UI điểm danh nằm đâu; cần phòng game chỉ vị trí (xem N-ux3-3).
+
+### Kiểm lại lỗi UX đang mở
+| Mã | Trạng thái | Chứng cứ |
+|---|---|---|
+| BUG-018 menu "…" bị cắt | CÒN | 300x220 vẫn thấy 4 mục trên 12 (ux2-01-menu.png, ảnh gốc ở test/e2e/out) |
+| BUG-019 panel Nhắc lịch ở note nhỏ | CHƯA KIỂM LẠI (không chụp 220x160 lượt này); giả định CÒN | — |
+| BUG-026 chip "quá hạn 0 giây" | ĐÃ SỬA | ux2-60-nhac-3: "10:36 hôm nay · báo đúng giờ" |
+| BUG-027 "Đang dán/Đang cất" | ĐÃ SỬA | chip nay "Đang hiện / Đã cất"; không còn trong src (l3-ux-danh-sach-moi) |
+| BUG-028 xưng hô | MỘT PHẦN | không còn "bạn/mình" lẫn; nhưng note mẫu (`src/main/notes/noteService.js:216` "Chào cậu, tớ là Mochi nè!") và toast Ghi nhanh "Tớ ghi mua sữa rồi nha." xưng tớ/cậu, trong khi `docs/persona/MOCHI.md:34` quy ước giao diện/note mẫu = "Mochi/bạn". Cần chốt lại một trong hai (xem N-ux3-1) |
+| BUG-029 phím tắt thiếu | ĐÃ SỬA | Cài đặt liệt kê Ctrl+F, Ctrl+Z/Y, Ctrl+Shift+K/R, zoom, Ctrl+D/W (`src/list/list.html:199-216`). Còn thiếu Ctrl+Alt+G (Phòng của Mochi) — nhẹ |
+| BUG-041 deco đè nút "…" | CÒN | Kraft mini: lá đè nút "…" (l3-ux-mini-kraft-deco-che-menu) |
+| BUG-042 bộ chọn Mẫu giấy 300x220 | CÒN | chỉ thấy 1 hàng, tab "Tối giản" cắt (l3-ux-picker-300x220.png) |
+| BUG-043 dải gợi ý Mini | CÒN | Mini "2 việc có giờ — …" cắt, nút "Tạo" không rõ; vẫn không có công tắc tắt hẳn (l3-ux-mini-kraft-deco-che-menu) |
+| BUG-044 tờ note giơ lệch tay | CÒN | tờ che mặt/nửa người bé, lệch phải (l3-ux-be-giat-note-lech-tay); dòng phụ vẫn cắt "· Go…" |
+| BUG-047 dark mode game | MỘT PHẦN | khoá hiện rõ hơn, pill "Cấp 2" vẫn tối trên tối; gacha vẫn "Gốc / Có BH" nhưng có chú thích bên dưới giải thích (ux2-l3-11-phong-toi-1) |
+| BUG-048 tô sáng trên giấy tối | CÒN | Đêm 300x220: chữ sáng trên nền vàng khó đọc (ux2-11-mac-minimal-night.png) |
+| BUG-049 hint/chip bị cắt note hẹp | CÒN | ux2-21-is3: "06:00 ngày mai · bá…", "Bé Mochi sẽ nhắc cậu" cắt mép |
+| BUG-050 toast Ghi nhanh | MỘT PHẦN | đổi câu thành "Tớ ghi mua sữa rồi nha." (hết "có chỗ ở"), nhưng vẫn đè nút Hiện/Ẩn tất cả (ux2-33-sau-ghi-nhanh.png) |
+| BUG-051 "kẹo" vs "xu" | ĐÃ SỬA | `assets/dialogue/vi.json:433-436` nay là "xu"; "kẹo" chỉ còn ở thoại nói về đồ ngọt (idle.sweet.03, hungry.gen.05, idle.mid.05) — chấp nhận được |
+| BUG-052 mẫu mèo kẻ cắt chữ | ĐÃ SỬA (đủ dùng) | ux2-11-mac-cute-cream-cat: chữ nằm trên dòng kẻ, không bị gạch xuyên |
+
+### Lỗi mới
+- N-ux3-1 (Nhẹ, notes/persona): quy ước xưng hô lệch giữa tài liệu và app. `docs/persona/MOCHI.md:34` bảo giao diện/note mẫu/thông báo xưng "Mochi/bạn", nhưng note mẫu (`noteService.js:216`) và toast Ghi nhanh nói tớ/cậu. Tái hiện: mở app dữ liệu trống; `ux2-shots` ux2-4 (ux2-33). Kỳ vọng: nhất quán theo MOCHI.md hoặc sửa MOCHI.md cho toast/note mẫu do bé nói. Ảnh: ux2-33-sau-ghi-nhanh.png.
+- N-ux3-2 (Vừa, game/art, cần xác nhận): Tủ đồ khung xem trước bé vẫn TRỐNG (chỉ có bệ xanh) cả sáng/tối dù có đồ và 300 xu; đồ seed `worn` (mũ len mèo, áo hoodie mèo) cũng không thấy trên bé ở sân khấu (ux3-3: ux2-l3-20-be-mac-do.png). Có thể do seed `worn` chưa hợp lệ hoặc pack art chưa có lớp đồ; N-ux-4 cũ vẫn còn. Ảnh: l3-ux-phong-tu-do-preview-trong.png.
+- N-ux3-3 (Nhẹ, game): không thấy chỗ điểm danh ở Phòng (6 tab) khi mới vào; người dùng khó biết có tính năng điểm danh. Kỳ vọng: nút/khối "Điểm danh hôm nay" rõ ở đầu tab Tủ đồ hoặc thẻ Bé Mochi. Ảnh: l3-ux-phong-album.png (thẻ trái chỉ có chuỗi ngày).
+- N-ux3-4 (Nhẹ, notes): bật "Cửa sổ note trong suốt" ra note có góc/mép trông gần như cũ (khung chữ nhật, không thấy mép xé/góc gập ở các mẫu Vàng/Xanh...). Có thể chỉ thấy rõ ở mẫu giấy riêng; ghi nhận để phòng notes xác nhận (l3-ux-note-transparent).
+
 ## LƯỢT 2 — ux: rà trải nghiệm Đợt 2 qua ảnh (main @20ec6c9)
 
 - Lệnh: `bash test/e2e/run.sh test/e2e/ux2-shots.test.js` (10 test, 10 pass / 0 fail; test chỉ chụp). 1366x768: `UX2_TAG=-1366 xvfb-run -a -s "-screen 0 1366x768x24" node --test --test-concurrency=1 test/e2e/ux2-shots.test.js` (10/10 pass). Cũng chạy lại `ux-shots.test.js` ux-6, ux-8 (pass) để kiểm lỗi cũ. Ảnh gốc `test/e2e/out/ux2-*.png` (~80 ảnh, 1366 có tiền tố `ux2-1366-`); ảnh chọn: `docs/rooms/qa/img/l2-ux-*.png` (10 ảnh).

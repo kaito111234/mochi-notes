@@ -1,3 +1,8 @@
+## note-persist — lượt 3 (main mới)
+- Lệnh: `bash test/e2e/run.sh test/e2e/note-persist.test.js`. Kết quả: 13 test, 11 pass, 2 fail (1a, 1b). Chạy 2 lần (lần 2 sau sửa ca 4).
+- Ca 4 (ĐỎ MỚI -> sửa test, đổi giao diện CÓ CHỦ Ý): note vàng hướng dẫn nay mở bằng "Chào cậu, tớ là Mochi nè!" (src/main/notes/noteService.js:216, notes Đợt 3: lời bé xưng tớ/cậu, BUG-028) trong khi test chờ "Chào bạn". Nội dung vẫn đủ (Ctrl+Alt+N, Ctrl+Alt+M...). Đổi chuỗi chờ thành "Chào cậu"; mọi kỳ vọng khác giữ nguyên. Xanh 2/2. BUG-028 (note mẫu) ĐÃ SỬA THẬT: innerHTML trong ảnh lỗi cũ test/e2e/out/np-4-LOI.png đã có "Chào cậu, tớ là Mochi nè!".
+- 1a/1b = BUG-017 VẪN ĐỎ, nguyên nhân y như cũ: activeElement=BODY; src/note/note.js không gọi `ed.focus()` khi khởi động (chỉ ed.focus() ở histRestore :164 và closeFind :259), noteWindows.js:76 chỉ `win.show()`. note.js không đổi từ Đợt 2.
+
 ## note-persist — lượt 2 (main @70ebdd3)
 - Lệnh: `bash test/e2e/run.sh test/e2e/note-persist.test.js` (~4 phút). Kết quả: 13 test, 11 pass, 2 fail (1a, 1b — BUG-017), 0 skip. Chạy 2 lần, như nhau.
 - 1a/1b: VẪN đỏ, cùng nguyên nhân lượt 1 (note mới tạo `document.activeElement` = BODY). src/note/note.js khối khởi động vẫn không gọi `ed.focus()` (chỉ có `win.focus()` ở noteWindows.js:45). Không phải do giao diện mới đổi có chủ ý: giữ nguyên kỳ vọng. Ảnh cũ: docs/rooms/qa/img/note-persist-khong-focus.png.

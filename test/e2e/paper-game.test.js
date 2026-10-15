@@ -307,7 +307,7 @@ test('4c. Trần 300 xu/ngày từ note', { timeout: 6 * TO }, async () => {
 // ============================================================
 // 5. Phòng của Mochi
 // ============================================================
-test('5. Phòng của Mochi: Ctrl+Alt+G, khay, 5 tab tiếng Việt, gacha, mặc đồ, Esc', { timeout: 4 * TO }, async () => {
+test('5. Phòng của Mochi: Ctrl+Alt+G, khay, 6 tab tiếng Việt (có Album), gacha, mặc đồ, Esc', { timeout: 4 * TO }, async () => {
   await withApp('l2-game-5', { waitNotes: 0, seed: newGameSeed({ version: 1, stats: { candy: 200 } }) }, async app => {
     await watch(app);
     assert.strictEqual(await candy(app), 200, 'seed xu qua ngăn game');
@@ -316,7 +316,7 @@ test('5. Phòng của Mochi: Ctrl+Alt+G, khay, 5 tab tiếng Việt, gacha, mặ
     await room.waitForLoadState('domcontentloaded');
     await room.waitForSelector('.tab-btn');
     const labels = await room.evaluate(() => [...document.querySelectorAll('.tab-btn .tab-label')].map(e => e.textContent));
-    assert.deepStrictEqual(labels, ['Tủ đồ', 'Máy gacha', 'Cửa hàng', 'Nhiệm vụ', 'Thống kê']);
+    assert.deepStrictEqual(labels, ['Tủ đồ', 'Máy gacha', 'Cửa hàng', 'Nhiệm vụ', 'Thống kê', 'Album']);   // Đợt 3: thêm tab Album (có chủ ý, phím 6)
     assert.strictEqual(await room.title(), 'Phòng của Mochi');
     assert.strictEqual(await room.textContent('.brand-name'), 'Phòng của Mochi');
     // từng tab hiện được, không có dấu hỏng chữ
@@ -376,6 +376,49 @@ test('5. Phòng của Mochi: Ctrl+Alt+G, khay, 5 tab tiếng Việt, gacha, mặ
     // Esc đóng lần nữa
     await room.keyboard.press('Escape').catch(() => {});
     await waitFor(() => app.pages('room.html').length === 0, { msg: 'Esc đóng (lần 2)' });
+  });
+});
+
+// ============================================================
+// 5b. Đợt 3: điểm danh + túi đồ ăn (qua UI phòng)
+// ============================================================
+test('5b. Điểm danh 7 ngày (+20 xu, một lần/ngày) và túi đồ ăn (mua ×1 vào túi, cho ăn từ túi)', { timeout: 4 * TO }, async () => {
+  await withApp('l3-game-5b', { waitNotes: 0, seed: newGameSeed({ version: 1, stats: { candy: 300 } }) }, async app => {
+    await watch(app);
+    await app.shortcut('Ctrl+Alt+G');
+    const room = await app.page('room.html');
+    await room.waitForSelector('.tab-btn');
+    // điểm danh: tab Nhiệm vụ (thứ 4)
+    await room.click('.tab-btn:nth-child(4)');
+    await room.waitForSelector('.qs-ci-btn.btn-primary', { timeout: 15000 });
+    const c0 = await candy(app);
+    await room.click('.qs-ci-btn');
+    await waitFor(async () => (await gview(app)).checkin.todayDone === true, { msg: 'điểm danh xong' });
+    const v1 = await gview(app);
+    assert.strictEqual(v1.checkin.cycleDay, 1, 'ô 1 của vòng');
+    assert.strictEqual(v1.stats.candy, c0 + 20, 'ô 1 = +20 xu (không có thưởng kèm)');
+    assert.ok(await room.$('.qs-ci-btn:not(.btn-primary)'), 'nút đổi thành "Mai quay lại nhé"');
+    const txt = await room.textContent('.qs-ci-btn');
+    assert.ok(/Mai quay lại/.test(txt), 'nút: ' + txt);
+    await app.shot('l3-game-5b-diemdanh');
+    // cửa hàng (thứ 3): mua vào túi
+    await room.click('.tab-btn:nth-child(3)');
+    await room.waitForSelector('.sh-buy-bag', { timeout: 15000 });
+    const c1 = await candy(app);
+    const price = await room.evaluate(() => { const b = document.querySelector('.sh-buy-bag'); const m = /\((\d+) xu\)/.exec(b.title || ''); return m ? +m[1] : null; });
+    assert.ok(price > 0, 'giá trong tooltip nút Mua vào túi');
+    await room.click('.sh-buy-bag >> nth=0');
+    await waitFor(async () => Object.values((await gview(app)).bag || {}).reduce((a, b) => a + b, 0) === 1, { msg: 'túi có 1 món' });
+    assert.strictEqual(await candy(app), c1 - price, 'mua vào túi trừ đúng giá (' + price + ')');
+    await room.waitForSelector('.sh-bag-feed', { timeout: 15000 });
+    const c2 = await candy(app);
+    const r2 = (await events(app, 'game:reward')).reduce((a, e) => a + e.p.candy, 0);
+    await room.click('.sh-bag-feed >> nth=0');
+    await waitFor(async () => Object.values((await gview(app)).bag || {}).reduce((a, b) => a + b, 0) === 0, { msg: 'cho ăn từ túi giảm 1' });
+    // không trừ xu; chỉ có thể cộng thưởng "lần đầu cho ăn" (+20) qua game:reward
+    const bonus2 = (await events(app, 'game:reward')).reduce((a, e) => a + e.p.candy, 0) - r2;
+    assert.strictEqual(await candy(app), c2 + bonus2, 'cho ăn từ túi không trừ xu (thưởng kèm ' + bonus2 + ')');
+    await app.shot('l3-game-5b-tui');
   });
 });
 
