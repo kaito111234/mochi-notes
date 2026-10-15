@@ -256,3 +256,110 @@ test('5. nút X cất note (visible=false, không xoá); mở lại app không h
     assert.ok(n && n.visible === false, 'note đã cất mất/đổi trạng thái sau khi mở lại');
   } finally { await app.close(); if (app2) await app2.close(); }
 });
+
+// ---------- 6. Mẫu giấy + checklist (Đợt 2 paper): lưu trong ngăn `paper` của mochi-data.json ----------
+const ckState = p => p.evaluate(() => Array.from(document.querySelectorAll('#editor > div[data-ck]')).map(d => d.getAttribute('data-ck') + ':' + d.textContent.replace(/\s+/g, ' ').trim()));
+const lsPaperKeys = p => p.evaluate(() => { try { return Object.keys(localStorage).filter(k => /paper|mochi/i.test(k)); } catch (_) { return []; } });
+// bấm vào ô tick của dòng checklist thứ i (như người dùng bấm chuột)
+async function tickLine(p, i) {
+  const pt = await p.evaluate(idx => {
+    const d = document.querySelectorAll('#editor > div[data-ck]')[idx];
+    const r = d.getBoundingClientRect(), cs = getComputedStyle(d, '::before');
+    const top = parseFloat(cs.top) || 0, h = parseFloat(cs.height) || 16;
+    return { x: r.left + 8, y: r.top + top + h / 2 };
+  }, i);
+  await p.mouse.click(pt.x, pt.y);
+}
+
+test('6. mẫu giấy kẻ ô + checklist có tick/đổi thứ tự/tiếng Việt/undo -> đóng mở lại còn nguyên, nằm trong mochi-data.json (ngăn paper), không ở localStorage', { timeout: 240000 }, async () => {
+  const t0 = Date.now();
+  const mkn = (id, x) => ({ id, html: '', text: '', color: 'yellow', bounds: { x, y: 120, width: 340, height: 300 }, visible: true, alwaysOnTop: false, reminder: null, createdAt: t0, updatedAt: t0 });
+  const seed = { notes: [mkn('n_ck', 100), mkn('n_kraft', 520)], settings: { mascotEnabled: false, mascotIdle: false, sound: false, glass: false, startup: false, allHidden: false } };
+  const app = await launch({ seed, waitNotes: 2 });
+  let app2;
+  try {
+    const pg = await app.noteWindow('n_ck');
+    await pg.waitForLoadState('domcontentloaded');
+    await waitFor(() => pg.evaluate(() => document.getElementById('editor').getAttribute('contenteditable') === 'true'), { msg: 'editor sẵn sàng' });
+    // --- đổi mẫu bằng UI: Menu "..." -> "Mẫu giấy…" -> nhóm Học sinh -> ô "student-grid"
+    await pg.click('#btnMenu');
+    await pg.click('#menu [data-act="paper"]');
+    await pg.waitForSelector('#pickerPanel:not([hidden])');
+    await pg.click('#pickerPanel .pk-tab[data-g="student"]');
+    await pg.click('#pickerPanel .pk-cell[data-id="student-grid"]');
+    await waitFor(async () => (await pg.evaluate(() => document.body.getAttribute('data-paper'))) === 'student-grid', { msg: 'cửa sổ áp mẫu student-grid' });
+    await pg.keyboard.press('Escape');
+    // --- checklist: gõ "[] " + tiếng Việt có dấu
+    await pg.click('#editor');
+    await pg.keyboard.type('[] ');
+    await pg.keyboard.type('Mua sữa đậu nành');
+    await pg.keyboard.press('Enter');
+    await pg.keyboard.type('Gửi thư ở bưu điện');
+    await pg.keyboard.press('Enter');
+    await pg.keyboard.type('Đóng tiền điện tháng chín');
+    await waitFor(async () => (await ckState(pg)).length === 3, { msg: '3 dòng checklist' });
+    assert.deepStrictEqual(await ckState(pg), ['0:Mua sữa đậu nành', '0:Gửi thư ở bưu điện', '0:Đóng tiền điện tháng chín']);
+    // --- tick dòng 1 và 3
+    await tickLine(pg, 0);
+    await tickLine(pg, 2);
+    await waitFor(async () => (await ckState(pg)).join('|') === '1:Mua sữa đậu nành|0:Gửi thư ở bưu điện|1:Đóng tiền điện tháng chín', { msg: 'đã tick 1 và 3: ' });
+    assert.strictEqual(await pg.textContent('#ckCount'), '2/3');
+    // --- undo sau tick: tick dòng 2, Ctrl+Z bỏ tick, Ctrl+Y tick lại
+    await tickLine(pg, 1);
+    await waitFor(async () => (await ckState(pg))[1].startsWith('1:'), { msg: 'tick dòng 2' });
+    await pg.keyboard.press('Control+Z');
+    await waitFor(async () => (await ckState(pg)).join('|') === '1:Mua sữa đậu nành|0:Gửi thư ở bưu điện|1:Đóng tiền điện tháng chín', { msg: 'Ctrl+Z hoàn tác tick (chữ còn nguyên)' });
+    assert.strictEqual(await pg.textContent('#ckCount'), '2/3');
+    await pg.keyboard.press('Control+Y');
+    await waitFor(async () => (await ckState(pg))[1].startsWith('1:'), { msg: 'Ctrl+Y làm lại tick' });
+    await pg.keyboard.press('Control+Z');
+    await waitFor(async () => (await ckState(pg))[1].startsWith('0:'), { msg: 'Ctrl+Z lần nữa' });
+    // --- đổi thứ tự: kéo tay nắm của dòng 3 lên trước dòng 1
+    const l3 = await pg.evaluate(() => { const r = document.querySelectorAll('#editor > div[data-ck]')[2].getBoundingClientRect(); return { x: r.left + 40, y: r.top + r.height / 2 }; });
+    const l1 = await pg.evaluate(() => { const r = document.querySelectorAll('#editor > div[data-ck]')[0].getBoundingClientRect(); return { x: r.left + 40, y: r.top + 2 }; });
+    await pg.mouse.move(l3.x, l3.y);
+    await sleep(300);
+    const hb = await waitFor(() => pg.evaluate(() => { const h = document.querySelector('.ck-handle'); if (!h || h.hidden) return null; const r = h.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }), { msg: 'tay nắm kéo hiện' });
+    await pg.mouse.move(hb.x, hb.y);
+    await pg.mouse.down();
+    for (let k = 1; k <= 8; k++) { await pg.mouse.move(hb.x + (l1.x - hb.x) * k / 8, hb.y + (l1.y - hb.y) * k / 8); await sleep(40); }
+    await pg.mouse.up();
+    const want = ['1:Đóng tiền điện tháng chín', '1:Mua sữa đậu nành', '0:Gửi thư ở bưu điện'];
+    await waitFor(async () => (await ckState(pg)).join('|') === want.join('|'), { msg: 'đổi thứ tự bằng kéo' });
+    // --- lưu & kiểm tra nguồn
+    await waitFor(async () => /^- \[x\] Đóng tiền điện tháng chín/.test((await savedNote(app, 'n_ck')).text), { msg: 'text lưu dạng - [x]' });
+    assert.deepStrictEqual(await lsPaperKeys(pg), [], 'mẫu giấy không được nằm ở localStorage');
+    // --- note 2: mẫu kraft qua API paper
+    const pg2 = await app.noteWindow('n_kraft');
+    await pg2.waitForLoadState('domcontentloaded');
+    const meta2 = await pg2.evaluate(() => window.mochi.paper.set('n_kraft', { paper: 'minimal-kraft' }));
+    assert.strictEqual(meta2.paper, 'minimal-kraft');
+    await waitFor(async () => (await pg2.evaluate(() => document.body.getAttribute('data-paper'))) === 'minimal-kraft', { msg: 'áp kraft' });
+    await app.shot('l2-note-giay-checklist');
+    await app.flush();
+    await app.close();
+    // --- file dữ liệu
+    const data = app.readData();
+    assert.ok(data.paper && data.paper.noteMeta, 'mochi-data.json phải có ngăn paper');
+    assert.strictEqual(data.paper.noteMeta.n_ck.paper, 'student-grid');
+    assert.strictEqual(data.paper.noteMeta.n_kraft.paper, 'minimal-kraft');
+    const saved = data.notes.find(n => n.id === 'n_ck');
+    assert.ok(/data-ck="1"/.test(saved.html) && /data-ck="0"/.test(saved.html), 'html lưu có data-ck: ' + saved.html);
+    assert.strictEqual(saved.text, '- [x] Đóng tiền điện tháng chín\n- [x] Mua sữa đậu nành\n- [ ] Gửi thư ở bưu điện');
+    // --- mở lại
+    app2 = await launch({ configHome: app.configHome, waitNotes: 2 });
+    const r1 = await app2.noteWindow('n_ck');
+    await r1.waitForLoadState('domcontentloaded');
+    await waitFor(async () => (await r1.evaluate(() => document.body.getAttribute('data-paper'))) === 'student-grid', { msg: 'mở lại: mẫu student-grid' });
+    await waitFor(async () => (await ckState(r1)).length === 3, { msg: 'mở lại: 3 dòng' });
+    assert.deepStrictEqual(await ckState(r1), want);
+    assert.strictEqual(await r1.textContent('#ckCount'), '2/3');
+    assert.deepStrictEqual(await lsPaperKeys(r1), [], 'mở lại: localStorage vẫn sạch');
+    const r2 = await app2.noteWindow('n_kraft');
+    await r2.waitForLoadState('domcontentloaded');
+    await waitFor(async () => (await r2.evaluate(() => document.body.getAttribute('data-paper'))) === 'minimal-kraft', { msg: 'mở lại: kraft' });
+    await sleep(1500);
+    await app2.shot('l2-note-giay-sau-mo-lai');
+  } catch (e) { await (app2 || app).shot('np-6-LOI'); throw e; }
+  finally { await app.close(); if (app2) await app2.close(); }
+});

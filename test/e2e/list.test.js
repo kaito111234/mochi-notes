@@ -114,14 +114,143 @@ test('list-3b: xoá từ menu note có xác nhận', { timeout: 90000 }, async (
   });
 });
 
-test('list-3c: khôi phục note đã xoá (thùng rác / thùng của bé)', { timeout: 60000 }, async () => {
-  const fs = require('fs'), path = require('path');
-  const ROOT = path.join(__dirname, '..', '..');
-  const read = f => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch (_) { return ''; } };
-  const src = ['src/list/list.js', 'src/list/list.html', 'src/main/notes/noteService.js', 'src/main/store.js', 'src/main/tray.js'].map(read).join('\n');
-  const cleaned = src.replace(/Khôi phục (từ bản sao|mục đã chọn)/g, '').replace(/data-data="restore"|t === 'restore'|bkRestore|icon\('trash'\)|trash: '/g, '');
-  assert.ok(/thùng|\btrash\b|khôi phục note|deletedNotes|restoreNote/i.test(cleaned),
-    'app không có thùng rác / khôi phục note đã xoá (deleteNote splice thẳng, hộp thoại ghi "không khôi phục được")');
+// ---- Thùng rác (Đợt 2B): xoá mềm 30 ngày. Luồng người dùng: xoá -> chip "Thùng rác" -> Khôi phục / Xoá hẳn.
+const DAY = 86400000;
+const seedTrash = () => {
+  const d = seed();
+  d.notes[0].reminder = { due: Date.now() + 3 * DAY, lead: 0, intent: 'task', auto: false, preFired: false, fired: false, done: false };
+  d.notes[0].html = '<div>Họp với khách</div><div>mang <b>hợp đồng</b> theo</div>';
+  d.notes[0].text = 'Họp với khách\nmang hợp đồng theo';
+  d.notes[0].color = 'blue';
+  d.paper = { v: 1, settings: {}, noteMeta: { n_hop: { paper: 'student-grid' } } };
+  return d;
+};
+const trashTitles = p => p.$$eval('#cards .trash-card .card-title', els => els.map(e => e.textContent));
+const trashOf = app => app.main(c => JSON.parse(JSON.stringify(c.store.section('trash').items)));
+async function deleteFromList(lp, id) {
+  await sleep(700);   // chờ danh sách ngừng chuyển động sau lần xoá trước
+  await lp.hover('.card[data-id="' + id + '"]');
+  await lp.click('.card[data-id="' + id + '"] [data-act="ask"]');
+  await lp.click('.card[data-id="' + id + '"] [data-act="delete"]');
+}
+
+test('list-3c: xoá note -> vào thùng rác -> khôi phục: về đủ nội dung, màu, mẫu giấy, nhắc', { timeout: 120000 }, async () => {
+  await withApp('list-3c', { seed: seedTrash(), waitNotes: 3 }, async app => {
+    const lp = await app.openList();
+    await waitFor(async () => (await titles(lp)).length === 3);
+    const before = (await app.notes()).find(n => n.id === 'n_hop');
+    await deleteFromList(lp, 'n_hop');
+    await waitFor(async () => (await app.notes()).length === 2, { msg: 'note ra khỏi danh sách chính' });
+    await waitFor(() => noteWins(app) === 2, { msg: 'cửa sổ note đóng' });
+    assert.strictEqual((await trashOf(app)).length, 1, 'phải nằm trong thùng (xoá mềm)');
+    // chip Thùng rác có số 1 và mở ra thấy note
+    await waitFor(async () => (await lp.textContent('[data-f="trash"] .n')) === '1', { msg: 'chip Thùng rác (1)' });
+    await lp.click('[data-f="trash"]');
+    await waitFor(async () => (await trashTitles(lp)).includes('Họp với khách'), { msg: 'note hiện trong thùng' });
+    await app.shot('l2-list-thung-rac');
+    // khôi phục
+    await lp.click('.trash-card[data-id="n_hop"] [data-act="trestore"]');
+    await waitFor(async () => (await app.notes()).some(n => n.text === before.text), { msg: 'note quay về' });
+    await waitFor(() => noteWins(app) === 3, { msg: 'cửa sổ note mở lại' });
+    const after = (await app.notes()).find(n => n.text === before.text);
+    assert.strictEqual(after.html, before.html, 'nội dung/định dạng phải đủ');
+    assert.strictEqual(after.color, 'blue');
+    assert.ok(after.reminder && after.reminder.due === before.reminder.due, 'nhắc còn nguyên: ' + JSON.stringify(after.reminder));
+    assert.strictEqual((await trashOf(app)).length, 0, 'thùng hết');
+    // mẫu giấy: ngăn paper còn meta cho id của note khôi phục, và cửa sổ note áp mẫu đó
+    const meta = await app.main((c, e, id) => { const b = c.store.section('paper'); return b && b.noteMeta[id] ? b.noteMeta[id] : null; }, after.id);
+    assert.ok(meta && meta.paper === 'student-grid', 'mất mẫu giấy sau khi khôi phục: ' + JSON.stringify(meta));
+    const np = await app.noteWindow(after.id);
+    await np.waitForLoadState('domcontentloaded');
+    await waitFor(async () => (await np.evaluate(() => document.body.getAttribute('data-paper'))) === 'student-grid', { msg: 'cửa sổ note áp mẫu ô ly/kẻ ô' });
+    await waitFor(async () => (await np.evaluate(() => document.getElementById('editor').innerText)).includes('hợp đồng'), { msg: 'chữ hiện' });
+  });
+});
+
+test('list-3d: xoá hẳn khỏi thùng cần xác nhận 2 bước; dọn sạch', { timeout: 120000 }, async () => {
+  await withApp('list-3d', { seed: seed(), waitNotes: 3 }, async app => {
+    const lp = await app.openList();
+    await waitFor(async () => (await titles(lp)).length === 3);
+    await deleteFromList(lp, 'n_abc');
+    await waitFor(async () => (await trashOf(app)).length === 1);
+    await deleteFromList(lp, 'n_cho');
+    await waitFor(async () => (await trashOf(app)).length === 2);
+    await lp.click('[data-f="trash"]');
+    await waitFor(async () => (await trashTitles(lp)).length === 2, { msg: '2 note trong thùng' });
+    // bấm "Xoá hẳn" 1 lần: chưa xoá
+    await lp.click('.trash-card[data-id="n_abc"] [data-act="tpurge"]');
+    await sleep(400);
+    assert.strictEqual((await trashOf(app)).length, 2, 'bấm 1 lần chưa được xoá hẳn');
+    assert.ok(/Chắc chắn/.test(await lp.textContent('.trash-card[data-id="n_abc"] [data-act="tpurge"]')), 'phải hỏi lại');
+    await lp.click('.trash-card[data-id="n_abc"] [data-act="tpurge"]');
+    await waitFor(async () => (await trashOf(app)).length === 1, { msg: 'xoá hẳn 1 note' });
+    assert.ok(!(await app.notes()).some(n => n.id === 'n_abc'), 'không quay lại danh sách chính');
+    // dọn sạch: 2 bước
+    await lp.click('[data-tact="empty"]');
+    await sleep(300);
+    assert.strictEqual((await trashOf(app)).length, 1);
+    await lp.click('[data-tact="empty"]');
+    await waitFor(async () => (await trashOf(app)).length === 0, { msg: 'dọn sạch' });
+    await waitFor(() => lp.isVisible('#empty'), { msg: 'trạng thái thùng trống' });
+  });
+});
+
+test('list-3e: thùng rác còn sau khi khởi động lại (nằm trong mochi-data.json) và khôi phục được', { timeout: 150000 }, async () => {
+  const app = await launch({ seed: seedTrash(), waitNotes: 3 });
+  let app2;
+  try {
+    const lp = await app.openList();
+    await waitFor(async () => (await titles(lp)).length === 3);
+    await deleteFromList(lp, 'n_cho');
+    await deleteFromList(lp, 'n_hop');
+    await waitFor(async () => (await trashOf(app)).length === 2);
+    await app.close();
+    const saved = app.readData();
+    assert.ok(saved.trash && saved.trash.items.length === 2, 'ngăn trash trong mochi-data.json: ' + JSON.stringify(saved.trash && saved.trash.items.length));
+    assert.ok(saved.trash.items.every(i => i.trashedAt > 0 && i.note && i.note.html));
+    app2 = await launch({ configHome: app.configHome });
+    await waitFor(async () => (await app2.main(c => c.store.section('trash').items.length)) === 2, { msg: 'thùng còn sau mở lại' });
+    assert.strictEqual((await app2.notes()).length, 1);
+    const lp2 = await app2.openList();
+    await waitFor(() => lp2.isVisible('[data-f="trash"]'));
+    await lp2.click('[data-f="trash"]');
+    await waitFor(async () => (await trashTitles(lp2)).length === 2, { msg: 'thấy 2 note trong thùng sau mở lại' });
+    // khôi phục note có mẫu giấy sau khi khởi động lại
+    await lp2.click('.trash-card[data-id="n_hop"] [data-act="trestore"]');
+    await waitFor(async () => (await app2.notes()).some(n => n.text.startsWith('Họp với khách')), { msg: 'khôi phục sau restart' });
+    const nid = (await app2.notes()).find(n => n.text.startsWith('Họp với khách')).id;
+    const np = await app2.noteWindow(nid);
+    await np.waitForLoadState('domcontentloaded');
+    await waitFor(async () => (await np.evaluate(() => document.body.getAttribute('data-paper'))) === 'student-grid', { msg: 'mẫu giấy còn sau restart + khôi phục' });
+  } catch (e) { await (app2 || app).shot('list-3e-LOI'); throw e; }
+  finally { await app.close(); if (app2) await app2.close(); }
+});
+
+test('list-3g: xoá từ danh sách -> toast "Hoàn tác" đưa note về ngay', { timeout: 90000 }, async () => {
+  await withApp('list-3g', { seed: seed(), waitNotes: 3 }, async app => {
+    const lp = await app.openList();
+    await waitFor(async () => (await titles(lp)).length === 3);
+    await deleteFromList(lp, 'n_cho');
+    await waitFor(async () => (await trashOf(app)).length === 1);
+    await lp.click('#toast .toast-act');
+    await waitFor(async () => (await app.notes()).length === 3, { msg: 'Hoàn tác đưa note về' });
+    assert.strictEqual((await trashOf(app)).length, 0);
+    assert.ok((await app.notes()).some(n => n.text === 'Đi chợ mua rau'));
+  });
+});
+
+test('list-3f: xoá từ menu note cũng vào thùng rác (chữ xác nhận nói rõ thùng rác)', { timeout: 90000 }, async () => {
+  await withApp('list-3f', { seed: seed(), waitNotes: 3 }, async app => {
+    const p = await app.noteWindow('n_cho');
+    await p.waitForLoadState('domcontentloaded');
+    await p.click('#btnMenu');
+    await p.click('[data-act="delete"]');
+    await p.waitForSelector('#menuConfirm:not([hidden])');
+    const txt = await p.textContent('#menuConfirm');
+    await p.click('[data-act="del-yes"]');
+    await waitFor(async () => (await trashOf(app)).length === 1, { msg: 'vào thùng rác' });
+    assert.ok(/thùng/i.test(txt), 'hộp xác nhận phải nói "thùng rác" (hiện: ' + txt.trim().replace(/\s+/g, ' ') + ')');
+  });
 });
 
 test('list-4: tìm kiếm không dấu, hoa/thường, đ/d', { timeout: 90000 }, async () => {
