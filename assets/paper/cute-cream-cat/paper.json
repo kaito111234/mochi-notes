@@ -1,0 +1,62 @@
+{
+  "id": "cute-cream-cat",
+  "name": "Kem lốm đốm & mèo đen",
+  "group": "cute",
+  "order": 10,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#fbf3e2",
+    "head": "#f6e7c8",
+    "gradient": null,
+    "texture": "speckle"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(150,120,90,.25)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Notes",
+    "font": "pangolin",
+    "color": "#5a3f33",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#3a2e2a",
+  "font": "itim",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/cat-black.svg",
+      "pos": "tr",
+      "w": 54,
+      "dx": 8,
+      "dy": 2,
+      "rot": -6
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/star.svg",
+      "pos": "tr",
+      "w": 24,
+      "dx": 66,
+      "dy": 12,
+      "rot": 10
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/star.svg",
+      "pos": "tr",
+      "w": 18,
+      "dx": 84,
+      "dy": 40,
+      "rot": -8
+    }
+  ],
+  "checklist": false
+}

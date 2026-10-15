@@ -1,0 +1,44 @@
+{
+  "id": "office-todo",
+  "name": "To do văn phòng",
+  "group": "office",
+  "order": 20,
+  "noteColor": "blue",
+  "dark": false,
+  "bg": {
+    "color": "#ffffff",
+    "head": "#e8f0fa",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(60,110,180,.2)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "To do",
+    "font": "bevietnam",
+    "color": "#2d5f9a",
+    "size": 20,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#1b2a3d",
+  "font": "bevietnam",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/pin-blue.svg",
+      "pos": "tr",
+      "w": 34,
+      "dx": 60,
+      "dy": -2,
+      "rot": 0
+    }
+  ],
+  "checklist": true
+}

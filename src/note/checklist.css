@@ -1,0 +1,59 @@
+/* Mochi Notes — checklist (dòng <div data-ck="0|1"> trong #editor) */
+#editor { --ck-accent: #3d9b6e; --ck-box: 1.05em; }
+
+#editor > div[data-ck] {
+  position: relative;
+  padding-left: calc(var(--ck-box) + 10px);
+  min-height: var(--step, 1.5em);
+}
+/* ô tick: căn giữa theo dòng đầu của khối */
+#editor > div[data-ck]::before {
+  content: "";
+  position: absolute; left: 0;
+  top: calc((var(--step, 1.5em) - var(--ck-box)) / 2);
+  width: var(--ck-box); height: var(--ck-box);
+  box-sizing: border-box;
+  border: 1.6px solid color-mix(in srgb, currentColor 72%, transparent);
+  border-radius: 4px;
+  background: transparent center / 76% no-repeat;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: background-color .12s, border-color .12s;
+}
+#editor > div[data-ck]:hover::before { border-color: var(--ck-accent); }
+#editor > div[data-ck="1"]::before {
+  background-color: var(--ck-accent);
+  border-color: var(--ck-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+#editor > div[data-ck="1"] { text-decoration: line-through; opacity: .55; }
+body.locked #editor > div[data-ck]::before { cursor: default; }
+
+/* chữ gợi ý (placeholder) khi note chỉ có một dòng checklist rỗng */
+#editor.empty:has(> div[data-ck])::before { left: calc(12px + var(--ck-box) + 10px); }
+
+/* đếm x/y trên thanh trên */
+.ck-count {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 7px; margin-left: 4px;
+  border-radius: 9px; font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums;
+  background: linear-gradient(rgba(var(--fg-rgb), .1), rgba(var(--fg-rgb), .1)), rgb(var(--head-rgb, 255,255,255)); color: rgba(var(--fg-rgb), .85); margin-right: 4px; position: relative; z-index: 2; -webkit-app-region: no-drag;
+}
+.ck-count.all { background: linear-gradient(color-mix(in srgb, var(--ck-accent, #3d9b6e) 30%, transparent), color-mix(in srgb, var(--ck-accent, #3d9b6e) 30%, transparent)), rgb(var(--head-rgb, 255,255,255)); }
+
+/* tay nắm kéo (phần tử nổi trong .body, ngoài #editor) */
+.ck-handle {
+  position: absolute; left: 0; top: 0; width: 12px; height: 18px; z-index: 4;
+  display: grid; place-items: center; border-radius: 3px;
+  color: var(--fg); opacity: .45; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-app-region: no-drag;
+}
+.ck-handle[hidden] { display: none; }
+.ck-handle:hover { opacity: .9; background: rgba(var(--fg-rgb), .1); }
+.ck-handle svg { width: 8px; height: 12px; fill: currentColor; stroke: none; }
+body.ck-dragging, body.ck-dragging * { cursor: grabbing !important; }
+.ck-drop {
+  position: absolute; left: 10px; right: 8px; height: 2px; margin-top: -1px; z-index: 4;
+  border-radius: 1px; background: var(--ck-accent, #3d9b6e); pointer-events: none;
+}
+.ck-drop[hidden] { display: none; }
+.ck-lift { position: absolute; z-index: 3; pointer-events: none; border-radius: 4px; background: rgba(var(--fg-rgb), .1); }
+.ck-lift[hidden] { display: none; }

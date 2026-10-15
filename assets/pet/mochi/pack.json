@@ -1,58 +1,70 @@
 {
   "id": "mochi",
   "name": "Mochi",
-  "author": "Joiha (hình tạm sinh tự động từ art/source)",
+  "author": "Phòng art Mochi Notes (rig vector)",
   "license": "Nội bộ Joiha",
   "size": [
-    288,
-    344
+    400,
+    400
   ],
   "scale": 0.6,
   "anchor": [
-    144,
-    338
+    200,
+    392
   ],
   "hitbox": {
     "head": [
-      60,
-      26,
-      168,
-      172
+      126,
+      70,
+      148,
+      160
     ],
     "body": [
-      96,
-      206,
-      96,
-      132
+      146,
+      230,
+      108,
+      162
     ]
   },
   "hand": [
-    216,
-    200
+    200,
+    262
   ],
-  "faces": {
-    "angry": "faces/angry.png",
-    "bored": "faces/bored.png",
-    "cold": "faces/cold.png",
-    "cry": "faces/cry.png",
-    "excited": "faces/excited.png",
-    "flustered": "faces/flustered.png",
-    "happy": "faces/happy.png",
-    "laugh": "faces/laugh.png",
-    "love": "faces/love.png",
-    "normal": "faces/normal.png",
-    "protest": "faces/protest.png",
-    "sad": "faces/sad.png",
-    "scared": "faces/scared.png",
-    "shy": "faces/shy.png",
-    "sleepy": "faces/sleepy.png",
-    "surprised": "faces/surprised.png",
-    "tired": "faces/tired.png",
-    "uncomfortable": "faces/uncomfortable.png"
-  },
   "actions": {
     "walk": {
       "speed": 2.2
     }
+  },
+  "note": {
+    "anchor": "center",
+    "center": [
+      200,
+      262
+    ],
+    "size": [
+      84,
+      84
+    ],
+    "_ghichu": "hand = TÂM tờ note giữa hai bàn tay (hold_note); size là cỡ tờ note vừa hai tay theo px canvas"
+  },
+  "faces": {
+    "normal": "faces/normal.png",
+    "happy": "faces/happy.png",
+    "laugh": "faces/laugh.png",
+    "excited": "faces/excited.png",
+    "surprised": "faces/surprised.png",
+    "scared": "faces/scared.png",
+    "sad": "faces/sad.png",
+    "cry": "faces/cry.png",
+    "angry": "faces/angry.png",
+    "shy": "faces/shy.png",
+    "flustered": "faces/flustered.png",
+    "cold": "faces/cold.png",
+    "tired": "faces/tired.png",
+    "sleepy": "faces/sleepy.png",
+    "bored": "faces/bored.png",
+    "protest": "faces/protest.png",
+    "uncomfortable": "faces/uncomfortable.png",
+    "love": "faces/love.png"
   }
 }

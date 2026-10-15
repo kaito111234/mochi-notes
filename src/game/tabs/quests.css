@@ -1,0 +1,27 @@
+.qs-root { overflow-y: auto; padding: 2px 2px 14px; }
+.qs-head { display: flex; align-items: baseline; justify-content: space-between; margin: 10px 2px 6px; }
+.qs-head:first-child { margin-top: 0; }
+.qs-title { font-weight: 700; font-size: 14px; }
+.qs-clock { font-size: 11.5px; color: var(--text-soft, #7a6a6a); font-variant-numeric: tabular-nums; }
+.qs-list { display: flex; flex-direction: column; gap: 8px; }
+.qs-card { padding: 9px 12px; display: flex; flex-direction: column; gap: 7px; }
+.qs-card.claimed { opacity: .65; }
+.qs-card.ready { box-shadow: 0 0 0 2px #ffd98a inset; }
+.qs-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.qs-name { font-weight: 600; font-size: 13px; min-width: 0; }
+.qs-reward { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; flex: none; }
+.qs-exp { color: var(--text-soft, #7a6a6a); font-weight: 500; margin-left: 4px; }
+.qs-row { display: flex; align-items: center; gap: 10px; }
+.qs-bar { flex: 1; height: 9px; border-radius: 99px; background: rgba(0,0,0,.08); overflow: hidden; }
+.qs-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #ffc978, #ff9f6b); transition: width .4s ease; }
+.qs-count { font-size: 12px; font-variant-numeric: tabular-nums; width: 34px; text-align: right; flex: none; }
+.qs-claim { font-size: 12px; padding: 4px 14px; flex: none; min-width: 74px; }
+.qs-done { font-size: 12px; font-weight: 600; color: var(--text-soft, #7a6a6a); min-width: 74px; text-align: center; flex: none; }
+.qs-ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.qs-ach { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; padding: 8px 4px; }
+.qs-badge { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e4e1de; color: #a9a4a0; }
+.qs-badge svg { width: 26px; height: 26px; }
+.qs-ach.on .qs-badge { background: radial-gradient(circle at 35% 30%, #fff0c2, #ffc36b); color: #8a4b12; box-shadow: 0 2px 6px rgba(255,170,70,.45); }
+.qs-ach-name { font-size: 11.5px; font-weight: 700; line-height: 1.2; }
+.qs-ach:not(.on) .qs-ach-name { color: #8d8884; }
+.qs-ach-sub { font-size: 10.5px; line-height: 1.25; color: var(--text-soft, #7a6a6a); }

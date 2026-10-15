@@ -14,7 +14,7 @@ Bản hiện có (0.1, nhánh `main`): sticky note nhiều cửa sổ, định d
 
 ## Trạng thái
 - Đợt 1 xong và đã gộp (core, notes, persona).
-- **Đợt 2 đang chạy**: notes (hiểu note, nhiều nhắc/note, API ghi nhanh), core (bé ghi note giúp, tự do hơn), **paper** (mẫu giấy note dễ thương), **art** (họa sĩ vẽ lại bé dạng rig vector, từng phần), **qa** (kiểm thử note như người dùng thật). Game hóa để Đợt 3.
+- **Đợt 2 đang chạy**: notes (hiểu note, nhiều nhắc/note, API ghi nhanh), core (bé ghi note giúp, tự do hơn), **paper** (mẫu giấy note dễ thương), **art** (họa sĩ vẽ lại bé dạng rig vector, từng phần), **qa** (kiểm thử note như người dùng thật). **Game hóa kéo lên Đợt 2** theo yêu cầu chủ dự án (xu thưởng khi xong note, gacha, tủ đồ). Đợt 2B: bé tháo note hết hạn → vo → ném thùng rác; bé gõ vào app đang dùng để nhắc; thêm nhiều hành động.
 
 ## Đợt 1 — Nền móng (làm trước)
 - Điều hành: hợp đồng chung `docs/spec/` — mô hình dữ liệu v2 (note, alarm, pet state, inventory), bus sự kiện giữa các module, định dạng gói animation & thoại.

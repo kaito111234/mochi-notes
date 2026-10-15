@@ -52,6 +52,14 @@ Biến chạy thử: `MOCHI_DEV_ALARM=<phút>` (tạo báo thức thật sau N p
 **Vướng mắc**: không.
 
 ## Đề xuất cho phòng điều hành
+**Đợt 2 (mới):**
+- A. `scripts/test-all.js`: thêm `src/shared/__tests__/parse.test.js`, `src/shared/understand/__tests__/entities.test.js`, `understand.test.js`, `src/main/notes/__tests__/reminders.test.js`, `insight.test.js`, `src/main/alarms/__tests__/placement.test.js`, `toast.test.js`.
+- B. `src/main/main.js` `second-instance`: bỏ qua mở danh sách khi argv có `mochi-notes://` (toast.js tự xử lý URL): `(_e, argv) => { if ((argv||[]).some(a => /^mochi-notes:\/\//i.test(a))) return; ctx.list.open(); }`.
+- C. `docs/spec/01-data.md`: ghi `Note.reminders: Reminder[]` (thêm `id, title?, key?, line?`), `Note.remindMuted: string[]`, `Note.reminder` = primary (xem API2.md mục 3). `02-events.md`: `reminder:pre|due {noteId, reminderId, title}`, `reminder:done|snoozed` thêm `reminderId`; bus mới `alarms:layout {ring}` (vị trí chuông).
+- D. Phòng core (`stage.js`): nút Xong/Hoãn của nhắc note gọi `ctx.notes.completeNote(noteId, p.reminderId)` / `snoozeNote(noteId, 10, p.reminderId)`, tiêu đề dùng `p.title`; thông báo dự phòng dùng `ctx.alarms.toast({kind:'note', refId:noteId, extra:{r:reminderId}, title, body, buttons:[{id:'done',label:'Xong'},{id:'snooze',label:'Hoãn 10 phút',m:10}]})`; công bố `ctx.pet.occupiedRect()` + `pet:moved {rect}`; bé "ghi giúp" gọi `ctx.notes.quickCapture(text, {source:'pet'})` → nói `reply`.
+- E. Phòng persona: `pick('alarm', {label, time})`, `pick('memo', {title})` dùng trong chuông/popup; `note_created` chỉ dùng khi ghi nhanh không có giờ.
+
+**Đợt 1 (cũ):**
 1. `src/main/store.js`: `normalizeReminder` giữ `repeat` (dùng `normRepeat` trong `src/main/alarms/box.js`). Khi đó bản sao lưu cũng có lặp; `noteRepeat.js` vẫn tương thích (nhân bản vào `noteMeta` thành thừa nhưng vô hại).
 2. `docs/spec/01-data.md`: ghi thêm `Repeat.freq: 'hourly'`, `Repeat.anchor?: number`, `Alarm.createdAt`, `Alarm.snoozedUntil?`, `box.missed/sounds/noteMeta` (xem `box.js`).
 3. `src/main/tray.js` + `listWindow.js`: thêm mục khay "Báo thức…" / "Dặn dò…" → `ctx.list.open(tab)`; renderer list đã có hook chuyển tab (hiện qua `alarm:devHint`, có thể thêm kênh `list:tab`).
@@ -74,5 +82,52 @@ Chủ dự án nhấn mạnh: app phải **đọc hiểu note**, không chỉ nh
 5. Thông báo Windows có nút **Tắt / Hoãn** (toastXml) cho báo thức và nhắc note.
 6. Kênh `list:tab` trong renderer danh sách (điều hành đang mở tab bằng `MochiList.setTab`).
 
+## Trạng thái Đợt 2
+_Cập nhật 2026-10-15 (lượt 2 của phòng). Hợp đồng nội bộ: `docs/rooms/notes/API2.md`._
+
+**Đã xong (6/6 việc)**
+1. Hiểu note `src/shared/understand/` (`index.js` + `entities.js`, UMD, offline): nhiều việc/dòng ("họp 9h, 14h gọi khách, tối 8h đi tập" → 3 mục), ngày chung ("Mai:" áp cho cả dòng và các dòng sau), checklist + tiến độ, người/nơi/tiền/SĐT/link/email/#thẻ, ưu tiên 0–3, hạn mềm, gợi ý (remind, remind-all, alarm, checklist, split, call, message, link, email). `parse.js` hiểu không dấu + viết tắt (`ng mai`, `t2`, `cn`, `9g30`, "8 giờ kém 15"), thêm `fold`, `whenSpans`. Sửa cố ý: "12h đêm" = 00:00 hôm sau, "1h đêm" = 01:00.
+2. Nhiều nhắc/note: `Note.reminders[]` (nguồn sự thật, ≤20), `Note.reminder` = primary (cùng tham chiếu, code cũ chạy nguyên), `Note.remindMuted`; migrate trong `normalizeNote`; scheduler xử lý từng mục, gõ thêm chữ không reset trạng thái/id.
+3. API: `mochi.alarms.insight/applySuggestion/quickCapture`, `mochi.notes2.setReminderItem/removeReminderItem/doneItem/snoozeItem/onListTab`; main `ctx.notes.insight/applySuggestion/quickCapture` (trả `reply` "Tớ ghi rồi nha, 3 việc: 09:00 họp…"). `source:'pet'` + đang ẩn hết → không bật cửa sổ note.
+4. Phối hợp bé: chuông/popup dặn dò đặt bằng `placement.js`, né `ctx.pet.occupiedRect()` và dời theo `pet:moved` (khi core có); popup né cả chuông; câu thoại `ctx.persona.pick('alarm'|'memo')` hiện trong chuông/popup. Bus `reminder:pre|due|done|snoozed` thêm `reminderId`, `title`; stage payload có `reminderId`, `title`.
+5. Toast Windows có nút Tắt/Hoãn (`src/main/alarms/toast.js`, giao thức `mochi-notes://`) cho báo thức khi bé tắt; `ctx.alarms.toast(...)` cho note (core dùng — xem đề xuất).
+6. Danh sách: nghe `list:tab`; ô "Ghi nhanh" có xem trước "Bé hiểu: …"; chip "+N", chi tiết từng nhắc (Xong/Hoãn), nút "Gợi ý".
+
+**Test** (`npm test` chưa gồm các bộ mới — xem đề xuất): parse 198, entities 227, understand 245, scheduler 82, reminders 19, insight 56, transfer 52, alarm 12, memo 17, placement 19, toast 25 — xanh ở Asia/Ho_Chi_Minh và America/New_York:
+```
+for t in src/shared/__tests__/*.test.js src/shared/understand/__tests__/*.test.js src/main/notes/__tests__/*.test.js src/main/alarms/__tests__/*.test.js; do TZ=Asia/Ho_Chi_Minh node $t >/dev/null || echo FAIL $t; done
+```
+Chạy thử: `MOCHI_DEV_CAPTURE="họp 9h, 14h gọi khách|mua sữa" MOCHI_DEV_LIST=1` (ghi nhanh như bé lúc khởi động, in `[notes] dev capture …`).
+**Ảnh nghiệm thu**: `docs/rooms/notes/d2-quick-capture-list.png` (3 câu ghi nhanh → nhắc "Họp 09:00", "Đón con 07:00 ngày mai"), `d2-ring-line-list.png` (chuông có câu thoại bé + ô Ghi nhanh, note 0.1 mở bình thường).
+
+**Chưa kiểm được / việc tiếp theo cụ thể**
+1. Windows thật: toast có nút (giao thức `mochi-notes://`), âm thanh, kéo-thả.
+2. Mục "Sắp tới" trong danh sách đang hiện 1 nhắc/note (primary) — nên liệt kê từng nhắc.
+3. Khi core có `occupiedRect`/`pet:moved`: chụp ảnh chuông né bé.
+4. Gom các bộ test mới vào `npm test` (chờ điều hành).
+5. Hiểu note còn thiếu: số bằng chữ ("chín giờ"), "ngày 20" đứng một mình, "9.30", "trong 5 phút", "mai mốt"; câu chỉ có ngày (không giờ) chưa thành mục — có thể thêm nhắc cả ngày.
+
+**Vướng mắc**: không.
+
 ## Gửi phòng paper (yêu cầu giao diện cửa sổ note)
-_(phòng notes ghi ở đây khi có API mới)_
+API đã có trong preload (khối notes), chi tiết `docs/rooms/notes/API2.md` mục 2–5:
+- `await mochi.alarms.insight(noteId)` → `{items, checklist, suggestions:[{id, kind, label}], reminders, people, phones, links, priority, softDeadline, …}`. Dải gợi ý cuối note: hiện tối đa 2–3 `suggestions[].label`; bấm → `mochi.alarms.applySuggestion(noteId, id)` → `{ok, message}` (hiện `message` dạng toast). Gọi lại sau khi gõ (debounce ≥ 600ms) hoặc khi `onNoteUpdated`.
+- Nhiều nhắc: `note.reminders[]` (`{id, due, done, fired, repeat?, title?}`); `note.reminder` vẫn là nhắc chính (chip cũ chạy nguyên). Panel nhắc nên liệt kê từng mục với Xong `mochi.notes2.doneItem(id, rid)`, Hoãn `snoozeItem(id, rid, phút)`, Sửa `setReminderItem(id, rid|null, {due, lead, repeat, title})`, Xoá `removeReminderItem(id, rid)`.
+- Gợi ý `checklist` ghi ra text dạng `- [ ] …` (mỗi dòng một `<div>`) để chế độ checklist của paper nhận. Note có ảnh → `checklist`/`split` trả `ok:false` (không làm mất ảnh).
+- Không cần nạp `understand` trong renderer; nếu muốn xem trước không qua IPC: `<script>` theo thứ tự `shared/parse.js`, `shared/recur.js`, `shared/understand/entities.js`, `shared/understand/index.js` → `window.MochiUnderstand.understand(text)`.
+
+## ĐỢT 2B — chủ dự án bổ sung
+1. **Thùng rác note** (xoá mềm): `ctx.notes.trash(id)`, `ctx.notes.restore(id)`, tự xoá hẳn sau 30 ngày; tab/khu "Thùng rác" trong danh sách. Xoá thường cũng vào thùng rác.
+2. **Note hết hạn**: `ctx.notes.expiredCandidates()` → note đang dán mà (a) mọi nhắc đã Xong, hoặc (b) quá hạn > 24 giờ chưa xong, hoặc (c) checklist đã tick hết. Phát `note:expired {noteId, reason}` (tối đa 1 lần/note/ngày) để bé tới hỏi dọn.
+
+### Trạng thái Đợt 2B
+_Cập nhật 2026-10-15 (lượt 3). Đợt 2 đã xong từ lượt 2 (xem "Trạng thái Đợt 2"); lượt này gộp main và làm 2B._
+**Đã xong**
+1. Thùng rác: `ctx.notes.trash/restore/purge/emptyTrash/trashList/isTrashed`; ngăn dữ liệu `trash` `{items:[{note, trashedAt}]}` (≤500), tự xoá hẳn sau 30 ngày (lúc khởi động + mỗi 6 giờ). `deleteNote` (kênh `note:delete`) giờ là xoá mềm; xoá hẳn: `deleteNotePermanently`. Bus: `note:deleted {id}` rồi `note:trashed {noteId}`; khôi phục: `note:created` rồi `note:restored`. Cỡ chữ/khoá/lặp (`noteMeta`) giữ lại khi vào thùng. Danh sách: chip "Thùng rác (N)" (Khôi phục / Xoá hẳn / Dọn sạch, xác nhận 2 bước), xoá note có toast "Hoàn tác".
+2. Note hết hạn: `ctx.notes.expiredCandidates()` → `[{noteId, reason, title}]` (`overdue` > 24h chưa xong ưu tiên > `done` mọi nhắc xong (không lặp) > `checklist` tick hết; bỏ qua note sửa trong 10 phút). Phát `note:expired {noteId, reason}` 60s sau khởi động rồi mỗi 5 phút, tối đa 1 lần/note/ngày (`noteMeta[id].expiredDay`). Không bao giờ tự xoá.
+3. Preload `mochi.notes2.trashList/trashRestore/trashPurge/trashEmpty/onTrashChanged/expired`.
+**Test**: thêm `trash.test.js` (24), `expiry.test.js` (31) — mọi bộ của phòng xanh ở 2 múi giờ. Chạy thử: `MOCHI_DEV_TRASH=1 MOCHI_DEV_LIST=1 MOCHI_DEV_TAB=trash`. Ảnh: `docs/rooms/notes/d2b-trash.png`.
+**Việc tiếp theo**: core nghe `note:expired` → hỏi dọn → `ctx.notes.trash(noteId)`; thêm cài đặt "tự dọn note đã xong" (mặc định tắt) khi core làm luồng dọn; ảnh nghiệm thu bé dọn note (cần core).
+**Đề xuất cho điều hành (2B)**: `scripts/test-all.js` thêm `src/main/notes/__tests__/trash.test.js`, `expiry.test.js` (cùng danh sách mục A ở trên); `01-data.md` ghi ngăn `trash` (chủ: notes) và `noteMeta[id].expiredDay`.
+**Gửi phòng paper (2B)**: nút xoá trong cửa sổ note gọi `mochi.deleteNote(id)` như cũ — nay là chuyển vào thùng rác, nên đổi chữ xác nhận thành "Chuyển vào thùng rác?" (khôi phục được 30 ngày trong danh sách).
+

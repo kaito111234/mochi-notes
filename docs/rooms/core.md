@@ -66,6 +66,14 @@ Chủ dự án muốn **"một pet tự do trên màn hình, tương tác và gi
 5. **Vùng chiếm chỗ**: công bố `ctx.pet.occupiedRect()` + phát `pet:moved {rect}` để cửa sổ chuông/dặn dò của notes né bé; sửa lỗi tờ note sát mép phải.
 6. Giữ ổn định: CPU khi đứng yên < 3% một nhân; nhiều màn hình; khởi động lại nhớ vị trí bé.
 
+## ĐỢT 2B — chủ dự án bổ sung (làm sau Đợt 2, hoặc cùng lượt nếu kịp)
+Chủ dự án: "Mochi không chỉ ở dưới taskbar mà còn **tương tác được với thẻ note đang treo**; hết hạn thì **tháo xuống, vo tròn rồi ném vào thùng**; lâu lâu **hiện ra vỗ vỗ vào cái app** để nhắc; thêm nhiều hành động".
+1. **Dọn note hết hạn**: khi notes báo note "hết hạn" (API `ctx.notes.expiredCandidates()` — phòng notes làm), bé đi tới cửa sổ note đó, hỏi bằng bong bóng "Note này xong/hết hạn rồi, tớ dọn nha?" [Dọn đi] [Giữ lại]. Đồng ý → bé "gỡ" note: cửa sổ note bị kéo theo tay bé (dời cửa sổ theo bé), co lại thành cục giấy (hiệu ứng vo), bé ném vào **thùng rác hiện ra cạnh taskbar** (cửa sổ nhỏ tạm), gọi `ctx.notes.trash(noteId)` (xoá mềm, khôi phục được). **Không bao giờ tự xoá khi chưa hỏi**; có cài đặt "tự dọn note đã xong" (mặc định tắt).
+2. **Vỗ vào app để nhắc**: khi có việc quá hạn/sắp tới mà người dùng đang làm ở app khác, thỉnh thoảng (tối đa 1 lần/15 phút, tôn trọng chế độ "Đừng làm phiền"/đang trình chiếu toàn màn hình) bé chạy tới **mép cửa sổ đang dùng** và gõ cộc cộc (hành động `knock`, rung nhẹ cửa sổ bé, tiếng gõ nhỏ). Lấy vị trí cửa sổ đang dùng trên Windows bằng PowerShell + user32 (`GetForegroundWindow`/`GetWindowRect`) chạy nền, không cần module native; nền tảng khác thì bỏ qua.
+3. **Thêm hành động** (dùng hình tạm, ghi danh sách cho art): `knock`, `carry_note` (mang note), `crumple` (vo giấy), `throw` (ném), `point` (chỉ vào note), `peek_note` (thò đầu sau note), `sit_on_note`, `climb` (leo mép), `yawn`, `stretch`, `read` (đọc note), `write` (ghi note giúp), `cheer` (khi xong việc), `eat`, `play_cat` (chơi với mèo đen). Đi kèm thoại qua `ctx.persona.pick`.
+4. Nghe `game:outfit` để đổi bộ hình đang mặc khi art có (tạm thời ghi nhận, chưa cần vẽ).
+5. Menu chuột phải trên bé thêm "Phòng của Mochi" (mở cửa sổ game — kênh do phòng game công bố).
+
 ## Trạng thái Đợt 2
 _Cập nhật 2026-10-15 — lượt 2 (Đợt 2). Kiến trúc & chia file nội bộ: `docs/rooms/core/ARCH.md` phần "Đợt 2"._
 

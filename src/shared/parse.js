@@ -17,9 +17,64 @@
   ];
   const DEFAULT_INTENT = { k: 'task', label: 'Việc', lead: 5 * MIN };
 
+  /* ---------- Gấp dấu: ánh xạ 1-1 vị trí để trả chỉ số theo chuỗi gốc ---------- */
+  const COMB = /[\u0300-\u036f]/;
+  const foldRaw = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+  /** Chữ thường, bỏ dấu tiếng Việt (đ->d), gộp khoảng trắng. */
+  const fold = s => foldRaw(s).replace(/\s+/g, ' ').trim();
+  const isDig = c => c !== undefined && c >= '0' && c <= '9';
+  /** lo: chữ thường (NFC) giữ dấu; f: đã bỏ dấu + dấu câu thành khoảng trắng; up: có viết hoa; st/en: vị trí gốc. */
+  function prep(text) {
+    const s = String(text == null ? '' : text);
+    const lo = [], fa = [], up = [], st = [], en = [];
+    let i = 0;
+    while (i < s.length) {
+      let j = i + 1;
+      const cp = s.charCodeAt(i);
+      const astral = cp >= 0xd800 && cp < 0xdc00 && j < s.length && (s.charCodeAt(j) & 0xfc00) === 0xdc00;
+      if (astral) j++;
+      while (j < s.length && COMB.test(s[j])) j++;
+      const nfc = s.slice(i, j).normalize('NFC');
+      let l, f, u = false;
+      if (astral) { l = ' '; f = ' '; } else {
+        l = nfc.toLowerCase()[0] || ' ';
+        u = nfc[0] !== nfc[0].toLowerCase();
+        f = l === 'đ' ? 'd' : (l.normalize('NFD').replace(/[\u0300-\u036f]/g, '')[0] || l);
+        if (/\s/.test(f)) f = ' ';
+      }
+      lo.push(l); fa.push(f); up.push(u); st.push(i); en.push(j);
+      i = j;
+    }
+    for (let k = 0; k < fa.length; k++) {
+      const c = fa[k];
+      if (/[,.!?;()"]/.test(c) && !((c === '.' || c === ',') && isDig(fa[k - 1]) && isDig(fa[k + 1]))) fa[k] = ' ';
+    }
+    return { lo: lo.join(''), f: fa.join(''), up, st, en };
+  }
+  /** f nhưng các từ có dấu bị thay bằng khoảng trắng (chỉ còn từ gõ không dấu). */
+  function plainOnly(P) {
+    const out = P.f.split('');
+    let k = 0;
+    while (k < out.length) {
+      if (!/[\p{L}\p{N}]/u.test(P.f[k])) { k++; continue; }
+      let e = k, acc = false;
+      while (e < out.length && /[\p{L}\p{N}]/u.test(P.f[e])) { if (P.lo[e] !== P.f[e]) acc = true; e++; }
+      if (acc) for (let x = k; x < e; x++) out[x] = ' ';
+      k = e;
+    }
+    return out.join('');
+  }
+  const LN = '\\p{L}\\p{N}';
+  const LB = `(?<![${LN}])`, RB = `(?![${LN}])`, NLB = `(?<![${LN}.,/:])`;
+  const INTENT_PLAIN = INTENTS.map(i => {
+    const src = foldRaw(i.re.source).replace(/ \|/g, '|').replace(/ $/, '');
+    return new RegExp(LB + '(?:' + src + ')' + RB, 'u');
+  });
+
   function intentOf(text) {
-    const s = String(text || '').toLowerCase();
-    return INTENTS.find(i => i.re.test(s)) || DEFAULT_INTENT;
+    const P = prep(text), plain = plainOnly(P);
+    const i = INTENTS.findIndex((it, x) => it.re.test(P.lo) || INTENT_PLAIN[x].test(plain));
+    return i >= 0 ? INTENTS[i] : DEFAULT_INTENT;
   }
   function leadFor(intent, due, timed, now = Date.now()) {
     if (!timed && intent.lead !== 'day' && intent.lead !== 'due') return 0;
@@ -28,49 +83,258 @@
     return intent.lead;
   }
 
-  const DOWN = { hai: 2, ba: 3, 'tư': 4, 'bốn': 4, 'năm': 5, 'sáu': 6, 'bảy': 7 };
+  /* ---------- Quét các cụm thời gian (dùng chung cho parseWhen & whenSpans) ---------- */
+  const DOWMAP = { hai: 2, ba: 3, tu: 4, bon: 4, nam: 5, sau: 6, bay: 7 };
+  const DOWOK = { hai: ['hai'], ba: ['ba'], tu: ['tư', 'tu'], bon: ['bốn', 'bon'], nam: ['năm', 'nam'], sau: ['sáu', 'sau'], bay: ['bảy', 'bay'] };
+  const PERCANON = { sang: 'sáng', trua: 'trưa', chieu: 'chiều', toi: 'tối', dem: 'đêm', khuya: 'khuya' };
+  const PEREXCL = { toi: /^(uu|da|thieu)$/, sang: /^(tao|kien|loc)$/, chieu: /^(cao|dai|rong|sau)$/ };
+  const UNITK = { giay: 1e3, phut: MIN, ph: MIN, p: MIN, tieng: HOUR, gio: HOUR, h: HOUR, ngay: DAY, tuan: 7 * DAY };
+  const UNITOK = { giay: ['giây', 'giay'], phut: ['phút', 'phut'], ph: ['ph'], p: ['p'], tieng: ['tiếng', 'tieng'], gio: ['giờ', 'gio'], h: ['h'], ngay: ['ngày', 'ngay'], tuan: ['tuần', 'tuan'] };
+  const TITLES = /(?:^|\s)(?:anh|chi|em|co|chu|bac|di|cau|mo|ong|ba|me|bo|ban|be|sep|thay|hoa|cay)\s+$/;
+  const FLOWER = /(?:^|\s)(?:hoa|cay)\s+$/;
+  const NOT_NAY = /(?:^|\s)(?:tuan|thang|nam|quy|nhat|cn|t[2-7]|ngay|[2-7]|hai|ba|tu|bon|sau|bay)\s+$/;
+  const NUMPER_BLOCK = /(?:^|\s)(?:phong|tang|so|lop|ban|bai|muc|buoc|thang|ngay|tuan|quy|trang|cau|tap|dong|thu|nhom|toa|can|lau)\s+$/;
+  const R = (src) => new RegExp(src, 'gud');
+
+  function scan(text) {
+    const P = prep(text), f = P.f, lo = P.lo, up = P.up;
+    let w = f;
+    const toks = [];
+    const blank = (a, b) => { w = w.slice(0, a) + '\u0001'.repeat(b - a) + w.slice(b); };
+    const okw = (a, b, list) => list.indexOf(lo.slice(a, b)) >= 0;
+    const run = (re, accept) => {
+      const src = w; re.lastIndex = 0; let m;
+      while ((m = re.exec(src))) {
+        const a = m.index, b = a + m[0].length;
+        const t = accept(m, a, b);
+        if (t) { if (t.a === undefined) t.a = a; if (t.b === undefined) t.b = b; toks.push(t); blank(t.a, t.b); re.lastIndex = b; }
+        else re.lastIndex = a + 1;
+      }
+    };
+
+    /* khoảng thời gian: "5 phút nữa", "sau 2 tiếng", "1 giờ 30 phút nữa" */
+    run(R(`${NLB}(\\d{1,3})\\s*(tieng|gio|h)\\s*(\\d{1,2})\\s*(phut|ph|p)\\s*(nua|sau)${RB}`), (m, a, b) => {
+      const i = m.indices;
+      if (!okw(i[2][0], i[2][1], UNITOK[m[2]]) || !okw(i[4][0], i[4][1], UNITOK[m[4]]) || !okw(i[5][0], i[5][1], ['nữa', 'nua', 'sau'])) return null;
+      return { type: 'dur', ms: +m[1] * HOUR + (+m[3]) * MIN, timed: true };
+    });
+    run(R(`${NLB}(\\d{1,3})\\s*(giay|phut|ph|p|tieng|gio|h|ngay|tuan)\\s*(?:(ruoi)\\s*)?(nua|sau|toi)${RB}`), (m, a, b) => {
+      const i = m.indices, u = m[2];
+      if (!okw(i[2][0], i[2][1], UNITOK[u])) return null;
+      if (/(?:^|\s)thu\s*$/.test(f.slice(0, a))) return null;
+      if (m[3] && !okw(i[3][0], i[3][1], ['rưỡi', 'ruoi'])) return null;
+      if (m[3] && u !== 'tieng' && u !== 'gio') return null;
+      const wd = lo.slice(i[4][0], i[4][1]);
+      if (m[4] === 'toi') { if (wd === 'tối') return null; if (wd === 'toi' && (u === 'gio' || u === 'h')) return null; if (wd !== 'tới' && wd !== 'toi') return null; }
+      else if (wd !== 'nữa' && wd !== 'nua' && wd !== 'sau') return null;
+      return { type: 'dur', ms: +m[1] * UNITK[u] + (m[3] ? HOUR / 2 : 0), timed: u !== 'ngay' && u !== 'tuan' };
+    });
+    run(R(`${LB}sau\\s*(\\d{1,3})\\s*(giay|phut|ph|p|tieng|ngay|tuan)${RB}`), (m, a, b) => {
+      const i = m.indices;
+      if (lo.slice(a, a + 3) !== 'sau' || !okw(i[2][0], i[2][1], UNITOK[m[2]])) return null;
+      return { type: 'dur', ms: +m[1] * UNITK[m[2]], timed: m[2] !== 'ngay' && m[2] !== 'tuan' };
+    });
+
+    /* ngày cụ thể */
+    const dateTok = (d, mo, y) => (d >= 1 && d <= 31 && mo >= 1 && mo <= 12) ? { type: 'date', d, mo, y } : null;
+    run(R(`(?:${LB}ngay\\s*)?(?<![${LN}./:])(\\d{1,2})\\s*\\/\\s*(\\d{1,2})(?:\\s*\\/\\s*(\\d{4}|\\d{2}))?(?![\\d/])`), (m, a) => {
+      if (m[0].startsWith('ngay') && !okw(a, a + 4, ['ngày', 'ngay'])) return null;
+      return dateTok(+m[1], +m[2], m[3] ? (m[3].length === 2 ? 2000 + (+m[3]) : +m[3]) : undefined);
+    });
+    run(R(`(?<![${LN}./:\\-])(\\d{1,2})\\s*-\\s*(\\d{1,2})\\s*-\\s*(\\d{4}|\\d{2})(?![\\d\\-])`), (m) => dateTok(+m[1], +m[2], m[3].length === 2 ? 2000 + (+m[3]) : +m[3]));
+    run(R(`${LB}ngay\\s*(\\d{1,2})\\s*thang\\s*(\\d{1,2})(?:\\s*nam\\s*(\\d{4}))?${RB}`), (m, a) => {
+      const i = m.indices;
+      if (!okw(a, a + 4, ['ngày', 'ngay'])) return null;
+      const th = f.indexOf('thang', i[1][1]);
+      if (!okw(th, th + 5, ['tháng', 'thang'])) return null;
+      return dateTok(+m[1], +m[2], m[3] ? +m[3] : undefined);
+    });
+    run(R(`${LB}cuoi\\s*thang${RB}`), (m, a, b) => {
+      const th = f.indexOf('thang', a);
+      return okw(a, a + 4, ['cuối', 'cuoi']) && okw(th, th + 5, ['tháng', 'thang']) ? { type: 'eom' } : null;
+    });
+    /* thứ trong tuần */
+    run(R(`${LB}(?:(chu\\s*nhat)|(cn)|thu\\s*(hai|ba|tu|bon|nam|sau|bay|[2-7])|t([2-7]))${RB}`), (m, a, b) => {
+      const i = m.indices;
+      if (m[1]) { const nh = f.indexOf('nhat', a); return okw(a, a + 3, ['chủ', 'chu']) && okw(nh, nh + 4, ['nhật', 'nhat']) ? { type: 'dow', dow: 0 } : null; }
+      if (m[2]) return { type: 'dow', dow: 0 };
+      if (m[4]) return { type: 'dow', dow: +m[4] - 1 };
+      if (!okw(a, a + 3, ['thứ', 'thu'])) return null;
+      const wd = m[3];
+      if (/^\d$/.test(wd)) return { type: 'dow', dow: +wd - 1 };
+      const w0 = i[3][0], w1 = i[3][1];
+      if (!okw(w0, w1, DOWOK[wd])) return null;
+      const accented = lo.slice(a, a + 3) === 'thứ' || lo.slice(w0, w1) !== f.slice(w0, w1);
+      if (!accented) {
+        if ((wd === 'nam' || wd === 'tu' || wd === 'ba') && up[w0]) return null;
+        if (wd === 'tu' && !/^\s*(?:$|\d|sang|trua|chieu|toi|dem|khuya|luc|vao|tuan|nay|nhe)/.test(f.slice(b))) return null;
+      }
+      return { type: 'dow', dow: DOWMAP[wd] - 1 };
+    });
+    run(R(`${LB}tuan\\s*(sau|toi)${RB}`), (m, a) => {
+      const i = m.indices, wd = lo.slice(i[1][0], i[1][1]);
+      return okw(a, a + 4, ['tuần', 'tuan']) && (wd === 'sau' || wd === 'tới' || wd === 'toi') ? { type: 'weeknext' } : null;
+    });
+    run(R(`${LB}cuoi\\s*tuan${RB}`), (m, a) => {
+      const tu = f.indexOf('tuan', a);
+      return okw(a, a + 4, ['cuối', 'cuoi']) && okw(tu, tu + 4, ['tuần', 'tuan']) ? { type: 'weekend' } : null;
+    });
+    run(R(`${LB}(?:(ngay)\\s*)?(mot|kia)${RB}`), (m, a) => {
+      const i = m.indices, wd = lo.slice(i[2][0], i[2][1]);
+      if (m[1] && !okw(i[1][0], i[1][1], ['ngày', 'ngay'])) return null;
+      if (m[2] === 'kia') return m[1] ? { type: 'mot' } : null;
+      if (wd === 'mốt') return { type: 'mot' };
+      return wd === 'mot' && m[1] && lo.slice(i[1][0], i[1][1]) === 'ngay' ? { type: 'mot' } : null;
+    });
+    run(R(`(?:${LB}(?:ngay|ng)\\s*mai|${LB}mai)${RB}`), (m, a, b) => {
+      if (!okw(b - 3, b, ['mai'])) return null;
+      if (b - a > 3) { const pre = lo.slice(a, b).replace(/\s*mai$/, ''); if (pre !== 'ng' && pre !== 'ngày' && pre !== 'ngay') return null; }
+      else if (FLOWER.test(f.slice(0, a)) || (up[a] && TITLES.test(f.slice(0, a)))) return null;
+      return { type: 'mai' };
+    });
+    run(R(`(?:${LB}(hom|bua)\\s*nay|${LB}nay)${RB}`), (m, a, b) => {
+      const i = m.indices, wd = lo.slice(b - 3, b);
+      if (m[1] && !okw(i[1][0], i[1][1], ['hôm', 'hom', 'bữa', 'bua'])) return null;
+      if (!m[1] && NOT_NAY.test(f.slice(0, a))) return (wd === 'nay' || wd === 'này') ? { type: 'this' } : null;
+      return wd === 'nay' ? { type: 'nay' } : null;
+    });
+
+    /* giờ */
+    const hmOK = (h, mi) => h >= 0 && h <= 24 && mi >= 0 && mi <= 59;
+    run(R(`${NLB}(\\d{1,2})\\s*(?:(gio|h|g)\\s*)?(kem)\\s*(\\d{1,2})(?![\\d])(?:\\s*(?:phut|ph|p)(?![${LN}]))?`), (m, a, b) => {
+      const i = m.indices, h = +m[1], k = +m[4];
+      const kk = lo.slice(i[3][0], i[3][1]);
+      if (kk !== 'kém' && kk !== 'kem') return null;
+      if (!m[2] && kk !== 'kém') return null;
+      if (m[2] === 'gio' && !okw(i[2][0], i[2][1], ['giờ', 'gio'])) return null;
+      if (m[2] === 'g' && up[i[2][0]]) return null;
+      if (!(h >= 1 && h <= 24 && k >= 1 && k <= 59)) return null;
+      return { type: 'clock', h: h - 1, mi: 60 - k };
+    });
+    run(R(`${NLB}(\\d{1,2})\\s*(?:(gio|h|g)\\s*)?ruoi${RB}`), (m, a, b) => {
+      const i = m.indices, h = +m[1];
+      const rr = lo.slice(b - 4, b);
+      if (rr !== 'rưỡi' && rr !== 'ruoi') return null;
+      if (m[2] === 'gio' && !okw(i[2][0], i[2][1], ['giờ', 'gio'])) return null;
+      if (m[2] === 'g' && up[i[2][0]]) return null;
+      if (!m[2] && h > 12) return null;
+      if (!(h >= 0 && h <= 24)) return null;
+      return { type: 'clock', h, mi: 30 };
+    });
+    run(R(`${NLB}(\\d{1,2})(?:(\\s*gio)|(\\s*h)|(g))(?!\\p{L})(?:(\\d{1,2})|\\s+(\\d{2})|\\s+(\\d)(?=\\s*(?:phut|p)(?![${LN}])))?(?![\\d])`), (m, a, b) => {
+      const i = m.indices, h = +m[1];
+      if (m[2] && !okw(i[2][0] + m[2].length - 3, i[2][1], ['giờ', 'gio'])) return null;
+      if (m[4] && up[i[4][0]]) return null;
+      const mi = +(m[5] || m[6] || m[7] || 0);
+      if (!hmOK(h, mi)) return null;
+      return { type: 'clock', h, mi };
+    });
+    run(R(`${NLB}(\\d{1,2}):(\\d{2})(?![\\d:])`), (m) => hmOK(+m[1], +m[2]) ? { type: 'clock', h: +m[1], mi: +m[2] } : null);
+    run(R(`${NLB}(\\d{1,2})\\s*(sang|trua|chieu|toi)${RB}`), (m, a, b) => {
+      const i = m.indices, h = +m[1], p = m[2], wd = lo.slice(i[2][0], i[2][1]);
+      if (!(h >= 1 && h <= 12) || NUMPER_BLOCK.test(f.slice(0, a))) return null;
+      if (wd !== PERCANON[p] && !(wd === p && (p === 'trua' || p === 'chieu'))) return null;
+      return { type: 'clock', h, mi: 0, per: p, perA: i[2][0] };
+    });
+
+    /* buổi trong ngày */
+    const adjTypes = { sang: ['clock', 'mai', 'nay'], toi: ['clock', 'mai', 'nay', 'dow'], dem: ['clock', 'mai', 'nay', 'dow'] };
+    const adj = (a, b, types) => toks.some(t => types.indexOf(t.type) >= 0 &&
+      ((t.b <= a && /^\s*$/.test(f.slice(t.b, a))) || (t.a >= b && /^\s*$/.test(f.slice(b, t.a)))));
+    run(R(`${LB}(sang|trua|chieu|toi|dem|khuya)${RB}`), (m, a, b) => {
+      const p = m[1], wd = lo.slice(a, b);
+      let bs = -1;
+      if (/(?:^|\s)buoi\s+$/.test(f.slice(0, a))) { bs = f.slice(0, a).lastIndexOf('buoi'); if (!okw(bs, bs + 4, ['buổi', 'buoi'])) bs = -1; }
+      const buoi = bs >= 0;
+      const nx = (f.slice(b).match(/^\s*(\S+)/) || [])[1] || '';
+      if (PEREXCL[p] && PEREXCL[p].test(nx)) return null;
+      if (wd !== PERCANON[p] && wd !== p) return null;
+      if (wd === p && wd !== PERCANON[p] && (p === 'sang' || p === 'toi' || p === 'dem') && !buoi && !adj(a, b, adjTypes[p])) return null;
+      const t = { type: 'per', per: p };
+      if (buoi) t.a = bs;
+      return t;
+    });
+    toks.sort((x, y) => x.a - y.a);
+    return { toks, P };
+  }
+
   /** Trả về {date: Date, timed: boolean} hoặc null nếu câu không có thời gian. */
   function parseWhen(raw, nowD = new Date()) {
-    const s = ' ' + String(raw || '').toLowerCase().replace(/[,.!?;()"]/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const toks = scan(raw).toks;
     const now = nowD.getTime();
-    let m = s.match(/(\d+)\s*(giây|phút|ph|p|tiếng|giờ|h|ngày|tuần)\s*(nữa|sau|tới)/u);
-    if (m) {
-      const k = { 'giây': 1e3, 'phút': MIN, ph: MIN, p: MIN, 'tiếng': HOUR, 'giờ': HOUR, h: HOUR, 'ngày': DAY, 'tuần': 7 * DAY }[m[2]];
-      return { date: new Date(now + (+m[1]) * k), timed: !/ngày|tuần/.test(m[2]) };
-    }
+    const has = ty => toks.find(t => t.type === ty);
+    const dur = has('dur');
+    if (dur) return { date: new Date(now + dur.ms), timed: dur.timed };
     const today = new Date(nowD); today.setHours(0, 0, 0, 0);
-    let base = new Date(today), dayset = false, dowExact = false;
+    let base = new Date(today), dayset = false, dowExact = false, t;
     const plus = n => { base = new Date(today); base.setDate(base.getDate() + n); dayset = true; };
     const toMon = () => ((8 - today.getDay()) % 7) || 7;
-    if ((m = s.match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})(?:\s*[\/\-]\s*(\d{2,4}))?/)) || (m = s.match(/ngày\s*(\d{1,2})\s*tháng\s*(\d{1,2})/))) {
-      const y = m[3] ? (+m[3] < 100 ? 2000 + (+m[3]) : +m[3]) : today.getFullYear();
-      base = new Date(y, +m[2] - 1, +m[1]); if (!m[3] && base < today) base.setFullYear(y + 1); dayset = true;
-    } else if (/cuối tháng/.test(s)) { base = new Date(today.getFullYear(), today.getMonth() + 1, 0); dayset = true; }
-    else if ((m = s.match(/chủ nhật|\scn\s|thứ\s*(hai|ba|tư|bốn|năm|sáu|bảy|[2-7])/u))) {
-      const dow = m[0].trim().startsWith('ch') || m[0].trim() === 'cn' ? 0 : ((DOWN[m[1]] || +m[1]) - 1);
-      if (/tuần sau|tuần tới/.test(s)) plus(toMon() + ((dow + 6) % 7));
-      else { const d = (dow - today.getDay() + 7) % 7; plus(d); dowExact = d === 0; }
+    let dateOk = false;
+    if ((t = has('date'))) {
+      const y = t.y || today.getFullYear();
+      let b = new Date(y, t.mo - 1, t.d);
+      if (!t.y && b < today) b = new Date(y + 1, t.mo - 1, t.d);
+      if (b.getMonth() === t.mo - 1 && b.getDate() === t.d) { base = b; dayset = true; dateOk = true; }
     }
-    else if (/tuần sau|tuần tới/.test(s)) plus(toMon());
-    else if (/cuối tuần/.test(s)) plus((6 - today.getDay() + 7) % 7);
-    else if (/ngày mốt|ngày kia/.test(s)) plus(2);
-    else if (/ mai /.test(s)) plus(1);
-    const explicitToday = /hôm nay| nay /.test(s);
-    const per = (s.match(/sáng|trưa|chiều|tối|đêm|khuya/) || [])[0] || '';
-    const tm = s.match(/(\d{1,2})\s*(?:giờ|h|g|:)(?!\p{L})\s*(\d{1,2})?/u);
-    if (!tm && !per && !dayset && !explicitToday) return null;
-    let h = tm ? +tm[1] : ({ 'sáng': 8, 'trưa': 12, 'chiều': 15, 'tối': 20, 'đêm': 22, 'khuya': 23 }[per] ?? 9);
-    const mi = tm && tm[2] ? +tm[2] : (/rưỡi/.test(s) ? 30 : 0);
-    if (h > 23 || mi > 59) return null;
-    if (/chiều|tối|đêm|khuya/.test(per) && h < 12) h += 12;
-    if (per === 'trưa' && h <= 3) h += 12;
+    if (dateOk) { /* đã có ngày */ }
+    else if (has('eom')) { base = new Date(today.getFullYear(), today.getMonth() + 1, 0); dayset = true; }
+    else if ((t = has('dow'))) {
+      if (has('weeknext')) plus(toMon() + ((t.dow + 6) % 7));
+      else { const d = (t.dow - today.getDay() + 7) % 7; plus(d); dowExact = d === 0; }
+    }
+    else if (has('weeknext')) plus(toMon());
+    else if (has('weekend')) plus((6 - today.getDay() + 7) % 7);
+    else if (has('mot')) plus(2);
+    else if (has('mai')) plus(1);
+    const explicitToday = !!has('nay');
+    const pt = toks.find(x => x.per), per = pt ? pt.per : '';
+    const ck = has('clock');
+    if (!ck && !per && !dayset && !explicitToday) return null;
+    let h = ck ? ck.h : ({ sang: 8, trua: 12, chieu: 15, toi: 20, dem: 22, khuya: 23 }[per] ?? 9);
+    const mi = ck ? ck.mi : 0;
+    let extra = 0;
+    if (h === 24) { h = 0; extra = 1; }
+    if (per === 'chieu' || per === 'toi') { if (h < 12) h += 12; }
+    else if (per === 'dem' || per === 'khuya') { if (h === 12) h = 0; else if (h >= 5 && h < 12) h += 12; }
+    if (per === 'trua' && h <= 3) h += 12;
+    const nightAm = (per === 'dem' || per === 'khuya') && h <= 4 && !!ck;
     const d = new Date(base); d.setHours(h, mi, 0, 0);
+    if (extra) d.setDate(d.getDate() + 1);
+    if (nightAm && (dayset || explicitToday)) d.setDate(d.getDate() + 1);
     if (!dayset && d.getTime() <= now) {
-      if (!per && h < 12 && d.getTime() + 12 * HOUR > now) d.setTime(d.getTime() + 12 * HOUR);
+      if (!per && h > 0 && h < 12 && d.getTime() + 12 * HOUR > now) d.setTime(d.getTime() + 12 * HOUR);
       else if (!explicitToday) d.setDate(d.getDate() + 1);
     }
     if (dowExact && d.getTime() <= now) d.setDate(d.getDate() + 7);
-    return { date: d, timed: !!(tm || per) };
+    return { date: d, timed: !!(ck || per) };
+  }
+
+  /** Các cụm chỉ thời gian đã nhận ra: [[start,end], ...] theo chỉ số CHUỖI GỐC. */
+  function whenSpans(text) {
+    const { toks, P } = scan(text), f = P.f, lo = P.lo;
+    if (!toks.length) return [];
+    const groups = [];
+    for (const t of toks) {
+      const g = groups[groups.length - 1];
+      if (g) {
+        const gap = f.slice(g.b, t.a);
+        const both = g.last === 'clock' && t.type === 'clock';
+        if (t.a >= g.b && (/^[\s,]*(?:(?:vao|luc|khoang|tam)[\s,]+)*$/.test(gap) || (both && /^\s*(?:-|~|den)\s*$/.test(gap)))) { g.b = Math.max(g.b, t.b); g.last = t.type; continue; }
+        if (t.a < g.b) { g.b = Math.max(g.b, t.b); continue; }
+      }
+      groups.push({ a: t.a, b: t.b, last: t.type });
+    }
+    return groups.map(g => {
+      let a = g.a;
+      for (;;) {
+        const m = f.slice(0, a).match(/(?:^|\s)(vao|luc|khoang|tam)\s+$/);
+        if (!m) break;
+        const ws = f.slice(0, a).lastIndexOf(m[1]);
+        if (['vào', 'vao', 'lúc', 'luc', 'khoảng', 'khoang', 'tầm', 'tam'].indexOf(lo.slice(ws, ws + m[1].length)) < 0) break;
+        a = ws;
+      }
+      return [P.st[a], P.en[g.b - 1]];
+    });
   }
 
   /** Phân tích toàn bộ note. due=null nếu không có giờ. */
@@ -99,7 +363,7 @@
   const leadLabel = l => l >= DAY ? 'báo trước 1 ngày' : l > 0 ? 'báo trước ' + dur(l) : 'báo đúng giờ';
   const intentLabel = k => (INTENTS.find(i => i.k === k) || DEFAULT_INTENT).label;
 
-  const api = { MIN, HOUR, DAY, parseWhen, analyze, intentOf, intentLabel, leadFor, whenLabel, dur, leadLabel, hm };
+  const api = { MIN, HOUR, DAY, fold, whenSpans, parseWhen, analyze, intentOf, intentLabel, leadFor, whenLabel, dur, leadLabel, hm };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MochiParse = api;
 })(typeof window !== 'undefined' ? window : globalThis);

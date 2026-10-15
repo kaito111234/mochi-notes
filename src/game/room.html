@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phòng của Mochi</title>
+<link rel="stylesheet" href="room.css">
+<link rel="stylesheet" href="tabs/wardrobe.css">
+<link rel="stylesheet" href="tabs/gacha.css">
+<link rel="stylesheet" href="tabs/shop.css">
+<link rel="stylesheet" href="tabs/quests.css">
+<link rel="stylesheet" href="tabs/stats.css">
+</head>
+<body>
+<div class="room" id="room">
+  <header class="titlebar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 14c0-4.4 3-8 7-8s7 3.6 7 8c0 2.8-1.6 4.5-4 4.5H9c-2.4 0-4-1.7-4-4.5z" fill="var(--mint)" stroke="var(--text)" stroke-width="1.6" stroke-linejoin="round"/><circle cx="9.5" cy="13" r="1" fill="var(--text)"/><circle cx="14.5" cy="13" r="1" fill="var(--text)"/></svg>
+      <span class="brand-name">Phòng của Mochi</span>
+    </div>
+    <div class="tb-right">
+      <div class="wallet" title="Xu của cậu"><span class="wallet-coin" id="coinIcon"></span><span class="wallet-num" id="coinNum">0</span></div>
+      <div class="level" id="levelChip" title="Kinh nghiệm">
+        <span class="level-label" id="levelLabel">Cấp 1</span>
+        <span class="level-bar"><i id="levelFill"></i></span>
+      </div>
+      <button class="icon-btn" id="btnClose" type="button" title="Đóng (Esc)" aria-label="Đóng"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="side">
+      <nav class="tablist" id="tablist" role="tablist" aria-label="Các mục" aria-orientation="vertical"></nav>
+
+      <div class="pet-card card" id="petCard">
+        <div class="pc-head"><span class="pc-title">Bé Mochi</span><span class="pc-mode" id="pcMode">Bình thường</span></div>
+        <div class="pc-row"><span class="pc-lab">Tâm trạng</span><span class="meter"><i id="pcMood"></i></span></div>
+        <div class="pc-row"><span class="pc-lab">Năng lượng</span><span class="meter meter-sky"><i id="pcEnergy"></i></span></div>
+        <div class="pc-streak" id="pcStreak">0 ngày liên tiếp</div>
+      </div>
+
+      <div class="toggle-box">
+        <label class="switch-row" for="swEnabled">
+          <span class="switch-name">Game hóa</span>
+          <span class="switch"><input type="checkbox" id="swEnabled" role="switch"><span class="knob"></span></span>
+        </label>
+        <p class="switch-hint">Tắt thì note và nhắc lịch vẫn chạy y nguyên.</p>
+      </div>
+    </aside>
+
+    <main class="content" id="content">
+      <div class="panels" id="panels"></div>
+      <div class="off-veil" id="offVeil" hidden>
+        <div class="off-card card">
+          <div class="off-title">Game hóa đang tắt</div>
+          <p>Note và nhắc lịch vẫn chạy bình thường. Bật lại để nhận xu và chăm bé.</p>
+          <button class="btn btn-primary" id="btnEnable" type="button">Bật game hóa</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</div>
+
+<script src="preview.js"></script>
+<script src="room.js"></script>
+<script src="tabs/wardrobe.js"></script>
+<script src="tabs/gacha.js"></script>
+<script src="tabs/shop.js"></script>
+<script src="tabs/quests.js"></script>
+<script src="tabs/stats.js"></script>
+</body>
+</html>

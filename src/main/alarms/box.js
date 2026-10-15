@@ -13,7 +13,7 @@ function defaults() {
     memos: [],         // Memo[]
     missed: [],        // [{alarmId, label, at}] báo thức đã lỡ (tối đa 50)
     sounds: [],        // [{soundFile, name}] âm thanh người dùng đã chép vào userData/alarm-sounds
-    noteMeta: {},      // { [noteId]: { repeat?: Repeat|null, zoom?: number, locked?: boolean } }
+    noteMeta: {},      // { [noteId]: { repeat?: Repeat|null, zoom?: number, locked?: boolean, expiredDay?: 'YYYY-MM-DD' } }
     settings: {
       defaultSnoozeMin: 10,
       defaultSound: 'chime',
@@ -97,6 +97,7 @@ function normalize(stored) {
       const r = normRepeat(m.repeat); if (r) o.repeat = r;
       if (isNum(m.zoom) && m.zoom >= 0.5 && m.zoom <= 3) o.zoom = m.zoom;
       if (m.locked) o.locked = true;
+      if (isStr(m.expiredDay) && /^\d{4}-\d{2}-\d{2}$/.test(m.expiredDay)) o.expiredDay = m.expiredDay;
       if (Object.keys(o).length && !Object.prototype.hasOwnProperty.call(d.noteMeta, id)) d.noteMeta[id] = o;
     }
   }

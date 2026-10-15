@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>checklist test</title>
+<link rel="stylesheet" href="../checklist.css">
+<style>
+:root{--fg:#1f1f1f;--fg-rgb:31,31,31;--bg-rgb:255,247,209;--head-rgb:255,242,171}
+body{margin:0;background:rgb(var(--bg-rgb));color:var(--fg);font:15px/1.5 "Segoe UI",system-ui,sans-serif;width:320px;height:360px;display:flex;flex-direction:column}
+body[data-color="charcoal"]{--bg-rgb:74,74,74;--fg:#f2f2f2;--fg-rgb:242,242,242}
+.topbar{height:32px;display:flex;align-items:center;background:rgba(var(--head-rgb),1);padding:0 6px}
+.spacer{flex:1}
+.body{flex:1;min-height:0;display:flex;position:relative}
+#editor{flex:1;min-width:0;overflow:auto;outline:none;padding:8px 12px;line-height:1.5;--step:1.5em}
+#editor.empty::before{content:attr(data-placeholder);position:absolute;left:12px;top:8px;color:rgba(var(--fg-rgb),.5);pointer-events:none}
+#editor div,#editor p{margin:0}
+#editor ul{margin:0;padding-left:22px}
+#menu{position:absolute;top:32px;right:4px;background:#fff;border:1px solid #999;padding:4px}
+#menu[hidden]{display:none}
+.mi{display:block;padding:4px 8px}
+</style></head>
+<body data-color="yellow">
+<div class="topbar"><span class="ck-count" id="ckCount" hidden></span><span class="spacer"></span><button id="btnMenu" type="button">...</button></div>
+<main class="body"><div id="editor" contenteditable="true" data-placeholder="Ghi chú…"></div></main>
+<div id="menu" hidden><button class="mi" data-act="checklist"><span>Chuyển thành checklist</span></button></div>
+<script src="checklist-test.js"></script>
+<script src="../checklist.js"></script>
+</body></html>

@@ -5,10 +5,16 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Note</title>
+<link rel="stylesheet" href="../../assets/fonts/fonts.css">
 <link rel="stylesheet" href="note.css">
+<link rel="stylesheet" href="paper.css">
+<link rel="stylesheet" href="checklist.css">
+<link rel="stylesheet" href="picker.css">
+<link rel="stylesheet" href="insight.css">
 </head>
 <body data-color="yellow">
 <div class="note" id="note">
+  <div class="paper-layer" id="paperLayer" aria-hidden="true"></div>
   <header class="topbar">
     <button class="ib" id="btnNew" type="button" title="Note mới (Ctrl+N)" aria-label="Note mới">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -19,7 +25,9 @@
     <span class="pin" id="lockInd" hidden title="Note đang khoá (chỉ đọc)" aria-label="Note đang khoá">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
     </span>
+    <span id="paperHead" class="paper-head"></span>
     <span class="spacer"></span>
+    <span class="ck-count" id="ckCount" hidden></span>
     <button class="ib" id="btnMenu" type="button" data-pop-toggle title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
     </button>
@@ -39,6 +47,8 @@
     <main class="body"><div id="editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Nội dung note" data-placeholder="Ghi chú…"></div></main>
 
     <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+
+    <div class="insight-row" id="insightRow" hidden></div>
 
     <div class="chiprow" id="chipRow" hidden>
       <button class="chip" id="chip" type="button" data-pop-toggle>
@@ -84,6 +94,8 @@
       </div>
       <button class="mi" type="button" role="menuitemcheckbox" aria-checked="false" data-act="top"><span>Luôn nổi trên cùng</span><svg class="chk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7"/></svg></button>
       <button class="mi" type="button" role="menuitem" data-act="remind"><span>Nhắc lịch…</span></button>
+      <button class="mi" type="button" role="menuitem" data-act="paper"><span>Mẫu giấy…</span></button>
+      <button class="mi" type="button" role="menuitem" data-act="checklist"><span>Chuyển thành checklist</span></button>
       <button class="mi" type="button" role="menuitem" data-act="find"><span>Tìm trong note</span><kbd>Ctrl+F</kbd></button>
       <button class="mi" type="button" role="menuitemcheckbox" aria-checked="false" data-act="lock"><span>Khoá note</span><svg class="chk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7"/></svg></button>
       <button class="mi" type="button" role="menuitem" data-act="exptxt"><span>Xuất .txt</span></button>
@@ -102,6 +114,8 @@
       </div>
     </div>
   </div>
+
+  <div class="pop picker-panel" id="pickerPanel" hidden role="dialog" aria-label="Mẫu giấy"></div>
 
   <div class="pop panel" id="remPanel" hidden role="dialog" aria-label="Nhắc lịch">
     <div class="ptitle">Nhắc lịch</div>
@@ -139,6 +153,13 @@
 </div>
 <script src="../shared/parse.js"></script>
 <script src="../shared/recur.js"></script>
+<script src="../../assets/paper/catalog.js"></script>
+<script src="paper.js"></script>
+<script src="paperStore.js"></script>
 <script src="note.js"></script>
+<script src="paperCtl.js"></script>
+<script src="checklist.js"></script>
+<script src="picker.js"></script>
+<script src="insight.js"></script>
 </body>
 </html>

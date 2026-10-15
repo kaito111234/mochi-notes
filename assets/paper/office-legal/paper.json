@@ -1,0 +1,27 @@
+{
+  "id": "office-legal",
+  "name": "Legal pad vàng",
+  "group": "office",
+  "order": 30,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#fff3a8",
+    "head": "#f2e17a",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "margin-ruled",
+    "color": "rgba(70,110,170,.35)",
+    "step": 26,
+    "margin": "#e05a5a"
+  },
+  "header": null,
+  "ink": "#2a2a2a",
+  "font": "bevietnam",
+  "edge": "torn-top",
+  "corner": null,
+  "deco": [],
+  "checklist": false
+}

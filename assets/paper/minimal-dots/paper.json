@@ -1,0 +1,27 @@
+{
+  "id": "minimal-dots",
+  "name": "Trắng chấm bi",
+  "group": "minimal",
+  "order": 10,
+  "noteColor": "gray",
+  "dark": false,
+  "bg": {
+    "color": "#ffffff",
+    "head": "same",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "dots",
+    "color": "rgba(0,0,0,.2)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2b2b2b",
+  "font": "bevietnam",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false
+}

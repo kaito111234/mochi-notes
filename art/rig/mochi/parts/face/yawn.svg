@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<defs><linearGradient id="yawn-iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2E6B55"/><stop offset=".5" stop-color="#4FA37A"/><stop offset="1" stop-color="#A6E3BE"/></linearGradient></defs>
+<g id="blush"><ellipse cx="158" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity="0.8"/><ellipse cx="242" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity="0.8"/></g>
+<g id="eye_l"><path d="M186 184Q173 192 160 183" fill="none" stroke="#1F2A44" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M160 183C157 182 155 181 154 178.5" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g id="eye_r"><path d="M214 184Q227 192 240 183" fill="none" stroke="#1F2A44" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M240 183C243 182 245 181 246 178.5" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>
+<clipPath id="yawn-mclip"><ellipse cx="200" cy="211" rx="6" ry="8.5"/></clipPath><g id="mouth"><ellipse cx="200" cy="211" rx="6" ry="8.5" fill="#8E4A57"/><g clip-path="url(#yawn-mclip)"><ellipse cx="200" cy="217.5" rx="4.5" ry="4" fill="#E88A8F"/></g><ellipse cx="200" cy="211" rx="6" ry="8.5" fill="none" stroke="#1F2A44" stroke-width="1.8"/></g>
+</svg>

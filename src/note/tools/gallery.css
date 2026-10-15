@@ -1,0 +1,10 @@
+/* công cụ dev, không đóng gói */
+body.gallery { overflow: auto; height: auto; background: #cfd3da; color: #222; padding: 12px 16px 40px; font: 14px/1.4 system-ui, sans-serif; }
+.gallery h1 { font-size: 18px; margin: 0 0 8px; } .gallery h2 { font-size: 14px; margin: 16px 0 6px; } .gallery small { font-weight: 400; color: #555; }
+.gbar { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; }
+.gthumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.ggrid { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 18px 16px; }
+.gcell { width: 240px; } .gcell .gname { font-size: 12px; margin-top: 6px; text-align: center; color: #333; }
+.gn-root { position: relative; width: 220px; height: 220px; margin: 0 auto; background: #888 url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='8' height='8' fill='%23bbb'/%3E%3Crect x='8' y='8' width='8' height='8' fill='%23bbb'/%3E%3C/svg%3E"); box-shadow: 0 3px 10px rgba(0,0,0,.3); overflow: hidden; }
+.gn-root .ib { opacity: .7; }
+.gn-root #editor { cursor: text; }

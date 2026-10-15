@@ -50,6 +50,7 @@ function init(ctx) {
 
   ctx.bus.on('note:deleted', p => {
     const id = p && p.id;
+    if (ctx.notes.isTrashed && ctx.notes.isTrashed(id)) return;   // vào thùng rác: giữ meta tới khi xoá hẳn
     const b = box();
     const m = typeof id === 'string' && !BAD.has(id) && b.noteMeta && own(b.noteMeta, id) && b.noteMeta[id];
     if (!m) return;

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<clipPath id="shout-clip_m"><path d="M186 204Q200 201.500 214 204Q214 220 200 220Q186 220 186 204Z"/></clipPath>
+<g id="blush"><ellipse cx="158" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity="0.75"/><ellipse cx="242" cy="203" rx="9" ry="4.5" fill="#F7B9B5" opacity="0.75"/></g>
+<g id="eye_l"><path d="M160 174L184 185L160 196" fill="none" stroke="#1F2A44" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M156 171L158.500 173" fill="none" stroke="#1F2A44" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g id="eye_r" transform="matrix(-1 0 0 1 400 0)"><path d="M160 174L184 185L160 196" fill="none" stroke="#1F2A44" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M156 171L158.500 173" fill="none" stroke="#1F2A44" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></g>
+<g id="mouth" transform="translate(0 1)"><path d="M186 204Q200 201.500 214 204Q214 220 200 220Q186 220 186 204Z" fill="#7A2E3A"/><g clip-path="url(#shout-clip_m)"><ellipse cx="200" cy="221" rx="9" ry="6" fill="#F08A98"/></g><path d="M188 205Q200 203 212 205" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".85"/><path d="M186 204Q200 201.500 214 204Q214 220 200 220Q186 220 186 204Z" fill="none" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/></g>
+</svg>

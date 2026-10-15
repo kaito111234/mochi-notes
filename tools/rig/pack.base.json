@@ -1,0 +1,50 @@
+{
+  "id": "mochi",
+  "name": "Mochi",
+  "author": "Phòng art Mochi Notes (rig vector)",
+  "license": "Nội bộ Joiha",
+  "size": [
+    400,
+    400
+  ],
+  "scale": 0.6,
+  "anchor": [
+    200,
+    392
+  ],
+  "hitbox": {
+    "head": [
+      126,
+      70,
+      148,
+      160
+    ],
+    "body": [
+      146,
+      230,
+      108,
+      162
+    ]
+  },
+  "hand": [
+    200,
+    262
+  ],
+  "actions": {
+    "walk": {
+      "speed": 2.2
+    }
+  },
+  "note": {
+    "anchor": "center",
+    "center": [
+      200,
+      262
+    ],
+    "size": [
+      84,
+      84
+    ],
+    "_ghichu": "hand = TÂM tờ note giữa hai bàn tay (hold_note); size là cỡ tờ note vừa hai tay theo px canvas"
+  }
+}

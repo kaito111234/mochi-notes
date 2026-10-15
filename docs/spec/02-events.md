@@ -40,3 +40,13 @@ ctx.pet.stage.cancel(id)
 | 10 | `chatter` | nói linh tinh khi rảnh |
 Mức cao hơn được ngắt mức thấp hơn (mức thấp quay lại hàng đợi nếu chưa hết hạn `ttlMs`). Nhắc lịch (≥60) **không bao giờ bị bỏ** vì game/thoại; nếu bé bị tắt thì core phải dùng thông báo Windows.
 Câu thoại cho mỗi lần lên sân khấu: core hỏi `ctx.persona.pick(event, vars)` nếu có (phòng persona), nếu không có thì dùng câu mặc định của core.
+
+
+## Bổ sung Đợt 2B
+| Tên | Phát bởi | Payload |
+|---|---|---|
+| `note:checkItem` | paper (qua main) | `{noteId, index, done}` |
+| `note:expired` | notes | `{noteId, reason: 'done'\|'overdue'\|'checklist'}` |
+| `note:trashed` / `note:restored` | notes | `{noteId}` |
+| `game:outfit` | game | `{worn: {slot: itemId}}` |
+| `pet:knock` | core | `{target: 'foreground'\|'note', noteId?}` |

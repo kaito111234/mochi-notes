@@ -5,6 +5,7 @@
 
   function render() {
     $('title').textContent = data.title || 'Tớ dặn cậu nè';
+    $('line').textContent = data.line || ''; $('line').hidden = !data.line;
     const ul = $('items'); ul.textContent = '';
     for (const it of data.items) { const li = document.createElement('li'); li.textContent = it.text; ul.appendChild(li); }
     $('btnStay').hidden = !data.quitting;

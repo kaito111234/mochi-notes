@@ -1,0 +1,53 @@
+{
+  "id": "cute-mint-bear",
+  "name": "Bạc hà ô vuông & gấu",
+  "group": "cute",
+  "order": 30,
+  "noteColor": "green",
+  "dark": false,
+  "bg": {
+    "color": "#e8f8ef",
+    "head": "#d3f0df",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "grid",
+    "color": "rgba(60,150,110,.24)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "To do",
+    "font": "pangolin",
+    "color": "#2f6b52",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#1f4a3a",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/bear.svg",
+      "pos": "tr",
+      "w": 54,
+      "dx": 8,
+      "dy": 4,
+      "rot": 4
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/leaf.svg",
+      "pos": "tr",
+      "w": 22,
+      "dx": 68,
+      "dy": 30,
+      "rot": -20
+    }
+  ],
+  "checklist": false
+}

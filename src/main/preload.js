@@ -60,6 +60,9 @@ api.alarms = {
   clearMissed: () => inv('alarm:clearMissed'),
   setSettings: patch => inv('alarm:settings', patch || {}),  // -> settings
   devHint: () => inv('alarm:devHint'),                   // -> {tab?:string} (chỉ dùng khi chạy thử)
+  insight: v => inv('notes2:insight', v),                // noteId | text -> InsightView | null (API2.md mục 4)
+  applySuggestion: (noteId, suggestionId) => inv('notes2:applySuggestion', noteId, suggestionId), // -> {ok, message, note?, notes?, alarm?, copied?}
+  quickCapture: text => inv('notes2:quickCapture', text), // -> {ok, note, insight, reply} | {ok:false, message}
   onChanged: cb => on('alarm:changed', cb),              // cb({alarms, missed, settings, sounds})
   onRing: cb => on('alarm:ring', cb),                    // (cửa sổ chuông) cb(RingInfo)
   onRingEnd: cb => on('alarm:ringEnd', cb),              // (cửa sổ chuông) cb({alarmId})
@@ -80,14 +83,25 @@ api.memos = {
 api.notes2 = {
   getMeta: id => inv('notes2:getMeta', id),              // -> {repeat, zoom, locked}
   setView: (id, patch) => inv('notes2:setView', id, patch || {}), // {zoom?, locked?} -> meta
-  setRepeat: (id, repeat) => inv('notes2:setRepeat', id, repeat), // Repeat | null -> Note
+  setRepeat: (id, repeat, reminderId) => inv('notes2:setRepeat', id, repeat, reminderId), // Repeat | null (reminderId tuỳ chọn) -> Note
+  setReminderItem: (id, reminderId, r) => inv('notes2:setReminderItem', id, reminderId || null, r), // r:{due,lead?,repeat?,title?,key?,auto?}; reminderId null = thêm -> Note | null
+  removeReminderItem: (id, reminderId) => inv('notes2:removeReminderItem', id, reminderId), // -> Note | null
+  doneItem: (id, reminderId) => inv('notes2:doneItem', id, reminderId), // báo xong một nhắc -> Note | null
+  snoozeItem: (id, reminderId, minutes) => inv('notes2:snoozeItem', id, reminderId, minutes), // hoãn một nhắc -> Note | null
+  onListTab: cb => on('list:tab', cb),                   // cb(tab) — điều hành gửi tới cửa sổ danh sách
   onMeta: cb => on('notes2:meta', cb),                   // (cửa sổ note) cb({id, repeat, zoom, locked})
   exportAll: format => inv('notes2:export', format),     // 'json'|'txt'|'md' -> {ok, path?, count?}
   exportNote: (id, format) => inv('notes2:exportNote', id, format), // 'txt'|'md' -> {ok, path?}
   importFile: () => inv('notes2:import'),                // -> {ok, count, errors?}
   listBackups: () => inv('notes2:backups'),              // -> [{file, day, size, noteCount}]
   readBackup: file => inv('notes2:readBackup', file),    // -> {notes:[{id,title,updatedAt,exists,same}]} | null
-  restoreBackup: (file, ids) => inv('notes2:restore', file, ids || null) // -> {ok, restored}
+  restoreBackup: (file, ids) => inv('notes2:restore', file, ids || null), // -> {ok, restored}
+  trashList: () => inv('notes2:trashList'),              // -> [{id,title,text,color,trashedAt,expiresAt}] mới nhất trước
+  trashRestore: id => inv('notes2:trashRestore', id),    // -> Note | null
+  trashPurge: id => inv('notes2:trashPurge', id),        // xoá hẳn một note -> boolean
+  trashEmpty: () => inv('notes2:trashEmpty'),            // dọn sạch thùng -> số note đã xoá
+  onTrashChanged: cb => on('notes2:trashChanged', cb),   // cb(trashList)
+  expired: () => inv('notes2:expired')                   // -> [{noteId, reason:'done'|'overdue'|'checklist', title}]
 };
 // ===== HẾT PHÒNG notes =====
 // ===== BẮT ĐẦU PHÒNG core (kênh 'pet:*') =====
@@ -100,10 +114,33 @@ api.pet = {
 };
 // ===== HẾT PHÒNG core =====
 // ===== BẮT ĐẦU PHÒNG game (kênh 'game:*') =====
-api.game = {};
+api.game = {
+  state: () => inv('game:state'),                 // -> View
+  catalog: () => inv('game:catalog'),
+  setEnabled: on => inv('game:setEnabled', !!on),
+  wear: (slot, itemId) => inv('game:wear', slot, itemId),   // itemId null = cởi
+  saveOutfit: name => inv('game:saveOutfit', name),
+  applyOutfit: id => inv('game:applyOutfit', id),
+  deleteOutfit: id => inv('game:deleteOutfit', id),
+  pull: count => inv('game:pull', count),         // 1 | 10
+  exchange: itemId => inv('game:exchange', itemId),
+  buyFeed: foodId => inv('game:feed', foodId),    // mua + cho ăn ngay
+  claim: questId => inv('game:claim', questId),
+  close: () => inv('game:close'),
+  onChanged: cb => on('game:changed', cb),        // cb(View)
+  onTab: cb => on('game:tab', cb)                 // cb('wardrobe'|'gacha'|'shop'|'quests'|'stats')
+};
 // ===== HẾT PHÒNG game =====
 // ===== BẮT ĐẦU PHÒNG paper (kênh 'paper:*') =====
-api.paper = {};
+api.paper = {
+  get: id => inv('paper:get', id),                        // -> {meta, settings}
+  set: (id, patch) => inv('paper:set', id, patch),        // patch NotePaper (null = xoá khoá) -> meta
+  settings: patch => inv('paper:settings', patch || {}),  // -> settings
+  resize: (id, size) => inv('paper:resize', id, size),    // {width,height} -> boolean
+  checkItem: (id, index, done) => inv('paper:checkItem', id, index, !!done),
+  onMeta: cb => on('paper:meta', cb),                     // cb({id, meta})
+  onSettings: cb => on('paper:settings', cb)              // cb(settings)
+};
 // ===== HẾT PHÒNG paper =====
 // ===== BẮT ĐẦU PHÒNG persona (kênh 'persona:*') =====
 api.persona = {};
