@@ -51,11 +51,14 @@ function init(ctx) {
       x: b.x, y: b.y, width: b.width, height: b.height,
       minWidth: 220, minHeight: 160,
       frame: false, show: false, skipTaskbar: true, resizable: true,
-      alwaysOnTop: !!note.alwaysOnTop, title: 'Mochi Note',
+      alwaysOnTop: !!note.alwaysOnTop, title: 'Mochi Notes',
       webPreferences: ctx.webPrefs()
     };
     if (ctx.useGlass()) { o.backgroundMaterial = 'acrylic'; o.backgroundColor = '#00000000'; }
     else o.backgroundColor = ctx.COLOR_BG[note.color] || ctx.COLOR_BG.yellow;
+    // Cửa sổ trong suốt (tuỳ chọn, mặc định tắt): chỉ áp dụng cho cửa sổ mở sau khi bật; renderer đọc ?transparent=1.
+    const transparent = ctx.settings().noteTransparent === true;
+    if (transparent) { o.transparent = true; o.backgroundColor = '#00000000'; o.hasShadow = false; delete o.backgroundMaterial; }
     const win = new BrowserWindow(o);
     noteWins.set(id, win);
     ctx.hardenWebContents(win);
@@ -80,7 +83,7 @@ function init(ctx) {
       } else if (!win.__silent) saveBounds();
     });
     win.on('closed', () => { if (noteWins.get(id) === win) noteWins.delete(id); });
-    win.loadFile(ctx.paths.noteHtml, { query: { id } });
+    win.loadFile(ctx.paths.noteHtml, { query: transparent ? { id, transparent: '1' } : { id } });
     return win;
   }
 

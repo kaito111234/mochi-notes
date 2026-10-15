@@ -15,6 +15,11 @@ t('sanitize bỏ on* và javascript:', () => {
   const o = T.sanitizeHtml('<div onclick="x()" style="color:red"><a href="javascript:alert(1)">link</a></div>');
   assert.strictEqual(o, '<div>link</div>');
 });
+t('sanitize giữ data-ck 0|1 trên div/li, chặn giá trị khác', () => {
+  assert.strictEqual(T.sanitizeHtml('<div data-ck="1">a</div><ul><li data-ck="0">b</li></ul>'), '<div data-ck="1">a</div><ul><li data-ck="0">b</li></ul>');
+  assert.strictEqual(T.sanitizeHtml('<div data-ck="2" onclick="x()">a</div><li data-ck="1 onclick=x">b</li>'), '<div>a</div><li>b</li>');
+  assert.strictEqual(T.sanitizeHtml('<span data-ck="1">a</span><b data-ck="1">b</b><div xdata-ck="1">c</div>'), '<span>a</span><b>b</b><div>c</div>');
+});
 t('sanitize bỏ iframe/object/embed', () => {
   const o = T.sanitizeHtml('<iframe src="x"></iframe><object data="y">o</object><embed src="z"><b>ok</b>');
   assert.strictEqual(o, '<b>ok</b>');
