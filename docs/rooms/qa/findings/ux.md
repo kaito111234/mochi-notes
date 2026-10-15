@@ -1,3 +1,38 @@
+## LƯỢT 2 — ux: rà trải nghiệm Đợt 2 qua ảnh (main @20ec6c9)
+
+- Lệnh: `bash test/e2e/run.sh test/e2e/ux2-shots.test.js` (10 test, 10 pass / 0 fail; test chỉ chụp). 1366x768: `UX2_TAG=-1366 xvfb-run -a -s "-screen 0 1366x768x24" node --test --test-concurrency=1 test/e2e/ux2-shots.test.js` (10/10 pass). Cũng chạy lại `ux-shots.test.js` ux-6, ux-8 (pass) để kiểm lỗi cũ. Ảnh gốc `test/e2e/out/ux2-*.png` (~80 ảnh, 1366 có tiền tố `ux2-1366-`); ảnh chọn: `docs/rooms/qa/img/l2-ux-*.png` (10 ảnh).
+- Đã xem bằng mắt: bộ chọn mẫu 6 tab; 8 mẫu x 3 cỡ (Mini 220x170, 300x220, 400x420; có Than, Kraft, Đêm, Tết, Trung thu...); checklist 14 dòng; dải gợi ý; danh sách (Ghi nhanh, +N, thùng rác); Phòng của Mochi 5 tab sáng/tối; bé đứng/giơ note/chuông/ngủ/vui; nhắc note thật; chuông MOCHI_DEV_RING; Cài đặt 4 đoạn.
+- Ổn: chữ trên mọi mẫu đọc được (Than, Kraft, Đêm, Tết, Trung thu đều đủ tương phản; chữ Việt có dấu đúng, không thấy lỗi chính tả); checklist gạch ngang + đếm 4/14 rõ; xem trước Ghi nhanh "Bé hiểu: 2 việc · 09:00 Họp · 14:00 Gọi khách" rất dễ hiểu; thùng rác có "Khôi phục/Xoá hẳn/Dọn sạch" + chú thích 30 ngày; Phòng của Mochi: dark mode dùng được, "xu" nhất quán trong giao diện (từ "kẹo" chỉ còn trong thoại bé `assets/dialogue/vi.json:433-435`, xem N-ux-9); bé cầm đồng hồ ở trạng thái chuông khớp tay; chuông/ngủ/vui không đè cửa sổ nào; ở 1366x768 bé, bong bóng, Phòng đều nằm trong màn.
+- So Sticky Notes: (1) menu "..." và bộ chọn mẫu bị nhốt trong cửa sổ note nhỏ (mục N-ux-1/2); (2) trang trí/dải gợi ý chiếm chỗ làm note nhỏ chỉ còn 1-2 dòng chữ; (3) Sticky Notes không có dải gợi ý tự bật, ở đây dải hiện cả với note không cần (note mẫu "1 việc có giờ"), nên có cách tắt hẳn trong Cài đặt.
+
+### Kiểm lại lỗi UX cũ
+| Mã | Trạng thái | Chứng cứ |
+|---|---|---|
+| BUG-013 chuông che bé | CÒN | `MOCHI_DEV_RING=1`: ring (1064,622,360x262) đè pet (1140,475,300x430); chỉ thấy chân bé (l2-ux-chuong-che-be.png). 1366: ring (990,490) vs pet (1066,343) vẫn chồng. Ghi chú: bé "cầm đồng hồ" (hold) hiển thị tốt khi dùng actor trực tiếp (ux2-52), nên nếu ring chỉ là dự phòng thì cần bỏ cửa sổ ring khi bé đang ở sân khấu |
+| BUG-015 dặn dò đè bé | CÒN | memo (1064,564,360x320) phủ gần hết pet; chỉ lộ chân (l2-ux-dando-che-be.png). Hết cảnh 2 khung nói trùng nhưng bé vẫn mất |
+| BUG-016 tờ note cắt mép phải | ĐÃ SỬA (phần lớn) | ux2-51b: tờ nằm trọn (mép phải 1410/1440; 1366 cũng trọn). Còn dòng phụ cắt "09:30 hôm nay · Go…" |
+| BUG-018 menu "..." bị cắt | CÒN (nặng hơn) | 300x220 thấy 4/12 mục (thêm "Mẫu giấy…", "Chuyển thành checklist" làm "Xoá note" càng xa); ux2-01-menu.png |
+| BUG-019 panel Nhắc lịch ở note nhỏ | CÒN | ux-52 (220x160): chỉ thấy ô Thời gian, nút Lưu/Tắt nhắc/Xong ngoài khung |
+| BUG-027 "Đang dán/Đang cất" | CÒN | chip "Đang dán 3 / Đang cất 0" ở danh sách (l2-ux-thung-rac-toast.png) |
+| BUG-028 xưng hô | CÒN | note mẫu "Chào bạn, mình là Mochi Notes!... nhắc bạn" trong khi bé/popup dặn dò nói "Tớ dặn cậu nè", "Cậu ơi" (ux-30-dando-2, ux2-61) |
+| BUG-029 phím tắt thiếu | CÒN (một phần) | Cài đặt chỉ liệt kê Ctrl+Alt+N/H/L/M và 6 phím trong note; thiếu Ctrl+Alt+G (Phòng của Mochi), Ctrl+F, Ctrl+Z/Y, Ctrl+Shift+K/R, zoom (l2-ux-caidat-phim-tat-thieu.png). Nút popup dặn dò nay là "Nhớ rồi" (đã dễ hiểu hơn "Ở lại") |
+| Art: "tờ note lệch khỏi tay" | CÒN | khi bé giơ note, tờ nằm lệch phải ~55px, cao hơn tay ~70px, che nửa người bé, tay không chạm tờ (l2-ux-be-giat-note-lech-tay.png) |
+
+### Lỗi mới
+- N-ux-1 (Vừa, paper): trang trí đè nút "..." / "x" / chip. Kraft (lá), Tết (hoa mai), Bài tập (kẹp giấy), MEMO (tách trà) phủ lên nút "..." ở thanh trên; hoa mai/thỏ/bánh trung thu ở góc dưới phủ nút "x" của dải gợi ý; thỏ Trung thu che chữ "2 việc có giờ". Tái hiện: `ux2-shots` ux2-2-mini/mac (ảnh l2-ux-mini-deco-che-nut-menu.png). Kỳ vọng: deco không chồng lên nút bấm. Thực tế: nút "..." bị che một phần (bấm trúng vẫn có thể nhưng không nhìn thấy).
+- N-ux-2 (Vừa, paper): bộ chọn Mẫu giấy trong note 300x220 chỉ thấy 1 hàng mẫu và tab nhóm bị cắt ("sinh", "Tối giản"; "Văn phòng", "Mùa & lễ" phải cuộn ngang), phần "Tuỳ chọn" nằm dưới nếp gập. Cách sửa gợi ý: tự phóng cửa sổ khi mở bộ chọn (có sẵn `paper.resize`) hoặc mở dạng cửa sổ riêng. Ảnh l2-ux-picker-300x220-chat.png (và ux2-02-picker-tab*).
+- N-ux-3 (Vừa, notes): dải gợi ý ăn ~1/3 note Mini 220x170: chỉ còn 1-2 dòng chữ, chữ trong dải bị cắt "2 việc có giờ — ..." / "Bé gợi ý: Chuyển thành check…", nút "Tạo"/"Làm" không nói tạo/làm gì. Kỳ vọng: ẩn dải ở note nhỏ hoặc gọn thành 1 biểu tượng; nút ghi rõ "Tạo nhắc"/"Chuyển checklist". Ảnh l2-ux-mini-deco-che-nut-menu.png, l2-ux-checklist-insight.png.
+- N-ux-4 (Vừa, game/art): tab Tủ đồ, khung xem trước bé trống (chỉ có bệ xanh, không có bé) ở cả sáng và tối (ux2-40-phong-sang-0, l2-ux-phong-toi-preview-trong.png). Tên đồ bị cắt "Cà vạt x…", "Kẹp chữ…". Chưa loại trừ do xvfb/tải ảnh chậm (chờ 0.9s).
+- N-ux-5 (Nhẹ, game): dark mode — pill "Cấp 1" nền tối trên nền tối gần như chìm, biểu tượng khoá trong ô đồ chưa mở gần như vô hình (l2-ux-phong-toi-preview-trong.png). Nhãn "Gốc / Có BH" ở Máy gacha viết tắt khó hiểu ("BH" = bảo hiểm).
+- N-ux-6 (Nhẹ, notes): tô sáng trên giấy Đêm/Than: chữ sáng trên nền vàng tô sáng gần như không đọc được ("tô sáng" ở ux2-11-lon-minimal-night.png). Nên tự đổi màu chữ trong vùng tô sáng.
+- N-ux-7 (Nhẹ, notes): "bé Mochi sẽ nhắc cậu" (hint cạnh chip) bị cắt ở mép phải khi note 300px; chip "06:00 ngày mai · bá…" bị cắt (ux2-21-is3.png). Chip nhắc đến hạn hiện "quá hạn 0 giây" (ux2-60-nhac-3.png) nên là "vừa tới giờ".
+- N-ux-8 (Nhẹ, notes): toast Ghi nhanh "Xong rồi nè, note mới đã có chỗ ở." nằm đè lên nút "Hiện tất cả/Ẩn tất cả" nhiều giây (kể cả khi đổi qua tab Thùng rác); câu "có chỗ ở" lạ tai (l2-ux-thung-rac-toast.png).
+- N-ux-9 (Nhẹ, persona/game): thoại thưởng dùng "kẹo" ("Nhận được {count} kẹo rồi nè", `assets/dialogue/vi.json:433-435`) trong khi giao diện Phòng gọi "xu". Thoại cho note intent "Gọi điện" ra câu "đến rồi nè. Một lời chúc ngắn thôi cũng đáng yêu lắm." (ux2-60-nhac-3.png): lệch loại việc (còn F-ux-5).
+- N-ux-10 (Nhẹ, notes): bộ hiểu note coi chữ "sáng" đơn lẻ là giờ (08:00): "Đậm nghiêng tô sáng" -> "2 việc có giờ" (chạy `understand()` xác nhận). Gợi ý nhắc sai cho từ như "tô sáng", "sáng tạo". Chuông thử MOCHI_DEV_RING chữ lặp "Báo thức Báo thức thử lúc 09:09" (dev, ux2-61).
+- N-ux-11 (Nhẹ, notes): bộ lọc danh sách vẫn đếm "Đang dán"/"Đang cất" (xem BUG-027); trang trí Mẫu "Notes" (mèo): dòng kẻ cắt qua chữ ở dòng 3-4 (ux2-10-luoi-mac.png) — lệch căn dòng chữ với đường kẻ.
+
+---
+
 ## ux — rà soát trải nghiệm qua ảnh chụp
 
 - Lệnh chạy: `bash test/e2e/run.sh test/e2e/ux-shots.test.js` (8 test, 8 pass / 0 fail / 0 skip — test chỉ chụp, việc đánh giá bằng mắt). Ảnh gốc ở `test/e2e/out/ux-*.png` (~45 ảnh: lần đầu, chip nhắc, menu "...", thanh định dạng, tô sáng, 7 màu + từng màu, list 3 tab + cài đặt cuộn 4 đoạn, form báo thức, chuông 6 khung, dặn dò 3 khung, bé nhắc note 8 khung, note 220x160 + menu + panel nhắc). Ảnh chứng minh chọn 8 tấm ở `docs/rooms/qa/img/ux-*.png`.
