@@ -26,7 +26,8 @@
 .sh-bag-ic img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .sh-bag-n { position: absolute; right: -10px; bottom: -4px; min-width: 20px; padding: 0 5px; height: 17px; line-height: 17px; border-radius: 9px; background: var(--accent); color: var(--accent-contrast); font-size: 10.5px; font-weight: 700; text-align: center; }
 .sh-bag-name { font-size: 11.5px; font-weight: 600; line-height: 1.2; }
-.sh-bag-feed { width: 100%; }
+.sh-bag-name { flex: 1; display: flex; align-items: center; }
+.sh-bag-feed { width: 100%; margin-top: auto; }
 .sh-bag-empty { font-size: 12px; color: var(--muted); padding: 9px 12px; margin-bottom: 14px; border-radius: 12px; border: 1px dashed var(--line); }
 .sh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .sh-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; text-align: center; transition: opacity .2s; }

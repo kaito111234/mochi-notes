@@ -22,6 +22,23 @@ File được sửa: `src/main/game/**`, `src/game/**`, `assets/game/**`, `docs/
 - Tắt game hóa trong cài đặt → mọi thứ note/nhắc vẫn chạy y nguyên.
 
 ## Trạng thái
+_Cập nhật 15/10/2026 — lượt Đợt 3 (theo tin nhắn phòng điều hành)._ Hợp đồng chi tiết: `docs/rooms/game/API-dot3.md`.
+
+**Đã xong Đợt 3**
+1. `game:fed {foodId, name}` phát khi cho ăn thành công (cả "Mua & cho ăn" lẫn cho ăn từ túi). Thưởng checklist idempotent theo **noteId + nội dung dòng** (`logic/checklist.js` đọc các `<div data-ck>` cấp 0 trong `note.html` đúng cách paper đánh index; khoá `chk:<noteId>:t:<fnv1a>`), chỉ lần 0→1 đầu tiên; bỏ tick/tick lại, chèn dòng, đổi thứ tự không thưởng thêm. Không đọc được chữ → khoá index cũ.
+2. Đơn vị "xu" ở mọi nơi trong game (có test chặn chữ "kẹo"). `game:reward` chỉ phát khi `candy > 0` (kèm `count`) nên persona không nói "0 xu". Câu `reward` của persona vẫn ghi "kẹo" → đề xuất 1 bên dưới.
+3. Mặc đồ lên bé: phòng art chưa có đề xuất id/lớp `assets/wardrobe/` → giữ xem trước bằng icon + phát `game:outfit`; catalog chưa phải đổi id.
+4. **Điểm danh 7 ngày** (`logic/checkin.js`): 20→100 xu, ô 3/5/7 kèm đồ ăn vào túi; lỡ ngày không mất vòng. **Nhiệm vụ tuần đa dạng**: 3 mục/tuần = "Xong 15 note" + "Dọn 3 note hết hạn" (`note:trashed`) + 1 xoay vòng tất định theo tuần (tick 10 checklist / cho ăn 5 / xoa đầu 10 / đúng hạn 8 / ghi nhanh qua bé 3 — mục cuối chỉ vào vòng khi đã thấy sự kiện ghi nhanh). **Túi đồ ăn** (mua ×1/×5 vào túi, cho ăn từ túi, tối đa 99/món). **Album theo bộ** (tab mới, phím 6): 9 bộ có tên ("Bộ Ngủ Ngon", "Cắm Trại Cuối Tuần"…), đủ bộ nhận 100–500 xu, thành tích `set_first`/`set_all`; chi tiết bộ có nút "Mặc thử".
+5. Tắt game hoá: test bắn mọi sự kiện bus + gọi mọi IPC → không có `game:reward/levelup/fed/persona:line`, xu/chỉ số không đổi, IPC mới trả `reason:'off'`; ctx giả bọc Proxy chứng minh game không gọi/ghi gì vào note/nhắc (bật lẫn tắt); listener `reminder:done` khác vẫn nhận sự kiện khi handler game bị ép ném lỗi.
+- Migrate dữ liệu Đợt 2 không mất gì (tuần cũ chỉ có `done15` được bù lên 3 mục, giữ tiến độ).
+- Test: **109 test game đạt**; `node scripts/test-all.js` đạt.
+
+**Ảnh nghiệm thu Đợt 3** (app thật, xvfb, dữ liệu `docs/rooms/game/shots/seed3.js <cfg>` + `MOCHI_GAME_OPEN=quests|shop|album`): 12 điểm danh 7 ngày · 13 túi đồ ăn + cửa hàng · 14 album theo bộ · 15 chi tiết bộ (preview mock).
+
+**Lưu ý đã biết**: dòng checklist đã thưởng ở Đợt 2 (khoá index) có thể được thưởng thêm 1 lần dưới khoá mới; hai dòng cùng chữ trong một note chỉ thưởng 1 lần; nhiệm vụ xoay vòng chốt lúc đổi tuần.
+
+---
+
 _Cập nhật 15/10/2026 — kết thúc lượt Đợt 2 (phòng game)._
 
 _Bổ sung 15/10/2026 (lượt sau tích hợp Đợt 2)_ — Đợt 2 đã gộp vào `main`; lượt này chỉ khớp hợp đồng mới, không làm lại:
@@ -44,19 +61,27 @@ _Bổ sung 15/10/2026 (lượt sau tích hợp Đợt 2)_ — Đợt 2 đã gộ
 01 xong note có hẹn → bé báo kẹo/xu, nhiệm vụ ngày 1/3 · 02 gacha 10+1 · 03 đang quay · 04 kết quả 1 lượt · 05 tủ đồ mặc thử · 06 đang mặc · 07 nhiệm vụ + thành tích · 08 cửa hàng cho ăn · 09 thống kê · 10 tắt game hóa, note vẫn chạy · `catalog-icons.png`.
 Tái tạo: `docs/rooms/game/shots/` (`seed.js <cfg>` tạo dữ liệu; `xvfb-run -a -s "-screen 0 1440x900x24" node docs/rooms/game/shots/drive.js $PWD/docs/rooms/game/shots/s3.js` với `XDG_CONFIG_HOME=<cfg> MOCHI_GAME_DEMO=1 MOCHI_GAME_DEMO_DONE=8 MOCHI_GAME_OPEN=quests SHOT_DIR=<thư mục>`; điều khiển app qua CDP cổng 9333, cần playwright toàn cục).
 
-**Cách chạy test**: `TZ=Asia/Ho_Chi_Minh node --test src/main/game/__tests__/*.test.js` — 80 test (xu, chống cày, chuỗi qua nửa đêm, gacha 100.000 lượt khớp tỉ lệ ±1% cả có/không bảo hiểm, bảo hiểm 30 lượt, nhiệm vụ, normalize, tích hợp bus/IPC). Xem cửa sổ không cần Electron: `python3 -m http.server 8751` ở gốc repo → `http://localhost:8751/src/game/test/preview.html#gacha` (mock).
+**Cách chạy test**: `TZ=Asia/Ho_Chi_Minh node --test src/main/game/__tests__/*.test.js` — 109 test (Đợt 3: checklist theo nội dung, điểm danh, túi, nhiệm vụ tuần, album, tắt game hoá; Đợt 2: xu, chống cày, chuỗi qua nửa đêm, gacha 100.000 lượt khớp tỉ lệ ±1% cả có/không bảo hiểm, bảo hiểm 30 lượt, nhiệm vụ, normalize, tích hợp bus/IPC). Xem cửa sổ không cần Electron: `python3 -m http.server 8751` ở gốc repo → `http://localhost:8751/src/game/test/preview.html#gacha` (mock).
 Biến môi trường gỡ lỗi: `MOCHI_GAME_OPEN=<tab>` mở sẵn cửa sổ; `MOCHI_GAME_DEMO=1` cộng 2000 xu khi < 2000 (không ghi thống kê); `MOCHI_GAME_DEMO_DONE=<giây>` bấm Xong note có hẹn đầu tiên.
 
 **Đang dở / việc tiếp theo**
 - Xem trước tủ đồ là bản tạm: icon chồng lên sprite theo điểm neo khe (`src/game/preview.js`). Khi phòng art có lớp `assets/wardrobe/<id>/` thì thay bằng hình mặc thật theo `id`.
 - Bé trên desktop chưa đổi hình theo đồ đang mặc (core/art nghe `game:outfit`).
-- Chưa có hoạt ảnh "cho ăn" trên bé (core có action `eat`; đề xuất bên dưới).
+- Hoạt ảnh "cho ăn" trên bé: game đã phát `game:fed`, chờ core + art (`eat`).
 - Bộ đếm phút không bù thời gian máy ngủ (chỉ dùng cờ ngủ/rảnh) — có chủ ý, nhẹ nhàng.
 
 **Vướng mắc**
 - Phòng persona gọi đơn vị là "kẹo" trong câu `reward` ("Nhận được {count} kẹo"), giao diện game dùng "xu" theo đề bài → cần chốt một tên.
 
 ## Đề xuất cho phòng điều hành
+**Mới (Đợt 3)**
+- A. **persona**: đổi "kẹo" → "xu" trong các câu `reward` (`assets/dialogue/*.json`, ví dụ `reward.gen.01`–`07`); `{count}` = số xu (game chỉ phát khi > 0).
+- B. **notes**: thêm `source` vào payload `note:created` (`{note, source:'pet'|'drop'|...}`) từ `quickCapture`, để nhiệm vụ "Ghi nhanh qua bé" chạy. Hoặc **core** phát `pet:captured {noteId}` sau khi ghi nhanh thành công — game nghe cả hai, không đếm đôi.
+- C. **core**: nghe `game:fed` để chạy action `eat`; nghe `game:outfit` khi art có lớp đồ.
+- D. **art**: khi làm lớp `assets/wardrobe/<id>/`, dùng id trong `assets/game/catalog.json` (trường `set` nhóm theo 9 bộ); nếu cần id mới, ghi vào `docs/rooms/art.md`, game sẽ cập nhật catalog.
+- E. Menu chuột phải trên bé (core): thêm "Album đồ…" → `ctx.game.open('album')`, "Điểm danh" → `ctx.game.open('quests')`.
+
+**Từ Đợt 2**
 1. ~~Khay~~ và 2. ~~Ctrl+Alt+G~~: đã làm ở tích hợp Đợt 2.
 3. **Menu chuột phải trên bé** (core): "Phòng của Mochi", "Cho bé ăn…" → `ctx.game.open('shop')`, "Thay đồ…" → `ctx.game.open('wardrobe')`.
 4. ~~test-all~~: đã có job game.
