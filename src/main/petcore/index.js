@@ -17,7 +17,7 @@ const POSTURES = ['idle', 'walk', 'sit', 'sleep', 'lifted', 'peek', 'work'];
 const MODES = ['happy', 'normal', 'tired', 'sad'];
 
 function defaults() {
-  return { x: null, y: null, displayId: null, posture: 'idle', draft: '', hiddenUntil: 0, settings: { alwaysVisible: true, scale: 1, walkEnabled: true, climbEnabled: true, followCursor: true } };
+  return { x: null, y: null, displayId: null, posture: 'idle', draft: '', hiddenUntil: 0, outfit: {}, settings: { alwaysVisible: true, scale: 1, walkEnabled: true, climbEnabled: true, followCursor: true, autoTidy: false, tidyEnabled: true, knockEnabled: true } };
 }
 function normalize(raw) {
   const d = defaults();
@@ -30,6 +30,10 @@ function normalize(raw) {
   if (typeof s.walkEnabled === 'boolean') d.settings.walkEnabled = s.walkEnabled;
   if (typeof s.climbEnabled === 'boolean') d.settings.climbEnabled = s.climbEnabled;
   if (typeof s.followCursor === 'boolean') d.settings.followCursor = s.followCursor;
+  if (typeof s.autoTidy === 'boolean') d.settings.autoTidy = s.autoTidy;
+  if (typeof s.tidyEnabled === 'boolean') d.settings.tidyEnabled = s.tidyEnabled;
+  if (typeof s.knockEnabled === 'boolean') d.settings.knockEnabled = s.knockEnabled;
+  if (raw.outfit && typeof raw.outfit === 'object' && !Array.isArray(raw.outfit)) d.outfit = Object.assign({}, raw.outfit);
   if (typeof raw.draft === 'string') d.draft = raw.draft.slice(0, 2000);
   if (num(raw.hiddenUntil) != null && raw.hiddenUntil > 0) d.hiddenUntil = raw.hiddenUntil;
   if (typeof s.scale === 'number' && isFinite(s.scale)) d.settings.scale = Math.min(2, Math.max(0.5, s.scale));
@@ -44,7 +48,7 @@ function init(ctx) {
     ctx, box, pack: null, layout: null,
     stage: false, shown: false, showSeq: 0, curPosture: 'idle', curMode: 'normal',
     window: null, body: null, brain: null, actor: null,
-    capture: null, menu: null, settingsWin: null, flash: null,
+    capture: null, menu: null, settingsWin: null, flash: null, tidy: null, knock: null,
     posture: () => core.curPosture,
     mode: () => core.curMode,
     setPosture(p) {
@@ -68,6 +72,10 @@ function init(ctx) {
   const mkSettings = optional('./settingsWindow.js', 'createSettingsWindow');
   const mkFlash = optional('./flash.js', 'createFlash');
   try { if (mkSettings) core.settingsWin = mkSettings(core); } catch (e) { console.error('[petcore] settingsWindow', e && e.message); }
+  const mkTidy = optional('./tidy.js', 'createTidy');
+  const mkKnock = optional('./knock.js', 'createKnock');
+  try { if (mkTidy) core.tidy = mkTidy(core); } catch (e) { console.error('[petcore] tidy', e && e.message); }
+  try { if (mkKnock) core.knock = mkKnock(core); } catch (e) { console.error('[petcore] knock', e && e.message); }
   try { if (mkFlash) core.flash = mkFlash(core); } catch (e) { console.error('[petcore] flash', e && e.message); }
 
   // ---- play: Promise resolve khi animEnd cùng token (loop thì resolve ngay), an toàn 10s
@@ -183,6 +191,9 @@ function init(ctx) {
     goToCorner: () => core.body.goToCorner(),
     goToNote: id => (core.body && typeof core.body.goToNote === 'function'
       ? core.body.goToNote(id) : Promise.resolve({ ok: false, side: null })),
+    goToRect: (rect, opts) => (core.body && typeof core.body.goToRect === 'function'
+      ? core.body.goToRect(rect, opts) : Promise.resolve({ ok: false, side: null })),
+    handScreen: () => { try { return core.body && typeof core.body.handScreen === 'function' ? core.body.handScreen() : null; } catch (_) { return null; } },
     on: (type, fn) => core.window.on(type, fn)
   };
   core.actor = actor;
@@ -194,6 +205,9 @@ function init(ctx) {
     if (typeof patch.walkEnabled === 'boolean') s.walkEnabled = patch.walkEnabled;
     if (typeof patch.climbEnabled === 'boolean') s.climbEnabled = patch.climbEnabled;
     if (typeof patch.followCursor === 'boolean') s.followCursor = patch.followCursor;
+    if (typeof patch.autoTidy === 'boolean') s.autoTidy = patch.autoTidy;
+    if (typeof patch.tidyEnabled === 'boolean') s.tidyEnabled = patch.tidyEnabled;
+    if (typeof patch.knockEnabled === 'boolean') s.knockEnabled = patch.knockEnabled;
     if (typeof patch.scale === 'number' && isFinite(patch.scale)) s.scale = Math.min(2, Math.max(0.5, patch.scale));
     ctx.store.save();
     if (s.scale !== prev.scale) core.window.relayout();
@@ -220,6 +234,8 @@ function init(ctx) {
       try { return !!(core.flash && typeof core.flash.flash === 'function' && core.flash.flash(id, ms)); } catch (_) { return false; }
     },
     capture: core.capture,
+    tidy: core.tidy,
+    knock: core.knock,
     mode: () => core.curMode,
     actor,
     body: { pos: () => core.body.pos(), posture: () => core.curPosture }
@@ -233,6 +249,12 @@ function init(ctx) {
       core.curMode = m;
       if (core.shown && !core.stage && !core.body.busy() && !core.brain.isSleeping() && core.curPosture === 'idle') core.toIdle();
     }
+  });
+  bus.on('game:outfit', d => {
+    const worn = d && d.worn && typeof d.worn === 'object' ? d.worn : {};
+    box.outfit = Object.assign({}, worn);
+    try { ctx.store.save(); } catch (_) { /* bỏ qua */ }
+    core.window.cmd({ op: 'outfit', worn: box.outfit });
   });
   bus.on('settings:changed', d => {
     const s = (d && d.settings) || ctx.settings();
@@ -299,6 +321,7 @@ function init(ctx) {
   app.on('before-quit', () => {
     try {
       clearTimeout(hideTimer);
+      for (const m of [core.tidy, core.knock]) { try { if (m && typeof m.stop === 'function') m.stop(); } catch (_) { /* bỏ qua */ } }
       if (core.shown && core.body.placedYet()) core.body.save();
       ctx.store.flushSync();
     } catch (_) { /* bỏ qua */ }

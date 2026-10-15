@@ -268,6 +268,156 @@ put('write', 'normal', 'loop', rng(4).map((i) => [200, render({
   arms: [{ e: [12, 18], h: [-2, 32] }, { e: [14, 14], h: [[8, 12, 16, 12][i], 30 + (i % 2 ? 2 : 0)] }],
 })]));
 
+// ---------- Action Đợt 2B (hình tạm; hình gốc quay mặt/hành động sang PHẢI) ----------
+// render có thêm tham số pre(cv): vẽ phía SAU nhân vật (vd. mép note để ngồi lên).
+function render2(P, G, post, pre) {
+  G = G || {};
+  const L = drawChar(P), cv = png.create(W, H);
+  if (pre) pre(cv);
+  png.drawImage(cv, L, { ox: CX, oy: FLOOR, x: CX + (G.dx || 0), y: FLOOR + (G.dy || 0), sx: G.sx || 1, sy: G.sy || 1, rot: G.rot || 0, alpha: G.alpha === undefined ? 1 : G.alpha });
+  if (post) post(cv);
+  return cv;
+}
+const rot2 = (x, y, deg) => { const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return [x * c - y * s, x * s + y * c]; };
+// tờ giấy note (vàng/hồng) nghiêng deg độ, tâm (cx,cy)
+function paper(cv, cx, cy, w, h, deg, fill, edge, lines) {
+  const pts = [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map((p) => { const r = rot2(p[0], p[1], deg); return [cx + r[0], cy + r[1]]; });
+  png.fillPoly(cv, pts, fill, edge, 2);
+  if (lines) for (let k = 0; k < lines; k++) {
+    const y = -h / 2 + 12 + k * ((h - 20) / lines), a = rot2(-w / 2 + 7, y, deg), b = rot2(w / 2 - 7 - (k % 2) * 9, y, deg);
+    png.drawLine(cv, cx + a[0], cy + a[1], cx + b[0], cy + b[1], 1.8, '#a98f3a');
+  }
+}
+const NOTE_Y = ['#fff1a0', '#c9ae3f'], NOTE_P = ['#ffc6d9', '#c4708f'];
+// cục giấy vo
+function ball(cv, x, y, r, fill) {
+  png.fillEllipse(cv, x, y, r, r * 0.92, fill || '#fff1a0', '#c9ae3f', 2);
+  png.drawLine(cv, x - r * 0.5, y - r * 0.2, x + r * 0.2, y - r * 0.55, 1.6, '#c9ae3f');
+  png.drawLine(cv, x - r * 0.1, y + r * 0.1, x + r * 0.55, y - r * 0.1, 1.6, '#c9ae3f');
+  png.drawLine(cv, x - r * 0.4, y + r * 0.5, x + r * 0.2, y + r * 0.3, 1.6, '#c9ae3f');
+}
+// mèo đen nhỏ hình khối, quay mặt sang TRÁI (x = giữa thân, y = sàn). o: {tail, paw, s}
+function cat(cv, x, y, o) {
+  o = o || {}; const s = o.s || 1, K = '#2b2b33', KO = '#121217', hy = o.hop || 0;
+  const by = y - 13 * s + hy, tail = o.tail || 0;
+  // đuôi (hai đoạn, vẫy theo tail)
+  const t1 = [x + 17 * s, by - 2 * s], t2 = [x + 30 * s, by - 12 * s + tail * 3], t3 = [x + 30 * s + tail * 6, by - 32 * s];
+  png.drawLine(cv, t1[0], t1[1], t2[0], t2[1], 8 * s, KO); png.drawLine(cv, t2[0], t2[1], t3[0], t3[1], 7 * s, KO);
+  png.drawLine(cv, t1[0], t1[1], t2[0], t2[1], 5.5 * s, K); png.drawLine(cv, t2[0], t2[1], t3[0], t3[1], 4.5 * s, K);
+  // chân
+  png.fillEllipse(cv, x + 10 * s, y - 4 * s, 6 * s, 4.5 * s, K, KO, 1.5);
+  png.fillEllipse(cv, x - 8 * s, y - 4 * s, 6 * s, 4.5 * s, K, KO, 1.5);
+  // thân
+  png.fillEllipse(cv, x, by, 19 * s, 12 * s, K, KO, 2);
+  // chân trước giơ vồ
+  if (o.paw) { png.drawLine(cv, x - 12 * s, by + 2 * s, x - 26 * s, by - 8 * s, 6 * s, KO); png.drawLine(cv, x - 12 * s, by + 2 * s, x - 26 * s, by - 8 * s, 4 * s, K); }
+  // đầu
+  const hx = x - 15 * s, hyy = by - 12 * s;
+  png.fillPoly(cv, [[hx - 12 * s, hyy - 5 * s], [hx - 9 * s, hyy - 21 * s], [hx - 1 * s, hyy - 10 * s]], K, KO, 1.5);
+  png.fillPoly(cv, [[hx + 1 * s, hyy - 10 * s], [hx + 8 * s, hyy - 21 * s], [hx + 12 * s, hyy - 5 * s]], K, KO, 1.5);
+  png.fillEllipse(cv, hx, hyy, 13 * s, 11 * s, K, KO, 2);
+  const ey = o.blink ? 0.25 : 1;
+  png.fillEllipse(cv, hx - 5 * s, hyy - 1 * s, 3.4 * s, 3.6 * s * ey, '#f2c230');
+  png.fillEllipse(cv, hx + 5 * s, hyy - 1 * s, 3.4 * s, 3.6 * s * ey, '#f2c230');
+  if (!o.blink) { png.drawLine(cv, hx - 5 * s, hyy - 4 * s, hx - 5 * s, hyy + 2 * s, 1.4, '#121217'); png.drawLine(cv, hx + 5 * s, hyy - 4 * s, hx + 5 * s, hyy + 2 * s, 1.4, '#121217'); }
+  png.fillPoly(cv, [[hx - 2 * s, hyy + 4 * s], [hx + 2 * s, hyy + 4 * s], [hx, hyy + 6.5 * s]], '#ff9db8');
+}
+const handR = (a, bob) => [CX + 38 + a.h[0], TORSO0 + (bob || 0) + 26 + a.h[1]];
+const sparkle = (cv, x, y, r, c) => { png.drawLine(cv, x - r, y, x + r, y, 2.5, c); png.drawLine(cv, x, y - r, x, y + r, 2.5, c); };
+
+// knock: gõ cộc cộc sang phải (nắm tay phải đưa ngang ngực, gõ tới lui)
+put('knock', 'normal', 'loop', rng(4).map((i) => {
+  const hit = i % 2 === 1, hx = hit ? 60 : 46, a = { e: [26, 8], h: [hx, -4 + (hit ? 0 : -3)] };
+  return [hit ? 90 : 110, render2({ face: hit ? 'protest' : 'normal', bustRot: hit ? 5 : 2, bustDx: hit ? 3 : 0, arms: ['down', a] }, { dx: hit ? 3 : 0, rot: hit ? 2 : 0 }, (cv) => {
+    if (hit) { const p = handR(a); for (const d of [-1, 0, 1]) png.drawLine(cv, p[0] + 12, p[1] + d * 9, p[0] + 22, p[1] + d * 14, 2.5, '#6f7cc4'); }
+  })];
+}));
+// carry_note: hai tay giơ trước-phải (tay phải đúng pack.hand), đi được; tờ giấy do renderer vẽ
+put('carry_note', 'normal', 'loop', rng(6).map((i) => {
+  const t = TAU * i / 6, s = S(t), c = C(t);
+  return [100, render2({
+    face: 'normal', bob: -Math.round(2 * Math.abs(s)), legs: standLegs(10 * s, Math.max(0, c) * 7, -10 * s, Math.max(0, -c) * 7),
+    arms: [{ e: [-30, 8], h: [-80, -46] }, { e: [26, -6], h: [34, -48] }],
+  }, { rot: 2 * s })];
+}));
+// crumple: hai tay bóp, rung, người co lại (cục giấy do renderer vẽ)
+put('crumple', 'normal', 'loop', rng(4).map((i) => {
+  const sq = i % 2, jx = [0, 3, -2, 3][i];
+  return [110, render2({
+    face: i % 2 ? 'protest' : 'angry', bustSy: sq ? 0.98 : 1, bustRot: [0, 3, 0, -3][i],
+    arms: [{ e: [-30, 8], h: [-78 - sq * 4, -46 + jx] }, { e: [26, -6], h: [32 - sq * 3, -48 - jx] }],
+  }, { dx: [0, 1, -1, 1][i] })];
+}));
+// throw: ném sang phải (single 5 khung)
+const thr = [
+  { f: 'normal', a: { e: [-10, -4], h: [-22, -40] }, rot: -4 },
+  { f: 'protest', a: { e: [-16, -14], h: [-30, -52] }, rot: -7 },
+  { f: 'excited', a: { e: [30, -18], h: [58, -42] }, rot: 7 },
+  { f: 'happy', a: { e: [32, 2], h: [62, 10] }, rot: 5 },
+  { f: 'normal', a: { e: [12, 18], h: [14, 44] }, rot: 0 },
+];
+put('throw', 'normal', 'single', thr.map((t, i) => [i === 2 ? 70 : 100, render2({ face: t.f, bustRot: t.rot * 0.6, arms: ['down', t.a], bustDx: t.rot * 0.3 }, { rot: t.rot, dx: t.rot * 0.4 })]));
+// peek_note: thò đầu từ sau mép note bên TRÁI sang phải (mép note là dải vàng/hồng; phần thân bên trái bị che)
+const peekN = (i) => {
+  const cv = render2({ face: ['shy', 'normal', 'normal', 'shy'][i], bustRot: [3, 6, 8, 6][i], arms: ['down', 'down'] }, { rot: [5, 7, 8, 7][i], dx: [0, 3, 5, 3][i] });
+  png.clearRect(cv, 0, 0, CX, H);
+  png.fillRoundRect(cv, CX - 26, 30, 28, H - 44, 4, '#fff1a0', '#c9ae3f', 2.5);
+  png.drawLine(cv, CX - 20, 60, CX - 4, 60, 2, '#a98f3a'); png.drawLine(cv, CX - 20, 80, CX - 4, 80, 2, '#a98f3a'); png.drawLine(cv, CX - 20, 100, CX - 8, 100, 2, '#a98f3a');
+  return cv;
+};
+put('peek_note', 'normal', 'loop', rng(4).map((i) => [[220, 180, 260, 180][i], peekN(i)]));
+// sit_on_note: ngồi buông chân trên mép note (note nằm sau, chân đung đưa)
+const slab = (cv) => {
+  png.fillRoundRect(cv, CX - 82, 306, 164, 42, 5, '#fff1a0', '#c9ae3f', 2.5);
+  for (const y of [320, 332]) png.drawLine(cv, CX - 70, y, CX + 70 - (y % 3) * 12, y, 2, '#a98f3a');
+};
+put('sit_on_note', 'normal', 'loop', rng(4).map((i) => {
+  const sw = [-6, 0, 6, 0][i];
+  return [200, render2({
+    face: i === 2 ? 'happy' : 'normal', bob: 6, hip: 308, skirtDrop: 4, bustSy: breath(i, 4),
+    legs: [{ foot: [CX - 14 + sw, 318] }, { foot: [CX + 14 - sw, 320] }], arms: ['down', 'down'],
+  }, null, null, slab)];
+}));
+// yawn: ngáp (single 6 khung)
+const yw = [['tired', 0, 0, 0], ['sleepy', -2, 0, 0], ['surprised', -5, 1.03, 0], ['surprised', -6, 1.04, 1], ['sleepy', -2, 1, 1], ['tired', 1, 1, 0]];
+put('yawn', 'normal', 'single', yw.map((y, i) => [i === 2 || i === 3 ? 260 : 150, render2({
+  face: y[0], bustRot: y[1], bustSy: y[2] || 1, bustDy: y[1] < -3 ? -2 : 0, arms: y[3] ? ['down', 'mouth'] : ['down', 'down'],
+}, null, y[0] === 'surprised' ? null : null)]));
+// stretch: vươn vai (single 6 khung)
+const st = [[0, 'normal', 'down'], [1, 'tired', 'cheer'], [2, 'sleepy', 'up'], [2, 'sleepy', 'up'], [1, 'happy', 'cheer'], [0, 'normal', 'down']];
+put('stretch', 'normal', 'single', st.map((s, i) => [i === 2 || i === 3 ? 260 : 130, render2({
+  face: s[1], bustSy: [1, 1.015, 1.035, 1.035, 1.015, 1][i], bustRot: [0, 0, -3, 3, 0, 0][i],
+  arms: [s[2], s[2]], legs: standLegs(0, i === 2 || i === 3 ? 5 : 0, 0, i === 2 || i === 3 ? 5 : 0),
+}, { dy: i === 2 || i === 3 ? -6 : 0 })]));
+// read: đứng cầm tờ note vàng trước ngực, cúi đọc, lật
+put('read', 'normal', 'loop', rng(4).map((i) => {
+  const dy = [0, 1, 2, 1][i], flip = i === 3;
+  return [[320, 260, 320, 200][i], render2({
+    face: i === 2 ? 'happy' : 'normal', bob: 0, bustRot: 4 + i % 2, bustDy: 3, bustSy: breath(i, 4),
+    arms: [{ e: [12, 16], h: [-16, 24] }, { e: [16, 14], h: [-4, 24] }],
+  }, null, (cv) => {
+    paper(cv, CX + 8, 276 + dy, 58, 62, flip ? 5 : -3, NOTE_Y[0], NOTE_Y[1], 4);
+    png.fillEllipse(cv, CX - 22, 276 + dy, 7, 7, SKIN, SKIN_O, 1.5); png.fillEllipse(cv, CX + 36, 276 + dy, 7, 7, SKIN, SKIN_O, 1.5);
+  })];
+}));
+// cheer: reo mừng, nhảy, hai tay giơ cao, lấp lánh
+put('cheer', 'normal', 'loop', rng(6).map((i) => {
+  const dy = [0, -12, -18, -10, 0, -4][i], a = i % 2 ? 'cheer' : 'up';
+  return [100, render2({ face: i % 2 ? 'laugh' : 'excited', arms: [a, a], bustRot: [-2, 0, 2, 0, -2, 0][i], legs: standLegs(0, dy < -6 ? 5 : 0, 0, dy < -6 ? 5 : 0) }, { dy, sy: dy === 0 ? 0.97 : 1, sx: dy === 0 ? 1.02 : 1 }, (cv) => {
+    const k = i % 3; const c = ['#ffd24a', '#ff8fb5', '#7ad0ff'][k];
+    sparkle(cv, 52 + k * 8, 64 - k * 8, 8, c); sparkle(cv, 238 - k * 6, 48 + k * 10, 6, ['#ff8fb5', '#7ad0ff', '#ffd24a'][k]); sparkle(cv, 250, 120 - k * 6, 5, c);
+  })];
+}));
+// play_cat: ngồi xổm chơi với mèo đen nhỏ bên phải
+put('play_cat', 'normal', 'loop', rng(6).map((i) => {
+  const t = TAU * i / 6, s = S(t), a = { e: [24, 24], h: [46 + 4 * s, 56 + 2 * (i % 2)] };
+  return [140, render2({
+    face: i % 2 ? 'laugh' : 'happy', bustRot: 5 + s, bustDx: 3, bustDy: 4, bob: 4, arms: ['down', a],
+  }, { dx: -26, rot: 1 + s }, (cv) => {
+    cat(cv, 220, FLOOR - 4, { tail: S(t + 1), paw: i % 3 === 1, blink: i === 4, hop: i % 3 === 2 ? -6 : 0 });
+  })];
+}));
+
 // ---------- Ghi ra đĩa ----------
 function rmClean(dir) {
   fs.mkdirSync(dir, { recursive: true });

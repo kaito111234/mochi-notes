@@ -1,12 +1,16 @@
 'use strict';
 (function () {
   const api = window.mochi && window.mochi.pet;
-  const BOOLS = ['alwaysVisible', 'walkEnabled', 'climbEnabled', 'followCursor'];
+  const BOOLS = ['alwaysVisible', 'walkEnabled', 'climbEnabled', 'followCursor', 'tidyEnabled', 'autoTidy', 'knockEnabled'];
+  const DEFAULT_OFF = { autoTidy: true };
   const segBtns = Array.from(document.querySelectorAll('#scale button'));
 
   function render(s) {
     if (!s) return;
-    for (const k of BOOLS) document.getElementById(k).checked = s[k] !== false;
+    for (const k of BOOLS) document.getElementById(k).checked = DEFAULT_OFF[k] ? s[k] === true : s[k] !== false;
+    const tidyOn = s.tidyEnabled !== false;
+    document.getElementById('autoTidy').disabled = !tidyOn;
+    document.getElementById('rowAutoTidy').classList.toggle('dim', !tidyOn);
     const sc = typeof s.scale === 'number' ? s.scale : 1;
     let best = null, bd = 9;
     for (const b of segBtns) { const d = Math.abs(parseFloat(b.dataset.v) - sc); if (d < bd) { bd = d; best = b; } }

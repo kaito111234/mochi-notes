@@ -5,9 +5,12 @@ const P = require('../../shared/parse.js');
 const S = require('../notes/scheduler.js');
 const defaultLines = require('./lines.js');
 
-const PRIORITY = { alarm: 100, due: 90, pre: 70, memo: 60, nag: 40, reward: 30, chatter: 10, hello: 10 };
-const DEFAULT_TTL = { nag: 120000, reward: 20000, chatter: 10000, hello: 20000 };
-const STAGE_KINDS = new Set(['alarm', 'due', 'pre', 'memo', 'nag', 'hello']);   // chạy tới góc rồi mới diễn
+const PRIORITY = { alarm: 100, due: 90, pre: 70, memo: 60, nag: 40, tidy: 35, reward: 30, chatter: 10, hello: 10 };
+const DEFAULT_TTL = { nag: 120000, tidy: 30 * 60000, reward: 20000, chatter: 10000, hello: 20000 };
+const STAGE_KINDS = new Set(['alarm', 'due', 'pre', 'memo', 'nag', 'tidy', 'hello']);
+const WHEN_LABEL = { startup: 'Lúc mở máy', morning: 'Buổi sáng', noon: 'Buổi trưa', evening: 'Buổi tối', 'before-shutdown': 'Trước khi tắt máy' };
+const WHY = { done: 'xong', overdue: 'quá hạn', checklist: 'làm hết việc' };
+const EXT_TIMEOUT = 6000;   // chạy tới góc rồi mới diễn
 const MUST_NOTIFY = 60;                                                          // >= mức này thì có thông báo dự phòng
 
 class Cancelled extends Error {
@@ -85,27 +88,65 @@ function create(ctx, deps = {}) {
   // ---------------------------------------------------------------- tiện ích
   function validItem(item) {
     const k = item.kind;
+    if (k === 'tidy') return !item.payload._asked && !!item.payload.noteId && !!ctx.findNote(item.payload.noteId) && noteVisible(item.payload.noteId);
     if (k !== 'pre' && k !== 'due' && k !== 'nag') return true;
     const t = now();
     if (k === 'nag') return S.overdueNotes(ctx.store.data.notes, t).length > 0;
     const n = item.payload.noteId ? ctx.findNote(item.payload.noteId) : null;
-    if (!n || !n.reminder || n.reminder.done) return false;
-    if (k === 'due') return n.reminder.due <= t + 1500;
+    const rm = remOf(n, item.payload);
+    if (!n || !rm || rm.done) return false;
+    if (k === 'due') return rm.due <= t + 1500;
     return true;
   }
   const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
 
+  /** Nhắc cụ thể của note: theo reminderId nếu có, không thì nhắc chính. */
+  function remOf(note, p) {
+    if (!note) return null;
+    if (p && p.reminderId && Array.isArray(note.reminders)) {
+      const r = note.reminders.find(x => x && x.id === p.reminderId);
+      if (r) return r;
+    }
+    return note.reminder || null;
+  }
+  function intentFor(note, rm) {
+    if (rm && typeof rm.intent === 'string' && rm.intent) return rm.intent;
+    try { const i = note && P.intentOf && P.intentOf(note.text || ''); return (i && i.k) || ''; } catch (_) { return ''; }
+  }
+  /** Số phút hoãn mặc định (cài đặt báo thức); mặc định 10. */
+  function snoozeMinutes() {
+    const ok = n => Number.isFinite(Number(n)) && Number(n) >= 1 && Number(n) <= 1440;
+    try {
+      const al = ctx.alarms;
+      if (al && typeof al.settings === 'function') { const s = al.settings(); if (s && ok(s.defaultSnoozeMin)) return Math.round(Number(s.defaultSnoozeMin)); }
+      else if (al && al.settings && ok(al.settings.defaultSnoozeMin)) return Math.round(Number(al.settings.defaultSnoozeMin));
+    } catch (_) { /* thử đường khác */ }
+    try {
+      const s = ctx.store.data.alarms.settings;
+      if (s && ok(s.defaultSnoozeMin)) return Math.round(Number(s.defaultSnoozeMin));
+    } catch (_) { /* mặc định */ }
+    return 10;
+  }
+  const whenText = w => {
+    if (typeof w === 'string' && WHEN_LABEL[w]) return WHEN_LABEL[w];
+    const n = Number(w);
+    if (typeof w !== 'string' && Number.isFinite(n) && n > 1e9) { try { return P.whenLabel(n); } catch (_) { return ''; } }
+    return '';
+  };
+
   function varsFor(item, note) {
     const t = now();
-    const v = { title: '', time: '', left: '', label: '', count: '' };
+    const v = { title: '', time: '', left: '', label: '', count: '', intent: '' };
     const p = item.payload || {};
-    if (note && note.reminder) {
-      v.title = clip(S.noteTitle(note.text), 50);
-      v.time = P.hm(note.reminder.due);
-      v.left = P.dur(note.reminder.due - t);
+    const rm = remOf(note, p);
+    if (note && rm) {
+      v.title = clip(p.title || rm.title || S.noteTitle(note.text), 50);
+      v.time = P.hm(rm.due);
+      v.left = P.dur(rm.due - t);
     }
+    if (note) v.intent = intentFor(note, rm);
     if (item.kind === 'alarm') { v.label = p.label || 'Báo thức'; v.title = clip(note ? S.noteTitle(note.text) : v.label, 50); v.time = P.hm(t); }
-    if (item.kind === 'memo') { v.title = clip(p.text, 60); v.time = p.when ? P.hm(p.when) : P.hm(t); }
+    if (item.kind === 'memo') { v.title = clip(p.text, 60); v.time = P.hm(t); }
     if (item.kind === 'nag') v.count = String(S.overdueNotes(ctx.store.data.notes, t).length);
     return v;
   }
@@ -130,26 +171,44 @@ function create(ctx, deps = {}) {
     return l || { text: (extra && extra.text) || '' };
   }
 
-  function sheetFor(kind, note, big) {
-    const r = note.reminder;
+  function sheetFor(kind, note, big, p) {
+    const r = remOf(note, p);
     return {
-      title: S.noteTitle(note.text), big,
+      title: clip((p && p.title) || (r && r.title) || S.noteTitle(note.text), 80), big,
       meta: r ? [P.whenLabel(r.due), P.intentLabel(r.intent)].join(' · ') : '',
       color: note.color, kind
     };
   }
 
   // ---------------------------------------------------------------- thông báo dự phòng
+  /** Toast có nút của phòng notes (ctx.alarms.toast). Trả true nếu đã hiện. */
+  function noteToast(item, n, title, body) {
+    try {
+      const al = ctx.alarms;
+      if (!al || typeof al.toast !== 'function') return false;
+      const p = item.payload || {};
+      const m = snoozeMinutes();
+      const buttons = item.kind === 'due'
+        ? [{ id: 'done', label: 'Xong rồi' }, { id: 'snooze', label: 'Hoãn ' + m + ' phút', m }]
+        : [{ id: 'open', label: 'Mở note' }];
+      const extra = { m };
+      if (p.reminderId) extra.r = p.reminderId;
+      return !!al.toast({ kind: 'note', refId: n.id, title, body, buttons, extra });
+    } catch (e) { log('alarms.toast lỗi', e && e.message); return false; }
+  }
+
   function fallbackNotify(item) {
     const p = item.payload || {};
     const t = now();
     let title = 'Mochi Notes', body = '', noteId = p.noteId || null;
     if (item.kind === 'pre' || item.kind === 'due') {
       const n = noteId ? ctx.findNote(noteId) : null;
-      if (!n || !n.reminder) return;
-      const r = n.reminder, label = P.intentLabel(r.intent);
-      title = S.noteTitle(n.text) || title;
+      const r = remOf(n, p);
+      if (!n || !r) return;
+      const label = P.intentLabel(r.intent);
+      title = clip(p.title || r.title || S.noteTitle(n.text) || title, 80);
       body = item.kind === 'pre' ? `${label} · còn ${P.dur(r.due - t)} nữa (${P.hm(r.due)})` : `${label} · đã tới giờ (${P.hm(r.due)})`;
+      if (noteToast(item, n, title, body)) return;
     } else if (item.kind === 'memo') {
       title = 'Mochi nhắc cậu'; body = String(p.text || 'Có một lời dặn đã tới giờ'); noteId = null;
     } else if (item.kind === 'alarm') {
@@ -242,6 +301,31 @@ function create(ctx, deps = {}) {
     return true;
   }
 
+  // ---------------------------------------------------------------- gõ cửa
+  /** Chờ promise của phòng khác tối đa 6s; lỗi/treo -> fallback. */
+  async function guarded(sess, fn, fallback, ms) {
+    let p;
+    try { p = Promise.resolve(fn()).then(r => r, () => fallback); } catch (_) { return fallback; }
+    try { return await sess.wait(T(ms || EXT_TIMEOUT), { promise: p, timeoutValue: fallback, errorValue: fallback }); } catch (e) { if (e instanceof Cancelled) throw e; return fallback; }
+  }
+  /** Gõ cửa app đang dùng. Trả true nếu đã tới + gõ xong (khi đó bỏ goToCorner). Mọi lỗi -> false, đi đường cũ. */
+  async function tryKnock(sess, actor) {
+    const kn = ctx.pet && ctx.pet.knock;
+    if (!kn || typeof kn.target !== 'function' || typeof actor.goToRect !== 'function') return false;
+    try { if (typeof kn.allowed === 'function' && !kn.allowed()) return false; } catch (_) { return false; }
+    const tg = await guarded(sess, () => kn.target(), null);
+    const r = tg && tg.rect;
+    if (!r || !Number.isFinite(r.x) || !Number.isFinite(r.y)) return false;
+    const res = await guarded(sess, () => actor.goToRect(r, { prefer: 'right' }), null);
+    if (!res || !res.ok) return false;
+    call(actor, 'play', 'knock', { loop: true });
+    call(actor, 'sound', 'knock');
+    sess.after(T(650), () => call(actor, 'sound', 'knock'));
+    try { bus.emit('pet:knock', { target: 'foreground' }); } catch (_) { /* bỏ qua */ }
+    await sess.sleep(T(1400));
+    return true;
+  }
+
   // ---------------------------------------------------------------- diễn
   async function ready(sess, actor) {
     if (typeof actor.isReady === 'function' && actor.isReady()) return true;
@@ -270,9 +354,11 @@ function create(ctx, deps = {}) {
       try { const cap = ctx.pet && ctx.pet.capture; if (cap && typeof cap.isOpen === 'function' && cap.isOpen() && typeof cap.suspend === 'function') cap.suspend(); } catch (e) { log('capture.suspend lỗi', e && e.message); }
     }
     call(actor, 'setStage', true);
-    if (STAGE_KINDS.has(kind)) {
+    let knocked = false;
+    if (kind === 'pre' || kind === 'nag') knocked = await tryKnock(sess, actor);
+    if (STAGE_KINDS.has(kind) && !knocked) {
       let target = null;
-      if (kind === 'pre' || kind === 'due') target = p.noteId || null;
+      if (kind === 'pre' || kind === 'due' || kind === 'tidy') target = p.noteId || null;
       else if (kind === 'nag') { const od = S.overdueNotes(ctx.store.data.notes, now()); target = od.length ? od[0].id : null; }
       if (target && noteVisible(target)) await tryPoint(sess, actor, target);
       if (!sess.pointing) {
@@ -292,10 +378,11 @@ function create(ctx, deps = {}) {
     switch (kind) {
       case 'pre': {
         const n = ctx.findNote(p.noteId);
-        if (!n || !n.reminder) return;
+        const rm = remOf(n, p);
+        if (!n || !rm) return;
         const v = varsFor(item, n);
-        const left = n.reminder.due - now();
-        hold(sheetFor('pre', n, left > 0 ? 'Còn ' + P.dur(left) : 'Sắp tới giờ rồi'));
+        const left = rm.due - now();
+        hold(sheetFor('pre', n, left > 0 ? 'Còn ' + P.dur(left) : 'Sắp tới giờ rồi', p));
         A('sound', 'ding');
         A('say', lineFor('pre', v).text, { ttlMs: 20000, buttons: [{ id: 'ok', label: 'Biết rồi' }, { id: 'open', label: 'Mở note', primary: true }] });
         sess.listen();
@@ -305,14 +392,15 @@ function create(ctx, deps = {}) {
       }
       case 'due': {
         const n = ctx.findNote(p.noteId);
-        if (!n || !n.reminder) return;
+        if (!n || !remOf(n, p)) return;
         const v = varsFor(item, n);
+        const sm = snoozeMinutes();
         const buttons = [
           { id: 'done', label: 'Xong rồi', primary: true },
-          { id: 'snooze', label: 'Hoãn 10 phút' },
+          { id: 'snooze', label: 'Hoãn ' + sm + ' phút' },
           { id: 'open', label: 'Mở note' }
         ];
-        hold(sheetFor('due', n, 'Tới giờ rồi!'));
+        hold(sheetFor('due', n, 'Tới giờ rồi!', p));
         A('sound', 'ding'); pulse();
         A('say', lineFor('due', v).text, { buttons });
         sess.listen();
@@ -328,10 +416,10 @@ function create(ctx, deps = {}) {
           }
           const id = ev.type === 'noteClick' ? 'open' : btnId(ev);
           if (id === 'done') {
-            const r = n.reminder;
+            const r = remOf(ctx.findNote(p.noteId) || n, p);
             const late = !!(r && r.fired && now() - r.due > S.NAG_AFTER);
             sess.acting = true;
-            try { ctx.notes.completeNote(p.noteId); } catch (e) { log(e && e.message); }
+            try { if (p.reminderId) ctx.notes.completeNote(p.noteId, p.reminderId); else ctx.notes.completeNote(p.noteId); } catch (e) { log(e && e.message); }
             sess.acting = false;
             emitAction(sess, 'done');
             stopPoint(sess);
@@ -344,12 +432,13 @@ function create(ctx, deps = {}) {
           }
           if (id === 'snooze') {
             sess.acting = true;
-            try { ctx.notes.snoozeNote(p.noteId, 10); } catch (e) { log(e && e.message); }
+            try { if (p.reminderId) ctx.notes.snoozeNote(p.noteId, sm, p.reminderId); else ctx.notes.snoozeNote(p.noteId, sm); } catch (e) { log(e && e.message); }
             sess.acting = false;
             emitAction(sess, 'snooze');
             stopPoint(sess);
             sess.listening = false;
             A('holdNote', null); A('shake', false);
+            v.left = sm + ' phút';
             A('say', lineFor('snooze', v).text, { ttlMs: 1400 });
             A('play', 'sleep', { loop: true });
             await sess.sleep(T(1400));
@@ -364,7 +453,7 @@ function create(ctx, deps = {}) {
         if (!od.length) return;
         const first = od[0];
         const v = varsFor(item, first); v.count = String(od.length);
-        hold(sheetFor('due', first, 'Quá hạn ' + P.dur(now() - first.reminder.due)));
+        hold(sheetFor('due', first, 'Quá hạn ' + P.dur(now() - first.reminder.due), null));
         A('say', lineFor('nag', v).text, { ttlMs: 15000, buttons: [{ id: 'see', label: 'Để tớ xem', primary: true }, { id: 'later', label: 'Để sau' }] });
         sess.listen();
         const ev = await sess.next(T(16000));
@@ -373,6 +462,47 @@ function create(ctx, deps = {}) {
           const cand = S.overdueNotes(ctx.store.data.notes, now())[0] || first;
           open(cand.id);
         } else if (ev.type === 'button') emitAction(sess, btnId(ev));
+        return;
+      }
+      case 'tidy': {
+        const n = ctx.findNote(p.noteId);
+        if (!n || !noteVisible(p.noteId)) return;
+        const title = clip(p.title || S.noteTitle(n.text), 40);
+        const v = { title, why: WHY[p.reason] || WHY.done, intent: intentFor(n, null), time: '', left: '', label: '', count: '' };
+        let go = !!p.auto;
+        if (!go) {
+          A('play', sess.pointing ? 'point' : 'say', { loop: true });
+          A('say', lineFor('tidyAsk', v).text, { ttlMs: 60000, buttons: [{ id: 'tidy', label: 'Dọn đi', primary: true }, { id: 'keep', label: 'Giữ lại' }] });
+          sess.listen();
+          const ev = await sess.next(T(61000));
+          const id = ev.type === 'noteClick' ? 'keep' : btnId(ev);
+          if (id === 'tidy') { emitAction(sess, 'tidy'); go = true; } else if (ev.type === 'button') { emitAction(sess, id || 'keep'); }
+          if (!go) {
+            if (ev.type === 'button') {
+              stopPoint(sess); sess.listening = false;
+              A('say', lineFor('tidyKeep', v).text, { ttlMs: 1500 });
+              await sess.sleep(T(1500));
+            }
+            return;
+          }
+        }
+        sess.listening = false;
+        p._asked = true;   // không hỏi lại dù bị ngắt giữa chừng
+        stopPoint(sess);
+        const tidy = ctx.pet && ctx.pet.tidy;
+        let ok = null;   // true đã dọn, false lỗi, null không rõ (treo)
+        if (tidy && typeof tidy.carryAway === 'function') {
+          sess.acting = true;
+          ok = await guarded(sess, () => tidy.carryAway(p.noteId), null, 40000);
+          sess.acting = false;
+          if (ok === false) ok = false; else if (ok !== true) ok = null;
+        } else ok = false;
+        sess.check();
+        if (ok === null) return;
+        A('say', lineFor(ok ? 'tidyDone' : 'tidyFail', v).text, { ttlMs: 3500 });
+        A('play', ok ? 'happy' : 'say', { loop: true });
+        emitAction(sess, ok ? 'tidied' : 'tidyFail');
+        await sess.sleep(T(3500));
         return;
       }
       case 'hello': {
@@ -384,7 +514,7 @@ function create(ctx, deps = {}) {
       }
       case 'memo': {
         const v = varsFor(item, null);
-        A('holdNote', { title: clip(p.text, 80), big: 'Dặn dò', meta: p.when ? P.whenLabel(p.when) : '', color: 'yellow', kind: 'memo' });
+        A('holdNote', { title: clip(p.text, 80), big: 'Dặn dò', meta: whenText(p.when), color: 'yellow', kind: 'memo' });
         A('play', 'hold_note', { loop: true });
         A('sound', 'ding');
         A('say', lineFor('memo', v).text, { ttlMs: 30000, buttons: [{ id: 'ok', label: 'Ừ, nhớ rồi', primary: true }] });
@@ -396,7 +526,7 @@ function create(ctx, deps = {}) {
       case 'alarm': {
         const n = p.noteId ? ctx.findNote(p.noteId) : null;
         const v = varsFor(item, n);
-        const snoozeMin = Number(p.snoozeMin) > 0 ? Number(p.snoozeMin) : 10;
+        const snoozeMin = Number(p.snoozeMin) > 0 ? Number(p.snoozeMin) : snoozeMinutes();
         A('holdNote', { title: p.label || (n ? S.noteTitle(n.text) : '') || 'Báo thức', big: p.label || 'Báo thức', meta: P.hm(now()) + ' · Báo thức', color: n ? n.color : 'yellow', kind: 'alarm' });
         A('play', 'ring', { loop: true });
         A('shake', true);
@@ -474,7 +604,7 @@ function create(ctx, deps = {}) {
     stopPoint(sess);
     cur = null;
     if (dirty) { const a = actorOf(); if (a) lightClean(a); }
-    if (!sess.finished && sess.reason === 'preempt') queue.push(item);   // quay lại hàng đợi (ttl xét ở takeNext)
+    if (!sess.finished && sess.reason === 'preempt' && item.kind !== 'tidy') queue.push(item);   // quay lại hàng đợi (ttl xét ở takeNext)
   }
   async function loop() {
     for (;;) {

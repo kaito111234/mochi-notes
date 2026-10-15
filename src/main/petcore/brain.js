@@ -25,6 +25,8 @@ function createBrain(core) {
   let seq = 0;
   let busyExt = false;          // đang ghi nhanh/menu: không tự làm gì
   let demo2Done = false;
+  let actTimer = null;          // đang diễn một hành động tĩnh có thời hạn (read/play_cat/peek_note): chỉ 1 timer dài, không có khi đứng yên
+  let sleepTok = 0;             // đổi mỗi lần ngủ/dậy để huỷ chuỗi yawn -> sleep
 
   const body = () => core.body;
   const actor = () => core.actor;
@@ -41,27 +43,43 @@ function createBrain(core) {
 
   function clearSit() { if (sitTimer) { clearTimeout(sitTimer); sitTimer = null; } }
 
-  function wake() {
+  function clearAct() { if (actTimer) { clearTimeout(actTimer); actTimer = null; } }
+
+  /** Dậy. opts.quiet: không vươn vai (người dùng vừa tương tác/đang bận — nơi gọi tự diễn tiếp). */
+  function wake(opts) {
+    const wasSleeping = sleeping;
     const was = sleeping || core.posture() === 'sit';
-    sleeping = false;
-    clearSit();
-    if (was && !body().busy() && core.shown) core.toIdle();
+    sleeping = false; sleepTok++;
+    clearSit(); clearAct();
+    if (was && !body().busy() && core.shown) {
+      if (wasSleeping && !(opts && opts.quiet) && !core.stage && !busyExt) {
+        const my = ++seq;
+        core.setPosture('idle');
+        actor().play('stretch', { mood: core.mode() }).then(() => {
+          if (seq === my && !sleeping && !core.stage && !body().busy() && core.shown && core.posture() === 'idle') core.toIdle();
+        });
+      } else core.toIdle();
+    }
     return was;
   }
   /** Mọi tương tác của người dùng: ghi nhận thời điểm, đánh thức. */
-  function touch() { lastTouch = Date.now(); seq++; }
+  function touch() { lastTouch = Date.now(); seq++; clearAct(); }
 
   function sleep() {
     if (sleeping || core.stage || !core.shown || body().busy()) return;
-    clearSit();
+    clearSit(); clearAct();
     sleeping = true;
+    const tok = ++sleepTok;
     core.setPosture('sleep');
-    actor().play('sleep', { loop: true });
+    // ngáp rồi mới ngủ; bị đánh thức giữa chừng (tok đổi) thì thôi
+    actor().play('yawn', { mood: core.mode() }).then(() => {
+      if (sleepTok === tok && sleeping && core.shown && !core.stage) actor().play('sleep', { loop: true });
+    });
   }
   function sit() {
     if (core.stage || body().busy()) return;
     core.setPosture('sit');
-    actor().play('sit', { loop: true });
+    actor().play(body().onNote() ? 'sit_on_note' : 'sit', { loop: true });
     clearSit();
     sitTimer = setTimeout(() => {
       sitTimer = null;
@@ -79,6 +97,23 @@ function createBrain(core) {
   function waveNow() {
     actor().play('wave', { mood: core.mode() }).then(() => { if (!body().busy() && !sleeping && core.posture() === 'idle') core.toIdle(); });
   }
+  /** Diễn một hành động tĩnh (loop) trong ms rồi về idle, huỷ được bởi touch/stage/busy/wake (seq đổi). */
+  function holdAct(anim, ms, extra) {
+    const my = ++seq;
+    clearAct();
+    core.setPosture('idle');
+    actor().play(anim, Object.assign({ loop: true, mood: core.mode() }, extra || {}));
+    actTimer = setTimeout(() => {
+      actTimer = null;
+      if (seq === my && !sleeping && !core.stage && !busyExt && !body().busy() && core.shown && core.posture() === 'idle') core.toIdle();
+    }, ms);
+    if (actTimer.unref) actTimer.unref();
+  }
+  function peekNoteAct() {
+    body().peekNote().then(r => {
+      if (r && r.ok && !core.stage && !busyExt && !sleeping && !body().busy()) holdAct('peek_note', rnd(5000, 9000));
+    }).catch(() => { /* bỏ qua */ });
+  }
   function pickWeighted(list) {
     let sum = 0;
     for (const [, w] of list) sum += w;
@@ -92,11 +127,15 @@ function createBrain(core) {
     else if (kind === 'hop') body().hopToNote({});
     else if (kind === 'follow') body().followCursor({});
     else if (kind === 'sit') sit();
+    else if (kind === 'read') holdAct('read', rnd(7000, 14000));
+    else if (kind === 'peekNote') peekNoteAct();
+    else if (kind === 'cat') holdAct('play_cat', rnd(9000, 16000));
     else waveNow();
   }
 
   function tick() {
     if (!core.shown || core.stage || busyExt || body().busy()) return;
+    if (actTimer) return;                                     // đang diễn hành động tĩnh
     const quietMs = Date.now() - lastTouch;
     bus.emit('pet:idleTick', { quietMs });
     if (sleeping) return;
@@ -111,11 +150,27 @@ function createBrain(core) {
       if (body().canHop()) opts.push(['hop', 12]);
       if (body().canFollow()) opts.push(['follow', 14]);
     }
+    const near = body().nearNote();
+    if (near) opts.push(['read', 16]);                        // đứng cạnh note: giở ra đọc
+    if (core.box.settings.walkEnabled !== false && body().hasNotes()) opts.push(['peekNote', 6]);
+    if (quietMs > 3 * 60 * 1000) opts.push(['cat', 8]);       // rảnh lâu: chơi với mèo
     opts.push(['sit', 22], ['wave', 12]);
     act(pickWeighted(opts));
   }
 
   function say(text) { actor().say(text, { ttlMs: 4000 }); }
+
+  /** Người dùng vừa xong việc (reminder:done): reo mừng nếu bé đang hiện, rảnh, không ngủ. */
+  function cheer() {
+    if (!core.shown || core.stage || busyExt || sleeping || body().busy() || core.posture() === 'lifted') return;
+    if (core.posture() === 'sit') { clearSit(); }
+    const my = ++seq;
+    clearAct();
+    core.setPosture('idle');
+    actor().play('cheer', { mood: 'happy' }).then(() => {
+      if (seq === my && !sleeping && !core.stage && !body().busy() && core.shown) core.toIdle();
+    });
+  }
 
   function onInteract(data) {
     const kind = data && data.kind;
@@ -126,7 +181,7 @@ function createBrain(core) {
     if (body().busy()) return;                                // đang nhấc/rơi/nấp/đi
     const wasSleeping = sleeping;
     const wasSitting = core.posture() === 'sit';
-    wake();
+    wake({ quiet: true });
     const my = seq;
     const back = () => { if (seq === my && !core.stage && !body().busy() && !sleeping) core.toIdle(); };
     if (kind === 'click') {
@@ -150,7 +205,7 @@ function createBrain(core) {
       body().stopWalk();
       sleeping = false;
       clearSit();
-      seq++;
+      seq++; sleepTok++; clearAct();
       core.setPosture('idle');
     } else {
       touch();
@@ -166,11 +221,11 @@ function createBrain(core) {
     if (on) {
       seq++;
       body().stopWalk();
-      if (sleeping || core.posture() === 'sit') wake();
+      if (sleeping || core.posture() === 'sit') wake({ quiet: true });
     } else touch();
   }
 
-  // Gỡ lỗi: MOCHI_PET_DEMO2 = climb | note | follow (chạy một lần sau khi bé hiện ~2.5s).
+  // Gỡ lỗi: MOCHI_PET_DEMO2 = climb | note | follow | rect | sleep | cheer | read | cat | peeknote (chạy một lần sau khi bé hiện ~2.5s).
   function runDemo2() {
     const what = process.env.MOCHI_PET_DEMO2;
     if (!what || demo2Done) return;
@@ -179,6 +234,17 @@ function createBrain(core) {
       try {
         if (!core.shown) return;
         if (what === 'climb') await body().climbWall({ maxDist: Infinity });
+        else if (what === 'rect') {          // goToRect tới hình chữ nhật giữa màn hình (có/không chỗ), rồi chụp
+          const wa = body().getWorkArea();
+          const edge = process.env.MOCHI_DEMO_EDGE === '1';
+          const r = await body().goToRect({ x: edge ? wa.x + wa.width - 300 : wa.x + 500, y: wa.y + wa.height - 260, width: 300, height: 260 }, { prefer: 'right' });
+          console.log('[demo2] goToRect', JSON.stringify(r), JSON.stringify(body().pos()), JSON.stringify(body().handScreen()));
+          actor().say('Bong bóng thử, rộng rộng rộng rộng rộng rộng rộng.', { ttlMs: 60000 });
+        } else if (what === 'sleep') { sleep(); setTimeout(() => wake(), 6000); }
+        else if (what === 'cheer') cheer();
+        else if (what === 'read') holdAct('read', 20000);
+        else if (what === 'cat') holdAct('play_cat', 20000);
+        else if (what === 'peeknote') peekNoteAct();
         else if (what === 'follow') await body().followCursor({ force: true });
         else if (what === 'note') {
           if (!ctx.windows.notes.size && ctx.notes && typeof ctx.notes.createNote === 'function') {
@@ -205,13 +271,14 @@ function createBrain(core) {
     if (tickTimer.unref) tickTimer.unref();
     runDemo2();
   }
-  function stop() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } clearSit(); sleeping = false; }
+  function stop() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } clearSit(); clearAct(); sleepTok++; sleeping = false; }
 
   core.window.on('interact', onInteract);
   bus.on('app:idle', () => { if (!core.stage) sleep(); });
   bus.on('app:resume', () => { touch(); wake(); });
+  bus.on('reminder:done', () => { try { cheer(); } catch (_) { /* bỏ qua */ } });
 
-  return { start, stop, tick, touch, wake, sleep, sit, setBusy, onStage, isSleeping: () => sleeping, onHidden() { sleeping = false; clearSit(); } };
+  return { start, stop, tick, touch, wake, sleep, sit, setBusy, cheer, onStage, isSleeping: () => sleeping, onHidden() { sleeping = false; sleepTok++; clearSit(); clearAct(); } };
 }
 
 module.exports = { createBrain };

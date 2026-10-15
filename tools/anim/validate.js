@@ -7,7 +7,7 @@ const { loadPack, MOODS, PHASES } = require('../../src/main/petcore/pack');
 const png = require('./png');
 
 const REQUIRED_ERR = ['idle'];
-const OPTIONAL_WARN = ['climb', 'point', 'write']; // Đợt 2: thiếu chỉ nhắc nhẹ (engine mượn từ gói dự phòng)
+const OPTIONAL_WARN = ['climb', 'point', 'write', 'knock', 'carry_note', 'crumple', 'throw', 'peek_note', 'sit_on_note', 'yawn', 'stretch', 'read', 'cheer', 'play_cat']; // Đợt 2: thiếu chỉ nhắc nhẹ (engine mượn từ gói dự phòng)
 const REQUIRED_WARN = ['walk', 'sit', 'sleep', 'pat_head', 'pat_body', 'lifted', 'fall', 'land', 'peek_left', 'peek_right', 'hold_note', 'ring', 'happy', 'sad', 'shy', 'angry', 'eat', 'work', 'wave', 'startup', 'shutdown', 'say'];
 
 function validate(dir) {

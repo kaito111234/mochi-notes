@@ -1,0 +1,27 @@
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; pointer-events: none; user-select: none; }
+#bin { position: absolute; left: 10px; right: 10px; bottom: 4px; top: 8px; }
+#body {
+  position: absolute; left: 6px; right: 6px; bottom: 0; height: 68px;
+  background: linear-gradient(#fff3e0, #ffe0e8); border: 3px solid #f3a6bd; border-radius: 8px 8px 20px 20px;
+  box-shadow: 0 3px 6px rgba(0,0,0,.2); overflow: hidden;
+}
+.stripe { position: absolute; top: 0; bottom: 0; width: 3px; background: rgba(243,166,189,.35); }
+.s1 { left: 22%; } .s2 { right: 22%; }
+#face { position: absolute; inset: 0; }
+.eye { position: absolute; top: 24px; width: 7px; height: 9px; background: #6b4a4a; border-radius: 50%; }
+.eye.l { left: 26%; } .eye.r { right: 26%; }
+.cheek { position: absolute; top: 36px; width: 10px; height: 6px; background: rgba(255,120,150,.5); border-radius: 50%; }
+.cheek.l { left: 15%; } .cheek.r { right: 15%; }
+.mouth { position: absolute; left: 50%; top: 36px; width: 8px; height: 5px; margin-left: -4px; border-bottom: 2px solid #6b4a4a; border-radius: 0 0 8px 8px; }
+#lid {
+  position: absolute; left: 0; right: 0; bottom: 64px; height: 12px; z-index: 2;
+  background: linear-gradient(#ffd3e0, #f7b5c9); border: 3px solid #f3a6bd; border-radius: 10px 10px 4px 4px;
+  transform-origin: 12% 100%; box-shadow: 0 2px 3px rgba(0,0,0,.18);
+}
+#knob { position: absolute; left: 50%; top: -9px; width: 20px; height: 8px; margin-left: -10px; background: #f3a6bd; border-radius: 8px 8px 0 0; }
+body.bump #lid { animation: lid .6s ease-out; }
+body.bump #body { animation: wob .6s ease-out; }
+body.bump .mouth { height: 9px; border: 2px solid #6b4a4a; border-radius: 50%; }
+@keyframes lid { 0% { transform: rotate(0); } 25% { transform: rotate(-38deg) translateY(-6px); } 55% { transform: rotate(-12deg); } 100% { transform: rotate(0); } }
+@keyframes wob { 0%,100% { transform: scale(1,1); } 30% { transform: scale(1.06,.93); } 60% { transform: scale(.97,1.03); } }
+@media (prefers-reduced-motion: reduce) { body.bump #lid, body.bump #body { animation: none; } }

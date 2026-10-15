@@ -10,20 +10,27 @@
 <main>
   <h1>Cài đặt bé Mochi</h1>
   <p class="sub">Chỉnh cho bé hợp ý cậu nha.</p>
+  <div class="grp">Đi lại</div>
   <div class="card">
     <label class="row"><span class="txt">Bé luôn ở trên desktop</span><input type="checkbox" id="alwaysVisible"><span class="sw"></span></label>
     <label class="row"><span class="txt">Cho bé đi lại</span><input type="checkbox" id="walkEnabled"><span class="sw"></span></label>
     <label class="row"><span class="txt">Cho bé leo tường</span><input type="checkbox" id="climbEnabled"><span class="sw"></span></label>
     <label class="row"><span class="txt">Thỉnh thoảng đi theo con trỏ</span><input type="checkbox" id="followCursor"><span class="sw"></span></label>
-  </div>
-  <div class="card">
-    <div class="lbl">Cỡ bé</div>
+    <div class="row static">
+      <span class="txt">Cỡ bé</span>
+    </div>
     <div class="seg" id="scale">
       <button type="button" data-v="0.75">75%</button>
       <button type="button" data-v="1">100%</button>
       <button type="button" data-v="1.25">125%</button>
       <button type="button" data-v="1.5">150%</button>
     </div>
+  </div>
+  <div class="grp">Nhắc &amp; dọn dẹp</div>
+  <div class="card">
+    <label class="row"><span class="txt">Bé đi hỏi dọn note hết hạn</span><input type="checkbox" id="tidyEnabled"><span class="sw"></span></label>
+    <label class="row" id="rowAutoTidy"><span class="txt">Tự dọn note đã xong, không cần hỏi<small>Note dọn vào thùng rác, lấy lại được trong 30 ngày</small></span><input type="checkbox" id="autoTidy"><span class="sw"></span></label>
+    <label class="row"><span class="txt">Bé gõ vào cửa sổ đang dùng để nhắc việc<small>Tối đa 15 phút một lần, không gõ khi cậu đang xem toàn màn hình</small></span><input type="checkbox" id="knockEnabled"><span class="sw"></span></label>
   </div>
   <p class="note">Khi tắt "luôn ở trên desktop", bé chỉ hiện lúc nhắc lịch.</p>
 </main>

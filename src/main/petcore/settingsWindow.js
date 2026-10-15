@@ -3,7 +3,7 @@
 const path = require('path');
 const { BrowserWindow, ipcMain } = require('electron');
 
-const BOOLS = ['alwaysVisible', 'walkEnabled', 'climbEnabled', 'followCursor'];
+const BOOLS = ['alwaysVisible', 'walkEnabled', 'climbEnabled', 'followCursor', 'tidyEnabled', 'autoTidy', 'knockEnabled'];
 
 function createSettingsWindow(core) {
   const ctx = core.ctx;
@@ -33,7 +33,7 @@ function createSettingsWindow(core) {
       return;
     }
     win = new BrowserWindow({
-      width: 360, height: 460, useContentSize: true,
+      width: 360, height: 660, useContentSize: true,
       resizable: false, maximizable: false, minimizable: true, fullscreenable: false,
       autoHideMenuBar: true, title: 'Cài đặt bé Mochi',
       backgroundColor: '#fff6ee',

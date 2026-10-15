@@ -55,8 +55,8 @@ const LINES = {
     'Muộn một chút cũng không sao. Cậu làm xong là được rồi.'
   ],
   snooze: [
-    'Ừa, 10 phút nữa tớ gọi lại nha.',
-    'Hoãn 10 phút nhé. Hết giờ tớ nhắc lại liền.'
+    'Ừa, {left} nữa tớ gọi lại nha.',
+    'Hoãn {left} nhé. Hết giờ tớ nhắc lại liền.'
   ],
   startup: [
     'Chào cậu! Tới giờ là tớ chạy ra nhắc liền.',
@@ -106,6 +106,38 @@ const LINES = {
   pointNote: [
     'Note này nè, {title}!',
     'Là note này đó cậu, {title}.'
+  ],
+  tidyAsk: [
+    'Note “{title}” {why} rồi, tớ dọn vào thùng rác nha?',
+    'Cậu ơi, note “{title}” {why} rồi. Để tớ dọn đi nhé?'
+  ],
+  tidyDone: [
+    'Tớ dọn rồi nha. Cần thì lấy lại trong thùng rác.',
+    'Xong, note nằm trong thùng rác rồi. Cậu cần thì lấy lại.'
+  ],
+  tidyKeep: [
+    'Ừ, tớ để lại đó nha.',
+    'Được, tớ giữ nguyên cho cậu.'
+  ],
+  tidyFail: [
+    'Ôi, tớ dọn chưa được. Note vẫn còn nguyên, cậu yên tâm.',
+    'Xin lỗi cậu, tớ dọn không xong. Note chưa bị gì hết.'
+  ],
+  knock: [
+    'Cộc cộc, cậu ơi, tớ có chuyện cần nhắc nè.',
+    'Cậu ơi, cho tớ xen vào xíu nha.'
+  ],
+  cheer: [
+    'Hoan hô! Cậu giỏi quá!',
+    'Yay, xong một việc rồi nè.'
+  ],
+  yawn: [
+    'Ưm, tớ buồn ngủ xíu.',
+    'Hà… tớ ngáp một cái thôi.'
+  ],
+  catPlay: [
+    'Meo, bé mèo đen đang chơi với tớ nè.',
+    'Tớ chơi với mèo xíu thôi, có việc tớ vẫn nhắc nha.'
   ],
   chatter: [
     'Tớ ngồi đây canh giờ cho cậu nha.',

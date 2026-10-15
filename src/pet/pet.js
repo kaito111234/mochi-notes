@@ -16,6 +16,7 @@
   };
 
   let pack = null, layout = { winW: 400, winH: 400, charLeft: 0, charTop: 0, scale: 1 };
+  let outfit = {};
   let dir = 'right', settings = { sound: true };
   let anim = null, loading = false, queued = [];
   let curNote = null, climbSide = null;
@@ -258,6 +259,23 @@
       o.type = 'sine'; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(760, t + 0.07);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
       o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.16);
+    } else if (name === 'knock') {
+      for (let r = 0; r < 2; r++) {
+        const b = t + r * 0.16;
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(190, b); o.frequency.exponentialRampToValueAtTime(110, b + 0.06);
+        g.gain.setValueAtTime(0.0001, b); g.gain.exponentialRampToValueAtTime(0.35, b + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, b + 0.09);
+        o.connect(g); g.connect(c.destination); o.start(b); o.stop(b + 0.1);
+      }
+    } else if (name === 'crumple') {
+      const len = Math.floor(c.sampleRate * 0.45), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const k = i / len, burst = (Math.sin(k * 38) > 0.2 ? 1 : 0.25);
+        d[i] = (Math.random() * 2 - 1) * (1 - k) * burst;
+      }
+      const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      f.type = 'highpass'; f.frequency.value = 1800; g.gain.value = 0.22;
+      src.buffer = buf; src.connect(f); f.connect(g); g.connect(c.destination); src.start(t);
     } else if (name === 'alarm') {
       for (let r = 0; r < 3; r++) {
         const b = t + r * 0.9;
@@ -409,6 +427,7 @@
       }
       case 'note': setNote(c.note); break;
       case 'sound': sound(c.name); break;
+      case 'outfit': outfit = c.worn && typeof c.worn === 'object' ? c.worn : {}; break;
       case 'shake': shaker.classList.toggle('shake', !!c.on); break;
       case 'settings': settings = Object.assign({}, settings, c.settings || {}); break;
       case 'fade': {

@@ -581,39 +581,117 @@ function createBody(core) {
     core.toIdle();
   }
 
-  /** Tới đứng cạnh cửa sổ note (ưu tiên bên phải, quay mặt về note). Promise<{ok, side}>. */
-  async function goToNote(noteId) {
-    const w = ctx.windows.notes.get(noteId);
-    if (!w || !ctx.alive(w) || !w.isVisible() || w.isMinimized()) return { ok: false, side: null };
+  /**
+   * Tới sàn sát cạnh một hình chữ nhật bất kỳ (toạ độ màn hình), quay mặt về nó. Promise<{ok, side}>.
+   * opts: {prefer:'right'|'left' (mặc định right), fast (nhảy ngay, không đi bộ), gap (px giữa mép thân bé và rect)}.
+   * Chừa chỗ bong bóng: bong bóng nằm trên đầu bé (rộng ~240px) nên nếu rect cao quá đầu bé thì đứng cách xa hơn.
+   * Cả cửa sổ bé (thân + bong bóng + tờ note) luôn nằm trong workArea. side=null: rect rộng hết màn hình, đứng trên mép trên/sàn.
+   */
+  async function goToRect(bounds, opts) {
+    opts = opts || {};
+    const fail = { ok: false, side: null };
+    if (!bounds || ![bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite) || bounds.width <= 0 || bounds.height <= 0) return fail;
     if (!core.shown) { try { await core.actor.show({ corner: true }); } catch (_) { /* bỏ qua */ } }
-    if (!walls() || !core.shown || !L() || st.mode === 'lift') return { ok: false, side: null };
-    if (!w || !ctx.alive(w) || !w.isVisible() || w.isMinimized()) return { ok: false, side: null };
-    const b = w.getBounds();
-    const d = screen.getDisplayMatching(b), wa = d.workArea, half = L().charW / 2, gap = 8;
-    const rightX = b.x + b.width + gap + half, leftX = b.x - gap - half;
-    let side = null, tx, ty;
-    if (rightX + half <= wa.x + wa.width) side = 'right';
-    else if (leftX - half >= wa.x) side = 'left';
-    if (side) {
-      tx = side === 'right' ? rightX : leftX;
-      ty = floorAt(tx, b.y + b.height).y;
-      // sàn cạnh note nằm quá thấp so với note (note lơ lửng trên cao): lên đứng trên mép trên note cho gần
-      if (ty - (b.y + b.height) > L().charH * 1.2 && b.y >= wa.y + L().charH) side = null;
+    if (!walls() || !core.shown || !L() || st.mode === 'lift') return fail;
+    const b = bounds;
+    const d = screen.getDisplayMatching(b), wa = d.workArea, half = L().charW / 2, ch = L().charH;
+    const bottom = b.y + b.height;
+    const tall = b.y < Math.min(bottom, wa.y + wa.height) - ch - 20;        // rect cao quá đầu bé: bong bóng sẽ phủ lên
+    const gap = Number.isFinite(opts.gap) ? opts.gap : (tall ? Math.max(8, Math.min(110, 104 - half)) : 8);
+    const prefer = opts.prefer === 'left' ? 'left' : 'right';
+    const cand = side => {
+      const face = side === 'right' ? 'left' : 'right';                    // quay mặt về rect
+      const tx = side === 'right' ? b.x + b.width + gap + half : b.x - gap - half;
+      const r = fxRange(wa, face, false);
+      return { side, face, tx, ok: tx >= r.lo - 0.5 && tx <= r.hi + 0.5, r };
+    };
+    const order = prefer === 'left' ? ['left', 'right'] : ['right', 'left'];
+    let pick = null;
+    for (const sd of order) { const c = cand(sd); if (c.ok) { pick = c; break; } }
+    if (!pick && gap > 8) {                                                // không đủ chỗ cho gap rộng: thử sát hơn
+      for (const sd of order) {
+        const c0 = cand(sd), tx = sd === 'right' ? b.x + b.width + 8 + half : b.x - 8 - half;
+        const r = c0.r;
+        if (tx >= r.lo - 0.5 && tx <= r.hi + 0.5) { pick = Object.assign(c0, { tx, ok: true }); break; }
+      }
     }
-    if (!side) {                                           // note rộng hết màn hình: đứng trên mép trên của nó
-      tx = clampX(b.x + b.width / 2, wa);
-      ty = b.y >= wa.y + L().charH ? b.y : wa.y + wa.height;
+    let side = null, tx, ty, face;
+    if (pick) {
+      side = pick.side; face = pick.face; tx = pick.tx;
+      ty = floorAt(tx, bottom).y;
+      // sàn cạnh rect nằm quá thấp so với rect (lơ lửng trên cao): lên đứng trên mép trên rect cho gần
+      if (ty - bottom > ch * 1.2 && b.y >= wa.y + ch) side = null;
     }
-    const face = side === 'right' ? 'left' : side === 'left' ? 'right' : st.face;
+    if (!side) {
+      face = st.face;
+      const r = fxRange(wa, face, false);
+      tx = Math.min(r.hi, Math.max(r.lo, b.x + b.width / 2));
+      ty = b.y >= wa.y + ch && b.y < wa.y + wa.height ? floorAt(tx, b.y + 1).y : wa.y + wa.height;
+      if (ty > b.y + 1 && b.y >= wa.y + ch) ty = b.y;
+    }
     if (st.mode === 'peek') leavePeek();
     const here = displayAt(st.fx, st.fy - 2);
-    if (st.mode === 'stand' && here.id === d.id && Math.abs(st.fy - ty) < 4 && Math.abs(tx - st.fx) <= 900) {
+    if (!opts.fast && st.mode === 'stand' && here.id === d.id && Math.abs(st.fy - ty) < 4 && Math.abs(tx - st.fx) <= 900) {
       await walk({ toX: tx, speedMul: 2.5 });
+      if (Math.abs(st.fx - tx) > 6 || Math.abs(st.fy - ty) > 6) await jumpTo(tx, ty, face);
+      else setFace(face);
+    } else if (opts.fast && st.mode === 'stand' && here.id === d.id && Math.abs(st.fy - ty) < 4 && Math.abs(tx - st.fx) <= 260) {
+      await walk({ toX: tx, speedMul: 4 });
       if (Math.abs(st.fx - tx) > 6 || Math.abs(st.fy - ty) > 6) await jumpTo(tx, ty, face);
       else setFace(face);
     } else await jumpTo(tx, ty, face);
     core.toIdle();
     return { ok: true, side };
+  }
+
+  /** Tới đứng cạnh cửa sổ note (ưu tiên bên phải, quay mặt về note). Promise<{ok, side}>. */
+  async function goToNote(noteId) {
+    const w = ctx.windows.notes.get(noteId);
+    if (!w || !ctx.alive(w) || !w.isVisible() || w.isMinimized()) return { ok: false, side: null };
+    const b0 = w.getBounds();
+    const r = await goToRect(b0, { prefer: 'right' });
+    return r;
+  }
+
+  /** Note đang hiện nằm sát cạnh bé trên cùng sàn (cách mép thân ≤ 70px, chạm sàn bé)? {id, side} hoặc null (rẻ, không timer). */
+  function nearNote() {
+    if (!walls() || !L() || !core.shown) return null;
+    const half = L().charW / 2;
+    for (const [id, w] of ctx.windows.notes) {
+      if (!ctx.alive(w) || !w.isVisible() || w.isMinimized()) continue;
+      const b = w.getBounds();
+      if (b.y + b.height < st.fy - 6 || b.y > st.fy - 20) continue;          // note phải chạm tầm bé
+      const dR = (st.fx - half) - (b.x + b.width), dL = b.x - (st.fx + half);
+      if (dR >= -6 && dR <= 70) return { id, side: 'right' };               // note nằm bên trái bé
+      if (dL >= -6 && dL <= 70) return { id, side: 'left' };                // note nằm bên phải bé
+    }
+    return null;
+  }
+  /** Ló đầu sau mép một note đang hiện (đứng ngay mép, hình ló quay ra xa note). Promise<{ok, side, id}>; ok:false nếu không có note/không đi được. */
+  async function peekNote() {
+    if (!autoOk() || cursorHits(st.fx, st.fy)) return { ok: false };
+    const ids = [];
+    for (const [id, w] of ctx.windows.notes) {
+      if (!ctx.alive(w) || !w.isVisible() || w.isMinimized()) continue;
+      const nb = w.getBounds(), wa0 = displayAt(nb.x + nb.width / 2, nb.y + nb.height / 2).workArea;
+      if (nb.y + nb.height >= wa0.y + wa0.height - L().charH * 0.6) ids.push(id);   // chỉ note chạm/gần sàn mới có "mép" để ló
+    }
+    if (!ids.length) return { ok: false };
+    const id = ids[Math.floor(Math.random() * ids.length)];
+    const b = ctx.windows.notes.get(id).getBounds();
+    const r = await goToRect(b, { prefer: Math.random() < 0.5 ? 'right' : 'left', gap: -10 });
+    if (!r.ok || !r.side || st.mode !== 'stand') return { ok: false };
+    setFace(r.side === 'right' ? 'right' : 'left');                         // đầu ló ra phía xa note
+    return { ok: true, side: r.side, id };
+  }
+
+  /** Toạ độ màn hình (DIP) của bàn tay (pack.hand) theo hướng mặt hiện tại; null khi bé ẩn/chưa đặt. */
+  function handScreen() {
+    if (!core.shown || !st.placed || !walls() || !L() || !P()) return null;
+    const l = L(), p = P(), o = offset();
+    const hx = l.charLeft + (st.face === 'left' ? p.size[0] - p.hand[0] : p.hand[0]) * l.scale;
+    const hy = l.charTop + p.hand[1] * l.scale;
+    return { x: Math.round(st.fx - o.x + hx), y: Math.round(st.fy - o.y + hy) };
   }
 
   // ----- kiểm sàn định kỳ 1s khi rảnh
@@ -671,7 +749,7 @@ function createBody(core) {
 
   return {
     apply, placeInitial, placeCorner, walk, stopWalk, startFall, peek, leavePeek, goToCorner, cancel,
-    goToNote, occupiedRect, canClimb, climbWall, canHop, hopToNote, canFollow, followCursor: followCursorWalk,
+    goToNote, goToRect, handScreen, nearNote, peekNote, hasNotes: () => { for (const [, w] of ctx.windows.notes) if (ctx.alive(w) && w.isVisible() && !w.isMinimized()) return true; return false; }, footScreen: () => ({ x: Math.round(st.fx), y: Math.round(st.fy) }), occupiedRect, canClimb, climbWall, canHop, hopToNote, canFollow, followCursor: followCursorWalk,
     onNote: () => st.onNote, cursorOnPet: () => cursorHits(st.fx, st.fy),
     startWatch, stopWatch, watch, revalidate, save, setFace, floorAt,
     mode: () => st.mode,
