@@ -12,6 +12,10 @@ Bản hiện có (0.1, nhánh `main`): sticky note nhiều cửa sổ, định d
 | 4. Thoại & tính cách | `room/persona` | Kho thoại JSON có điều kiện (giờ, tâm trạng, việc tồn, sự kiện); tính cách bé (ngại ngùng, thích mèo, đồ ngọt); bong bóng chữ chạy dần; **bảng yêu cầu vẽ** cho họa sĩ (danh sách tư thế, kích thước, quy ước tên file) |
 | 5. Kiểm thử & đóng gói | `room/qa` | Test tự động (logic + chạy xvfb chụp màn hình), bộ cài Windows (NSIS), tự cập nhật, đo hiệu năng, danh sách lỗi |
 
+## Trạng thái
+- Đợt 1 xong và đã gộp (core, notes, persona).
+- **Đợt 2 đang chạy**: notes (hiểu note, nhiều nhắc/note, API ghi nhanh), core (bé ghi note giúp, tự do hơn), **paper** (mẫu giấy note dễ thương), **art** (họa sĩ vẽ lại bé dạng rig vector, từng phần), **qa** (kiểm thử note như người dùng thật). Game hóa để Đợt 3.
+
 ## Đợt 1 — Nền móng (làm trước)
 - Điều hành: hợp đồng chung `docs/spec/` — mô hình dữ liệu v2 (note, alarm, pet state, inventory), bus sự kiện giữa các module, định dạng gói animation & thoại.
 - Phòng 1: engine animation + cửa sổ bé đi lại/kéo thả (dùng hình tạm).

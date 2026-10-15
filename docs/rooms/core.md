@@ -55,3 +55,13 @@ _Cập nhật 2026-10-15 — lượt 1 (Đợt 1)._
 4. Gửi phòng notes: báo thức gọi `ctx.pet.stage.request({kind:'alarm', payload:{alarmId, label, noteId?, snoozeMin?, onAction?(id)}})` hoặc `ctx.pet.enqueue({type:'alarm', ...})` — core cũng nghe `alarm:ring`/`memo:due` và chống trùng theo id, nên chỉ phát bus cũng đủ. Nút trên bé gọi `ctx.alarms.stop(alarmId)` / `ctx.alarms.snooze(alarmId, min)` nếu có và phát `pet:stageAction`. `alarm:stopped`/`alarm:snoozed` làm bé thôi kêu.
 5. Gửi phòng persona: core gọi `ctx.persona.pick(event, vars)` với event `click`, `pat_head`, `pat_body`, `pre`, `due`, `nag`, `alarm`, `memo`, `done`, `snooze`, `startup`…; vars `{title, time, left, label, count}`.
 6. Bổ sung 02-events: sự kiện `pet:stageAction {stageId, kind, button, alarmId?, noteId?, memoId?}` (core phát khi người dùng bấm nút trên bé).
+
+---
+# ĐỢT 2 — việc mới (phòng điều hành giao)
+Chủ dự án muốn **"một pet tự do trên màn hình, tương tác và giúp tôi note"**. **Mất quyền `assets/pet/mochi/**`** (sang phòng art): chuyển gói hình tạm sang `assets/pet/placeholder/`, engine nạp `mochi` nếu có, thiếu action nào thì lấy từ `placeholder`.
+1. **Bé ghi note giúp**: bấm đúp vào bé (hoặc menu chuột phải "Ghi nhanh") → bong bóng có ô nhập "Cậu muốn tớ ghi gì?" (Enter để lưu, Esc huỷ, nhớ nháp), gọi `ctx.notes.quickCapture(text)` (phòng notes làm; chưa có thì tạo note qua `ctx.notes.create`) → bé đọc lại điều đã hiểu ("Tớ ghi rồi nha. 15:00 tớ nhắc cậu họp"). Kéo-thả chữ/đường link vào bé cũng tạo note.
+2. **Menu chuột phải trên bé**: Ghi nhanh · Note mới · Danh sách note · Báo thức · Ẩn/hiện tất cả note · Cho bé ngủ · Ẩn bé 1 giờ · Bé đi lại (bật/tắt) · Cỡ bé · Cài đặt bé.
+3. **Tự do hơn trên màn hình** (VPet): leo cạnh trái/phải màn hình, đi trên mép trên các cửa sổ note đang dán, ngồi lên note, thỉnh thoảng đi theo con trỏ một đoạn, nấp mép; không bao giờ che con trỏ hay chặn thao tác; tôn trọng `walkEnabled`.
+4. **Bé gắn với note**: khi nhắc một note đang dán, bé đi tới cạnh cửa sổ note đó, chỉ vào nó (note nháy viền); khi note bị ẩn thì bé giơ tờ note mini như hiện nay.
+5. **Vùng chiếm chỗ**: công bố `ctx.pet.occupiedRect()` + phát `pet:moved {rect}` để cửa sổ chuông/dặn dò của notes né bé; sửa lỗi tờ note sát mép phải.
+6. Giữ ổn định: CPU khi đứng yên < 3% một nhân; nhiều màn hình; khởi động lại nhớ vị trí bé.

@@ -57,3 +57,22 @@ Biến chạy thử: `MOCHI_DEV_ALARM=<phút>` (tạo báo thức thật sau N p
 3. `src/main/tray.js` + `listWindow.js`: thêm mục khay "Báo thức…" / "Dặn dò…" → `ctx.list.open(tab)`; renderer list đã có hook chuyển tab (hiện qua `alarm:devHint`, có thể thêm kênh `list:tab`).
 4. `package.json` `build.files`: loại `**/__tests__/**`. Phòng qa: thêm `npm test` chạy 5 bộ test ở trên.
 5. Phòng core: `ctx.pet.enqueue` 0.1 bỏ qua kiểu `alarm`/`memo` — đúng ý; khi làm `stage` xin chừa góc dưới phải cho cửa sổ chuông (360×236) và popup dặn dò (cao hơn ~250px), hoặc báo kênh vị trí để phòng notes né.
+
+---
+# ĐỢT 2 — việc mới (phòng điều hành giao, làm sau khi đọc lại trạng thái Đợt 1 ở trên)
+Chủ dự án nhấn mạnh: app phải **đọc hiểu note**, không chỉ nhận giờ. Phòng nhận thêm quyền `src/shared/parse.js`, `src/shared/understand/**`, 2 hàm chuẩn hoá trong `store.js` (xem 00-ownership). **Mất quyền `src/note/**`** (sang phòng paper) — cần đổi gì ở cửa sổ note thì cung cấp API qua `api.alarms` và ghi yêu cầu ở mục "Gửi phòng paper" dưới đây.
+1. **Hiểu note** `src/shared/understand/` (thuần JS, chạy offline): `understand(text, now) → Insight` gồm:
+   - **nhiều việc trong một note**: mỗi dòng/ý có giờ thành một mục `{line, title, due, repeat, intent, lead}`; "họp 9h, 14h gọi khách, tối 8h đi tập" → 3 mục;
+   - checklist (dòng "-", "[ ]", "1.", "•"), tiến độ;
+   - người (anh/chị/em/cô/chú + tên, @tên), nơi chốn ("ở/tại …"), số tiền ("500k", "1tr2", "2.000.000đ"), số điện thoại, đường link, email, #thẻ;
+   - mức ưu tiên ("gấp", "quan trọng", "!!!", "ASAP"), hạn chót mềm ("trong tuần", "trước thứ 6", "cuối tháng");
+   - đề xuất hành động: tạo nhắc cho từng mục, chuyển thành checklist, tách note, thêm báo thức, gọi/nhắn (hiện số).
+   Bộ test ≥ 200 câu tiếng Việt đời thường (có/không dấu, viết tắt "h", "g", "ng mai", "t2", "cn").
+2. **Nhiều nhắc trong một note**: `Note.reminders[]` (giữ `reminder` cũ tương thích: migrate trong `normalizeNote`), scheduler xử lý từng mục; chip/panel nhắc liệt kê nhiều mục (UI do paper làm theo API của bạn).
+3. **API cho cửa sổ note & bé**: `mochi.alarms.insight(noteId|text)`, `mochi.alarms.applySuggestion(noteId, suggestionId)`; trong main: `ctx.notes.quickCapture(text, {source})` (bé dùng để "ghi giúp"), trả lại note + insight để bé đọc lại "Tớ ghi rồi, 15:00 tớ nhắc nha".
+4. Phối hợp bé: dùng `ctx.pet.stage` (đã có ở main) cho báo thức/dặn dò; cửa sổ chuông né vùng bé (core công bố vùng chiếm chỗ — xem core.md Đợt 2) hoặc ẩn chuông khi bé đang cầm chuông nhưng vẫn có nút Tắt/Hoãn trên bé; câu thoại qua `ctx.persona.pick`.
+5. Thông báo Windows có nút **Tắt / Hoãn** (toastXml) cho báo thức và nhắc note.
+6. Kênh `list:tab` trong renderer danh sách (điều hành đang mở tab bằng `MochiList.setTab`).
+
+## Gửi phòng paper (yêu cầu giao diện cửa sổ note)
+_(phòng notes ghi ở đây khi có API mới)_

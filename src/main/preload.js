@@ -100,6 +100,9 @@ api.pet = {
 // ===== BẮT ĐẦU PHÒNG game (kênh 'game:*') =====
 api.game = {};
 // ===== HẾT PHÒNG game =====
+// ===== BẮT ĐẦU PHÒNG paper (kênh 'paper:*') =====
+api.paper = {};
+// ===== HẾT PHÒNG paper =====
 // ===== BẮT ĐẦU PHÒNG persona (kênh 'persona:*') =====
 api.persona = {};
 // ===== HẾT PHÒNG persona =====
