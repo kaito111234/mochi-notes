@@ -211,10 +211,53 @@
     p.classList.toggle('open', open);
     p.setAttribute('aria-hidden', String(!open));
     p.inert = !open;
-    $('listView').inert = open;
+    ['listView', 'alarmView', 'memoView'].forEach(id => { $(id).inert = open; });
     $('btnSettings').setAttribute('aria-expanded', String(open));
     (open ? $('btnBack') : $('btnSettings')).focus({ preventScroll: true });
   }
+
+  // ---------- tab, toast (dùng chung với alarms.js / memos.js / data.js) ----------
+  const TABS = { note: 'listView', alarms: 'alarmView', memos: 'memoView' };
+  const hooks = {};
+  let curTab = 'note';
+  function setTab(name, focus) {
+    if (!TABS[name]) name = 'note';
+    curTab = name;
+    document.querySelectorAll('.tab').forEach(t => {
+      const on = t.dataset.tab === name;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus({ preventScroll: true });
+    });
+    for (const [k, id] of Object.entries(TABS)) $(id).hidden = k !== name;
+    if (hooks[name]) { try { hooks[name](); } catch (e) { /* bỏ qua */ } }
+  }
+  let toastTimer = 0;
+  function toast(msg, bad) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.toggle('bad', !!bad);
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+  }
+  window.MochiList = { toast, el, setTab, setPanel, onTab: (n, fn) => { hooks[n] = fn; }, isPanelOpen: () => panelOpen, getTab: () => curTab };
+  $('tabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) setTab(t.dataset.tab); });
+  $('tabs').addEventListener('keydown', e => {
+    const names = Object.keys(TABS), i = names.indexOf(curTab);
+    if (e.key === 'ArrowRight') { e.preventDefault(); setTab(names[(i + 1) % names.length], true); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); setTab(names[(i + names.length - 1) % names.length], true); }
+  });
+  try {
+    api.alarms.devHint().then(h => {
+      const t = h && h.tab;
+      if (t === 'alarms' || t === 'memos') setTab(t);
+      else if (t === 'alarms-new') { setTab('alarms'); setTimeout(() => $('alAdd').click(), 300); }
+      else if (t === 'memos-edit') { setTab('memos'); setTimeout(() => { const b = document.querySelector('.mm-row [data-act="edit"]'); if (b) b.click(); }, 800); }
+      else if (t === 'restore') { setPanel(true); setTimeout(() => document.querySelector('[data-data="restore"]').click(), 300); }
+      else if (t === 'data') { setPanel(true); const g = $('hData'), pb = document.querySelector('.panel-body'); if (g && pb) pb.scrollTop = g.offsetTop - 8; }
+    }).catch(() => {});
+  } catch (e) { /* chưa có handler */ }
 
   // ---------- events ----------
   $('btnNew').addEventListener('click', () => api.createNote({}));
@@ -272,7 +315,9 @@
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    const sh = document.querySelector('.sheet.open');
+    if (sh) { const b = sh.querySelector('.sheet-head .icon-btn'); if (b) b.click(); return; }
     if (confirmId) { confirmId = null; renderCards(); }
     else if (panelOpen) setPanel(false);
   });
@@ -292,5 +337,5 @@
     renderSettings();
   }).catch(() => render());
 
-  setInterval(render, 30000);
+  setInterval(() => { if (curTab === 'note') render(); }, 30000);
 })();

@@ -21,8 +21,14 @@
     </div>
   </header>
 
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Chọn mục">
+    <button class="tab" type="button" role="tab" id="tabNote" data-tab="note" aria-selected="true" aria-controls="listView">Note</button>
+    <button class="tab" type="button" role="tab" id="tabAlarms" data-tab="alarms" aria-selected="false" aria-controls="alarmView" tabindex="-1">Báo thức</button>
+    <button class="tab" type="button" role="tab" id="tabMemos" data-tab="memos" aria-selected="false" aria-controls="memoView" tabindex="-1">Dặn dò</button>
+  </nav>
+
   <main class="main">
-    <section class="list-view" id="listView">
+    <section class="list-view" id="listView" role="tabpanel" aria-labelledby="tabNote">
       <div class="search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Tìm trong note..." autocomplete="off" spellcheck="false" aria-label="Tìm trong note">
@@ -50,6 +56,108 @@
       </footer>
     </section>
 
+    <section class="list-view tab-view" id="alarmView" role="tabpanel" aria-labelledby="tabAlarms" hidden>
+      <form class="quick" id="alQuick" autocomplete="off">
+        <input id="alQuickIn" type="text" placeholder="Tạo nhanh: 6h30 sáng ngày thường dậy tập" aria-label="Tạo nhanh báo thức bằng một dòng" spellcheck="false">
+        <button class="btn sm primary" type="submit">Tạo</button>
+      </form>
+      <div class="scroll" id="alScroll">
+        <section class="missed" id="alMissed" hidden aria-label="Báo thức đã lỡ">
+          <div class="missed-head"><h2>Đã lỡ</h2><button class="btn sm" id="alMissedClear" type="button">Xoá</button></div>
+          <ul class="missed-list" id="alMissedList"></ul>
+        </section>
+        <div class="al-cards" id="alCards"></div>
+        <div class="empty" id="alEmpty" hidden></div>
+      </div>
+      <div class="fab-bar"><button class="btn primary wide" id="alAdd" type="button">Thêm báo thức</button></div>
+
+      <div class="sheet" id="alSheet" role="dialog" aria-modal="true" aria-label="Báo thức" aria-hidden="true" inert>
+        <form class="sheet-in" id="alForm" autocomplete="off">
+          <div class="sheet-head">
+            <button class="icon-btn" type="button" id="alBack" title="Đóng" aria-label="Đóng form báo thức"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <h2 id="alFormTitle">Báo thức mới</h2>
+          </div>
+          <div class="sheet-body">
+            <div class="timebox" role="group" aria-label="Giờ báo">
+              <input id="alH" class="tnum" type="text" inputmode="numeric" maxlength="2" aria-label="Giờ (0 đến 23)" value="07">
+              <span class="colon" aria-hidden="true">:</span>
+              <input id="alM" class="tnum" type="text" inputmode="numeric" maxlength="2" aria-label="Phút (0 đến 59)" value="00">
+            </div>
+            <label class="fld"><span>Nhãn</span><input id="alLabel" type="text" maxlength="200" placeholder="Ví dụ: Dậy tập thể dục"></label>
+            <div class="fld"><span id="alRepLbl">Lặp lại</span>
+              <div class="seg" id="alRep" role="radiogroup" aria-labelledby="alRepLbl">
+                <button type="button" role="radio" data-v="once" aria-checked="true">Một lần</button>
+                <button type="button" role="radio" data-v="daily" aria-checked="false">Hằng ngày</button>
+                <button type="button" role="radio" data-v="weekdays" aria-checked="false">Ngày thường</button>
+                <button type="button" role="radio" data-v="weekly" aria-checked="false">Chọn thứ</button>
+                <button type="button" role="radio" data-v="monthly" aria-checked="false">Hằng tháng</button>
+              </div>
+            </div>
+            <label class="fld" id="alDateWrap"><span>Ngày</span><input id="alDate" type="date"></label>
+            <div class="fld" id="alDowWrap" hidden><span id="alDowLbl">Các thứ trong tuần</span>
+              <div class="dows" id="alDows" role="group" aria-labelledby="alDowLbl"></div>
+            </div>
+            <label class="fld" id="alMonWrap" hidden><span>Ngày trong tháng</span><select id="alMonDay"></select></label>
+            <div class="fld"><span id="alSndLbl">Âm báo</span>
+              <div class="seg" id="alSnd" role="radiogroup" aria-labelledby="alSndLbl">
+                <button type="button" role="radio" data-v="chime" aria-checked="true">Chuông ngân</button>
+                <button type="button" role="radio" data-v="bell" aria-checked="false">Chuông</button>
+                <button type="button" role="radio" data-v="soft" aria-checked="false">Nhẹ nhàng</button>
+                <button type="button" role="radio" data-v="custom" aria-checked="false">File của bạn</button>
+              </div>
+              <div class="snd-custom" id="alSndCustom" hidden>
+                <select id="alSndFile" aria-label="File âm thanh đã có"></select>
+                <button class="btn sm" type="button" id="alPick">Chọn file…</button>
+              </div>
+            </div>
+            <label class="fld"><span>Hoãn</span><select id="alSnooze"><option value="5">5 phút</option><option value="10">10 phút</option><option value="15">15 phút</option><option value="20">20 phút</option><option value="30">30 phút</option></select></label>
+          </div>
+          <div class="sheet-foot">
+            <button class="btn danger" type="button" id="alDel" hidden>Xoá</button>
+            <button class="btn" type="button" id="alTest" hidden>Thử chuông</button>
+            <span class="grow"></span>
+            <button class="btn primary" type="submit" id="alSave">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="list-view tab-view" id="memoView" role="tabpanel" aria-labelledby="tabMemos" hidden>
+      <form class="memo-add" id="mmAdd" autocomplete="off">
+        <input id="mmText" type="text" maxlength="500" placeholder="Dặn bé điều gì đó..." aria-label="Nội dung dặn dò">
+        <div class="memo-add-row">
+          <select id="mmWhen" aria-label="Thời điểm"></select>
+          <label class="chk"><input type="checkbox" id="mmOnce"><span>Chỉ một lần</span></label>
+          <span class="grow"></span>
+          <button class="btn sm primary" type="submit">Thêm</button>
+        </div>
+      </form>
+      <div class="scroll" id="mmScroll">
+        <div id="mmGroups"></div>
+        <div class="empty" id="mmEmpty" hidden></div>
+      </div>
+      <div class="sheet" id="mmSheet" role="dialog" aria-modal="true" aria-label="Sửa dặn dò" aria-hidden="true" inert>
+        <form class="sheet-in" id="mmForm" autocomplete="off">
+          <div class="sheet-head">
+            <button class="icon-btn" type="button" id="mmBack" title="Đóng" aria-label="Đóng form dặn dò"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <h2>Sửa dặn dò</h2>
+          </div>
+          <div class="sheet-body">
+            <label class="fld"><span>Nội dung</span><input id="mmEText" type="text" maxlength="500"></label>
+            <label class="fld"><span>Thời điểm</span><select id="mmEWhen"></select></label>
+            <div class="fld"><span id="mmDowLbl">Ngày áp dụng (không chọn = mọi ngày)</span>
+              <div class="dows" id="mmDows" role="group" aria-labelledby="mmDowLbl"></div>
+            </div>
+            <label class="chk"><input type="checkbox" id="mmEOnce"><span>Chỉ một lần</span></label>
+          </div>
+          <div class="sheet-foot">
+            <span class="grow"></span>
+            <button class="btn primary" type="submit">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <section class="panel" id="panel" aria-label="Cài đặt" aria-hidden="true" inert>
       <div class="panel-head">
         <button class="icon-btn" id="btnBack" type="button" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -64,6 +172,22 @@
           <button class="row" type="button" role="switch" aria-checked="false" data-key="startup"><span class="row-text"><span class="row-title">Khởi động cùng Windows</span></span><span class="switch" aria-hidden="true"></span></button>
         </div>
         <button class="btn primary wide" id="btnSummon" type="button">Gọi bé ra thử</button>
+
+        <h3>Báo thức</h3>
+        <div class="group form-group" id="grpAlarm">
+          <label class="frow"><span class="row-title">Hoãn mặc định</span><select id="sDefSnooze" aria-label="Hoãn mặc định"><option value="5">5 phút</option><option value="10">10 phút</option><option value="15">15 phút</option><option value="20">20 phút</option><option value="30">30 phút</option></select></label>
+          <label class="frow"><span class="row-title">Chuông tự im sau</span><select id="sRingMax" aria-label="Chuông tự im sau"><option value="1">1 phút</option><option value="2">2 phút</option><option value="3">3 phút</option><option value="5">5 phút</option><option value="10">10 phút</option><option value="15">15 phút</option><option value="30">30 phút</option></select></label>
+          <label class="frow"><span class="row-title">Âm lượng</span><span class="vol"><input id="sVol" type="range" min="0" max="100" step="5" aria-label="Âm lượng chuông"><output id="sVolOut">80%</output></span></label>
+        </div>
+
+        <h3 id="hData">Dữ liệu</h3>
+        <div class="group" id="grpData">
+          <button class="row" type="button" data-data="exp-json"><span class="row-text"><span class="row-title">Xuất tất cả (.json)</span><span class="row-desc">Bản đầy đủ, dùng để nhập lại</span></span></button>
+          <button class="row" type="button" data-data="exp-txt"><span class="row-text"><span class="row-title">Xuất văn bản (.txt)</span></span></button>
+          <button class="row" type="button" data-data="exp-md"><span class="row-text"><span class="row-title">Xuất Markdown (.md)</span></span></button>
+          <button class="row" type="button" data-data="import"><span class="row-text"><span class="row-title">Nhập từ file…</span></span></button>
+          <button class="row" type="button" data-data="restore"><span class="row-text"><span class="row-title">Khôi phục từ bản sao lưu…</span><span class="row-desc">Lấy lại note từ bản tự sao lưu</span></span></button>
+        </div>
 
         <h3>Phím tắt toàn cục</h3>
         <dl class="keys">
@@ -83,10 +207,29 @@
         </dl>
         <p class="tip">Mẹo: gõ giờ tự nhiên trong note, ví dụ "họp 3h chiều nay", "nộp báo cáo thứ 6", "gọi khách 20 phút nữa" là bé tự nhắc.</p>
       </div>
+      <div class="sheet" id="bkSheet" role="dialog" aria-modal="true" aria-label="Khôi phục từ bản sao lưu" aria-hidden="true" inert>
+        <div class="sheet-in">
+          <div class="sheet-head">
+            <button class="icon-btn" type="button" id="bkBack" title="Quay lại" aria-label="Quay lại"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+            <h2 id="bkTitle">Bản sao lưu</h2>
+          </div>
+          <div class="sheet-body" id="bkBody"></div>
+          <div class="sheet-foot" id="bkFoot" hidden>
+            <label class="chk"><input type="checkbox" id="bkAll"><span>Chọn tất cả</span></label>
+            <span class="grow"></span>
+            <button class="btn primary" type="button" id="bkRestore">Khôi phục mục đã chọn</button>
+          </div>
+        </div>
+      </div>
     </section>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </main>
 </div>
 <script src="../shared/parse.js"></script>
+<script src="../shared/recur.js"></script>
 <script src="list.js"></script>
+<script src="alarms.js"></script>
+<script src="memos.js"></script>
+<script src="data.js"></script>
 </body>
 </html>
