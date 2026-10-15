@@ -1,0 +1,651 @@
+{
+  "version": 1,
+  "slots": [
+    {
+      "id": "hat",
+      "name": "Mũ"
+    },
+    {
+      "id": "hairclip",
+      "name": "Kẹp tóc"
+    },
+    {
+      "id": "glasses",
+      "name": "Kính"
+    },
+    {
+      "id": "neck",
+      "name": "Cổ"
+    },
+    {
+      "id": "body",
+      "name": "Áo"
+    },
+    {
+      "id": "outer",
+      "name": "Áo khoác"
+    },
+    {
+      "id": "hand",
+      "name": "Cầm tay"
+    },
+    {
+      "id": "back",
+      "name": "Sau lưng"
+    }
+  ],
+  "rarities": [
+    {
+      "id": "common",
+      "name": "Thường"
+    },
+    {
+      "id": "rare",
+      "name": "Hiếm"
+    },
+    {
+      "id": "epic",
+      "name": "Siêu hiếm"
+    },
+    {
+      "id": "legend",
+      "name": "Huyền thoại"
+    }
+  ],
+  "items": [
+    {
+      "id": "hat_cat_beanie",
+      "slot": "hat",
+      "rarity": "common",
+      "name": "Mũ len tai mèo",
+      "icon": "icons/hat_cat_beanie.svg",
+      "set": "winter",
+      "desc": "Ấm cả đầu, lại có hai cái tai nhỏ xinh."
+    },
+    {
+      "id": "hat_beret",
+      "slot": "hat",
+      "rarity": "common",
+      "name": "Mũ nồi trắng",
+      "icon": "icons/hat_beret.svg",
+      "set": "school",
+      "desc": "Nghiêng nhẹ một bên, trông rất ngoan."
+    },
+    {
+      "id": "hat_dino_hood",
+      "slot": "hat",
+      "rarity": "common",
+      "name": "Mũ khủng long",
+      "icon": "icons/hat_dino_hood.svg",
+      "set": "pajama",
+      "desc": "Mũ ngủ xanh bạc hà có gai nhỏ xíu."
+    },
+    {
+      "id": "hat_cap",
+      "slot": "hat",
+      "rarity": "rare",
+      "name": "Mũ lưỡi trai xanh",
+      "icon": "icons/hat_cap.svg",
+      "set": "sport",
+      "desc": "Đội vào là muốn chạy quanh sân liền."
+    },
+    {
+      "id": "hat_party",
+      "slot": "hat",
+      "rarity": "rare",
+      "name": "Nón tiệc sinh nhật",
+      "icon": "icons/hat_party.svg",
+      "set": "party",
+      "desc": "Đội lên là có tiệc ngay, hihi."
+    },
+    {
+      "id": "hat_witch",
+      "slot": "hat",
+      "rarity": "epic",
+      "name": "Mũ phù thủy nhỏ",
+      "icon": "icons/hat_witch.svg",
+      "set": "cosplay",
+      "desc": "Có chút phép thuật, ít thôi nhé."
+    },
+    {
+      "id": "hat_moon_crown",
+      "slot": "hat",
+      "rarity": "legend",
+      "name": "Vương miện mặt trăng",
+      "icon": "icons/hat_moon_crown.svg",
+      "set": "party",
+      "desc": "Ánh trăng dịu dàng đặt lên mái tóc."
+    },
+    {
+      "id": "clip_x",
+      "slot": "hairclip",
+      "rarity": "common",
+      "name": "Kẹp chữ X vàng",
+      "icon": "icons/clip_x.svg",
+      "set": "daily",
+      "desc": "Chiếc kẹp nhỏ xíu mà dễ thương ghê."
+    },
+    {
+      "id": "clip_star",
+      "slot": "hairclip",
+      "rarity": "common",
+      "name": "Kẹp ngôi sao",
+      "icon": "icons/clip_star.svg",
+      "set": "daily",
+      "desc": "Lấp lánh một chút để hôm nay vui hơn."
+    },
+    {
+      "id": "clip_black_bow",
+      "slot": "hairclip",
+      "rarity": "common",
+      "name": "Nơ đen ruy băng",
+      "icon": "icons/clip_black_bow.svg",
+      "set": "school",
+      "desc": "Nơ ruy băng đen, nhẹ như gió."
+    },
+    {
+      "id": "clip_mint_pins",
+      "slot": "hairclip",
+      "rarity": "rare",
+      "name": "Cặp kẹp xanh bạc hà",
+      "icon": "icons/clip_mint_pins.svg",
+      "set": "daily",
+      "desc": "Hai chiếc kẹp song song, gọn gàng ghê."
+    },
+    {
+      "id": "clip_cat_ear",
+      "slot": "hairclip",
+      "rarity": "rare",
+      "name": "Kẹp mèo đen",
+      "icon": "icons/clip_cat_ear.svg",
+      "set": "cat",
+      "desc": "Chú mèo đen nhỏ ngồi trên mái tóc."
+    },
+    {
+      "id": "clip_moon",
+      "slot": "hairclip",
+      "rarity": "epic",
+      "name": "Kẹp trăng non",
+      "icon": "icons/clip_moon.svg",
+      "set": "party",
+      "desc": "Một vầng trăng non nằm yên bên tóc."
+    },
+    {
+      "id": "clip_snowflake",
+      "slot": "hairclip",
+      "rarity": "epic",
+      "name": "Kẹp bông tuyết",
+      "icon": "icons/clip_snowflake.svg",
+      "set": "winter",
+      "desc": "Như một bông tuyết đầu mùa đậu xuống."
+    },
+    {
+      "id": "glasses_round",
+      "slot": "glasses",
+      "rarity": "common",
+      "name": "Kính tròn",
+      "icon": "icons/glasses_round.svg",
+      "set": "school",
+      "desc": "Đeo kính tròn trông chăm học hẳn."
+    },
+    {
+      "id": "glasses_square",
+      "slot": "glasses",
+      "rarity": "common",
+      "name": "Kính gọng vuông",
+      "icon": "icons/glasses_square.svg",
+      "set": "daily",
+      "desc": "Gọn gàng, hợp với những ngày bận rộn."
+    },
+    {
+      "id": "glasses_sun",
+      "slot": "glasses",
+      "rarity": "common",
+      "name": "Kính râm mát lạnh",
+      "icon": "icons/glasses_sun.svg",
+      "set": "sport",
+      "desc": "Nắng to cỡ nào cũng không sợ."
+    },
+    {
+      "id": "glasses_heart",
+      "slot": "glasses",
+      "rarity": "rare",
+      "name": "Kính râm hình tim",
+      "icon": "icons/glasses_heart.svg",
+      "set": "party",
+      "desc": "Nhìn đời qua hai trái tim hồng."
+    },
+    {
+      "id": "glasses_cat",
+      "slot": "glasses",
+      "rarity": "rare",
+      "name": "Kính mắt mèo",
+      "icon": "icons/glasses_cat.svg",
+      "set": "cat",
+      "desc": "Đuôi kính vểnh lên như tai mèo."
+    },
+    {
+      "id": "glasses_star",
+      "slot": "glasses",
+      "rarity": "epic",
+      "name": "Kính ngôi sao",
+      "icon": "icons/glasses_star.svg",
+      "set": "cosplay",
+      "desc": "Đeo vào là thành nhân vật chính liền."
+    },
+    {
+      "id": "glasses_goggle",
+      "slot": "glasses",
+      "rarity": "epic",
+      "name": "Kính trượt tuyết",
+      "icon": "icons/glasses_goggle.svg",
+      "set": "winter",
+      "desc": "Gió tuyết thổi cũng chẳng cay mắt."
+    },
+    {
+      "id": "neck_scarf",
+      "slot": "neck",
+      "rarity": "common",
+      "name": "Khăn quàng len",
+      "icon": "icons/neck_scarf.svg",
+      "set": "winter",
+      "desc": "Quàng một vòng, ấm tới tận tim."
+    },
+    {
+      "id": "neck_tie_blue",
+      "slot": "neck",
+      "rarity": "common",
+      "name": "Cà vạt xanh",
+      "icon": "icons/neck_tie_blue.svg",
+      "set": "school",
+      "desc": "Thắt gọn gàng cho buổi học hôm nay."
+    },
+    {
+      "id": "neck_bell",
+      "slot": "neck",
+      "rarity": "common",
+      "name": "Vòng cổ chuông",
+      "icon": "icons/neck_bell.svg",
+      "set": "cat",
+      "desc": "Đi tới đâu là leng keng tới đó."
+    },
+    {
+      "id": "neck_bowtie",
+      "slot": "neck",
+      "rarity": "rare",
+      "name": "Nơ cổ đi tiệc",
+      "icon": "icons/neck_bowtie.svg",
+      "set": "party",
+      "desc": "Chỉnh nơ lại một chút, sắp vào tiệc rồi."
+    },
+    {
+      "id": "neck_headphones",
+      "slot": "neck",
+      "rarity": "rare",
+      "name": "Tai nghe quàng cổ",
+      "icon": "icons/neck_headphones.svg",
+      "set": "daily",
+      "desc": "Nghe nhạc nhẹ nhàng giữa ngày dài."
+    },
+    {
+      "id": "neck_star_pendant",
+      "slot": "neck",
+      "rarity": "epic",
+      "name": "Dây chuyền ngôi sao",
+      "icon": "icons/neck_star_pendant.svg",
+      "set": "cosplay",
+      "desc": "Ngôi sao nhỏ nằm cạnh trái tim bạn."
+    },
+    {
+      "id": "neck_fur_collar",
+      "slot": "neck",
+      "rarity": "epic",
+      "name": "Cổ lông xù",
+      "icon": "icons/neck_fur_collar.svg",
+      "set": "winter",
+      "desc": "Mềm mịn như một đám mây nhỏ."
+    },
+    {
+      "id": "body_hoodie_cat",
+      "slot": "body",
+      "rarity": "common",
+      "name": "Áo hoodie tai mèo",
+      "icon": "icons/body_hoodie_cat.svg",
+      "set": "daily",
+      "desc": "Mũ hoodie có tai mèo, mặc là thích."
+    },
+    {
+      "id": "body_pajama_dino",
+      "slot": "body",
+      "rarity": "common",
+      "name": "Áo ngủ khủng long",
+      "icon": "icons/body_pajama_dino.svg",
+      "set": "pajama",
+      "desc": "Mặc áo này ngủ chắc ngon lắm."
+    },
+    {
+      "id": "body_sport_tee",
+      "slot": "body",
+      "rarity": "common",
+      "name": "Áo thể thao",
+      "icon": "icons/body_sport_tee.svg",
+      "set": "sport",
+      "desc": "Nhẹ và thoáng, chạy vài vòng thôi nào."
+    },
+    {
+      "id": "body_uniform",
+      "slot": "body",
+      "rarity": "rare",
+      "name": "Đồng phục đi học",
+      "icon": "icons/body_uniform.svg",
+      "set": "school",
+      "desc": "Áo trắng gọn gàng, cặp sách sẵn sàng."
+    },
+    {
+      "id": "body_sweater",
+      "slot": "body",
+      "rarity": "rare",
+      "name": "Áo len họa tiết",
+      "icon": "icons/body_sweater.svg",
+      "set": "winter",
+      "desc": "Len mềm ôm lấy cả mùa đông."
+    },
+    {
+      "id": "body_party_blouse",
+      "slot": "body",
+      "rarity": "epic",
+      "name": "Áo blouse đi tiệc",
+      "icon": "icons/body_party_blouse.svg",
+      "set": "party",
+      "desc": "Bồng bềnh như cánh hoa, hợp đi tiệc."
+    },
+    {
+      "id": "body_star_dress",
+      "slot": "body",
+      "rarity": "legend",
+      "name": "Váy đêm đầy sao",
+      "icon": "icons/body_star_dress.svg",
+      "set": "cosplay",
+      "desc": "Mặc váy này, cả bầu trời nằm trong tay."
+    },
+    {
+      "id": "outer_black_white",
+      "slot": "outer",
+      "rarity": "common",
+      "name": "Áo khoác đen viền trắng",
+      "icon": "icons/outer_black_white.svg",
+      "set": "daily",
+      "desc": "Áo khoác rộng rãi, dáng cực kỳ ngầu."
+    },
+    {
+      "id": "outer_puffer",
+      "slot": "outer",
+      "rarity": "common",
+      "name": "Áo phao xanh",
+      "icon": "icons/outer_puffer.svg",
+      "set": "winter",
+      "desc": "Phồng phồng như ôm cả đám mây."
+    },
+    {
+      "id": "outer_raincoat",
+      "slot": "outer",
+      "rarity": "common",
+      "name": "Áo mưa vàng",
+      "icon": "icons/outer_raincoat.svg",
+      "set": "camping",
+      "desc": "Trời mưa cũng đi dạo được nè."
+    },
+    {
+      "id": "outer_sport_jacket",
+      "slot": "outer",
+      "rarity": "rare",
+      "name": "Áo khoác thể thao",
+      "icon": "icons/outer_sport_jacket.svg",
+      "set": "sport",
+      "desc": "Kéo khóa lên là sẵn sàng chạy bộ."
+    },
+    {
+      "id": "outer_blazer",
+      "slot": "outer",
+      "rarity": "rare",
+      "name": "Áo vest học đường",
+      "icon": "icons/outer_blazer.svg",
+      "set": "school",
+      "desc": "Có huy hiệu nhỏ ở ngực, trông thật lịch sự."
+    },
+    {
+      "id": "outer_witch_cape",
+      "slot": "outer",
+      "rarity": "epic",
+      "name": "Áo choàng phù thủy",
+      "icon": "icons/outer_witch_cape.svg",
+      "set": "cosplay",
+      "desc": "Phép thuật nhỏ nằm trong từng nếp áo."
+    },
+    {
+      "id": "outer_moon_cloak",
+      "slot": "outer",
+      "rarity": "legend",
+      "name": "Áo choàng ánh trăng",
+      "icon": "icons/outer_moon_cloak.svg",
+      "set": "cosplay",
+      "desc": "Mềm như sương, sáng như ánh trăng đêm."
+    },
+    {
+      "id": "hand_boba",
+      "slot": "hand",
+      "rarity": "common",
+      "name": "Ly trà sữa trân châu",
+      "icon": "icons/hand_boba.svg",
+      "set": "daily",
+      "desc": "Ngọt ngọt, dai dai, uống là vui."
+    },
+    {
+      "id": "hand_book",
+      "slot": "hand",
+      "rarity": "common",
+      "name": "Cuốn sách nhỏ",
+      "icon": "icons/hand_book.svg",
+      "set": "school",
+      "desc": "Mở ra là cả một thế giới nhẹ nhàng."
+    },
+    {
+      "id": "hand_phone",
+      "slot": "hand",
+      "rarity": "common",
+      "name": "Điện thoại ngôi sao",
+      "icon": "icons/hand_phone.svg",
+      "set": "daily",
+      "desc": "Vỏ xanh có ngôi sao, nhìn là thấy ưng."
+    },
+    {
+      "id": "hand_lantern",
+      "slot": "hand",
+      "rarity": "rare",
+      "name": "Đèn lồng cắm trại",
+      "icon": "icons/hand_lantern.svg",
+      "set": "camping",
+      "desc": "Ánh vàng ấm áp giữa đêm trong rừng."
+    },
+    {
+      "id": "hand_gamepad",
+      "slot": "hand",
+      "rarity": "rare",
+      "name": "Tay cầm chơi game",
+      "icon": "icons/hand_gamepad.svg",
+      "set": "daily",
+      "desc": "Chơi một ván nhỏ thôi, hứa đó nha."
+    },
+    {
+      "id": "hand_black_cat_plush",
+      "slot": "hand",
+      "rarity": "epic",
+      "name": "Mèo đen bông",
+      "icon": "icons/hand_black_cat_plush.svg",
+      "set": "cat",
+      "desc": "Bé mèo đen mềm mềm để ôm khi buồn."
+    },
+    {
+      "id": "hand_moon_wand",
+      "slot": "hand",
+      "rarity": "legend",
+      "name": "Gậy mặt trăng",
+      "icon": "icons/hand_moon_wand.svg",
+      "set": "cosplay",
+      "desc": "Vẫy nhẹ một cái, đêm bỗng lung linh."
+    },
+    {
+      "id": "back_cat_pack",
+      "slot": "back",
+      "rarity": "common",
+      "name": "Ba lô mèo đen",
+      "icon": "icons/back_cat_pack.svg",
+      "set": "cat",
+      "desc": "Hai cái tai nhỏ thò lên sau lưng bạn."
+    },
+    {
+      "id": "back_satchel",
+      "slot": "back",
+      "rarity": "common",
+      "name": "Cặp sách xanh",
+      "icon": "icons/back_satchel.svg",
+      "set": "school",
+      "desc": "Sách vở đầy đủ, đi học thôi nào."
+    },
+    {
+      "id": "back_pillow",
+      "slot": "back",
+      "rarity": "common",
+      "name": "Gối ôm ngôi sao",
+      "icon": "icons/back_pillow.svg",
+      "set": "pajama",
+      "desc": "Ôm gối ngủ một giấc thật ngon nhé."
+    },
+    {
+      "id": "back_camp_pack",
+      "slot": "back",
+      "rarity": "rare",
+      "name": "Ba lô cắm trại",
+      "icon": "icons/back_camp_pack.svg",
+      "set": "camping",
+      "desc": "Đựng đủ thứ cho một đêm ngắm sao."
+    },
+    {
+      "id": "back_big_ribbon",
+      "slot": "back",
+      "rarity": "rare",
+      "name": "Nơ to sau lưng",
+      "icon": "icons/back_big_ribbon.svg",
+      "set": "party",
+      "desc": "Cái nơ bồng bềnh làm váy thêm duyên."
+    },
+    {
+      "id": "back_bat_wings",
+      "slot": "back",
+      "rarity": "epic",
+      "name": "Cánh dơi nhỏ",
+      "icon": "icons/back_bat_wings.svg",
+      "set": "cosplay",
+      "desc": "Đôi cánh nhỏ xíu, cũng ngầu lắm nha."
+    },
+    {
+      "id": "back_angel_wings",
+      "slot": "back",
+      "rarity": "legend",
+      "name": "Cánh thiên thần",
+      "icon": "icons/back_angel_wings.svg",
+      "set": "cosplay",
+      "desc": "Nhẹ tênh, như chỉ cần một cơn gió là bay."
+    }
+  ],
+  "foods": [
+    {
+      "id": "food_mochi",
+      "name": "Bánh mochi",
+      "icon": "icons/food_mochi.svg",
+      "price": 15,
+      "mood": 8,
+      "energy": 6
+    },
+    {
+      "id": "food_boba",
+      "name": "Trà sữa trân châu",
+      "icon": "icons/food_boba.svg",
+      "price": 30,
+      "mood": 14,
+      "energy": 8
+    },
+    {
+      "id": "food_strawberry_cake",
+      "name": "Bánh dâu",
+      "icon": "icons/food_strawberry_cake.svg",
+      "price": 38,
+      "mood": 15,
+      "energy": 12
+    },
+    {
+      "id": "food_mint_icecream",
+      "name": "Kem bạc hà",
+      "icon": "icons/food_mint_icecream.svg",
+      "price": 25,
+      "mood": 13,
+      "energy": 5
+    },
+    {
+      "id": "food_grilled_fish",
+      "name": "Cá nướng",
+      "icon": "icons/food_grilled_fish.svg",
+      "price": 20,
+      "mood": 9,
+      "energy": 12
+    },
+    {
+      "id": "food_cat_cookie",
+      "name": "Bánh quy mèo",
+      "icon": "icons/food_cat_cookie.svg",
+      "price": 12,
+      "mood": 6,
+      "energy": 4
+    },
+    {
+      "id": "food_chocolate",
+      "name": "Sô-cô-la",
+      "icon": "icons/food_chocolate.svg",
+      "price": 18,
+      "mood": 10,
+      "energy": 8
+    },
+    {
+      "id": "food_flan",
+      "name": "Bánh flan",
+      "icon": "icons/food_flan.svg",
+      "price": 22,
+      "mood": 11,
+      "energy": 7
+    },
+    {
+      "id": "food_onigiri",
+      "name": "Onigiri",
+      "icon": "icons/food_onigiri.svg",
+      "price": 15,
+      "mood": 5,
+      "energy": 14
+    },
+    {
+      "id": "food_warm_milk",
+      "name": "Sữa ấm",
+      "icon": "icons/food_warm_milk.svg",
+      "price": 10,
+      "mood": 4,
+      "energy": 10
+    },
+    {
+      "id": "food_dango",
+      "name": "Bánh dango",
+      "icon": "icons/food_dango.svg",
+      "price": 18,
+      "mood": 9,
+      "energy": 6
+    }
+  ]
+}
