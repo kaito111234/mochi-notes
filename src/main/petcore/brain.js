@@ -111,7 +111,10 @@ function createBrain(core) {
   }
   function peekNoteAct() {
     body().peekNote().then(r => {
-      if (r && r.ok && !core.stage && !busyExt && !sleeping && !body().busy()) holdAct('peek_note', rnd(5000, 9000));
+      if (r && r.ok && !core.stage && !busyExt && !sleeping && !body().busy()) {
+        const my = seq;   // chờ một nhịp: toIdle() cuối goToRect không được đè lên hình peek_note
+        setTimeout(() => { if (seq === my && !core.stage && !busyExt && !sleeping && !body().busy()) holdAct('peek_note', rnd(5000, 9000)); }, 200);
+      }
     }).catch(() => { /* bỏ qua */ });
   }
   function pickWeighted(list) {
@@ -259,7 +262,8 @@ function createBrain(core) {
           await new Promise(r => setTimeout(r, 400));
           const p = body().pos(), wa = body().getWorkArea();
           let ok = await body().hopToNote({ force: true });
-          console.log('[demo2] hop', ok, p, wa.width);
+          console.log('[demo2] hop', ok, p, wa.width, 'onNote', body().onNote());
+          if (ok && process.env.MOCHI_DEMO_SIT === '1') setTimeout(() => { sit(); console.log('[demo2] sit', core.posture()); }, 800);   // nghiệm thu sit_on_note
         }
       } catch (e) { console.error('[petcore] demo2', e); }
     }, 2500);

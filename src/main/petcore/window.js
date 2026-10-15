@@ -164,6 +164,27 @@ function createWindow(core) {
       }, ms);
     }
   }
+  // Gỡ lỗi: MOCHI_PET_CLICKBTN="Nhãn nút,ms[;...]" — sau ms tìm nút có chữ đó trong bong bóng bé rồi click vào giữa nút.
+  if (process.env.MOCHI_PET_CLICKBTN) {
+    for (const part of String(process.env.MOCHI_PET_CLICKBTN).split(';')) {
+      const i = part.lastIndexOf(',');
+      const label = part.slice(0, i), ms = Number(part.slice(i + 1));
+      if (!label || !Number.isFinite(ms)) continue;
+      setTimeout(async () => {
+        if (!alive()) return;
+        const wc = win.webContents;
+        try {
+          const pt = await wc.executeJavaScript('(function(){var b=[].slice.call(document.querySelectorAll("button")).find(function(e){return e.textContent.trim()===' + JSON.stringify(label) + '&&e.offsetParent;});if(!b)return null;var r=b.getBoundingClientRect();return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2)};})()');
+          console.log('[clickbtn]', label, JSON.stringify(pt));
+          if (!pt) return;
+          win.setIgnoreMouseEvents(false);
+          wc.sendInputEvent({ type: 'mouseMove', x: pt.x, y: pt.y });
+          wc.sendInputEvent({ type: 'mouseDown', x: pt.x, y: pt.y, button: 'left', clickCount: 1 });
+          setTimeout(() => { if (alive()) wc.sendInputEvent({ type: 'mouseUp', x: pt.x, y: pt.y, button: 'left', clickCount: 1 }); }, 60);
+        } catch (e) { console.log('[clickbtn] lỗi', e && e.message); }
+      }, ms);
+    }
+  }
   // Linux (X11) không hỗ trợ forward chuột khi đang click xuyên: main dò con trỏ ~12 lần/s và hỏi renderer
   // điểm đó có trúng thân bé/bong bóng không (op 'pointer'). Windows/macOS dùng forward gốc, không có timer này.
   if (process.platform !== 'win32' && process.platform !== 'darwin' && !process.env.MOCHI_PET_NOPOLL) {

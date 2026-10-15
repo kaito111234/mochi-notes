@@ -117,3 +117,37 @@ _Cập nhật 2026-10-15 — lượt 2 (Đợt 2). Kiến trúc & chia file nộ
 4. `tray.js`: thêm "Ghi nhanh với bé" → `ctx.pet.capture.open()`, "Cài đặt bé…" (cần core công bố `ctx.pet.openSettings` — core sẵn sàng thêm nếu đồng ý), "Cho bé leo tường" (`climbEnabled`). Phím tắt gợi ý Ctrl+Alt+Space → ghi nhanh.
 5. Gửi phòng notes: `ctx.notes.quickCapture(text, {source:'pet'|'drop'})` nên trả `{note, insight}`, KHÔNG tự mở cửa sổ note đè lên bé khi `source` là `pet` (hoặc mở cạnh bé); cửa sổ chuông/dặn dò né `ctx.pet.occupiedRect()` / nghe `pet:moved`.
 6. Gửi phòng paper: có thể nghe `pet:pointNote` (qua kênh `paper:*` của mình) để làm hiệu ứng riêng trong note; khi đó core sẽ tắt cửa sổ viền nháy để không trùng.
+
+## Trạng thái Đợt 2B
+_Cập nhật 2026-10-15 — lượt 3. Đã gộp main vào `room/core` (chỉ xung đột ở file này). Hợp đồng nội bộ: `docs/rooms/core/ARCH.md` phần "Đợt 2B"._
+
+**Đã xong**
+1. **Dọn note hết hạn** (`petcore/tidy.js`, `src/pet/bin.*`, `src/pet/crumple.*`, kind sân khấu `tidy` mức 35): nghe `note:expired` (tối đa 1 lần hỏi/10 phút) hoặc menu "Dọn note hết hạn…" → bé tới cạnh note, chỉ tay, note nháy viền, hỏi [Dọn đi]/[Giữ lại] (60s không trả lời = giữ). Dọn: chụp ảnh note → tờ giấy giả bay về tay bé → `ctx.notes.trash(id)` (xoá mềm, không bao giờ xoá hẳn) → bé mang tới thùng rác hiện cạnh taskbar → vo → ném, thùng nảy nắp → "Tớ dọn rồi nha. Cần thì lấy lại trong thùng rác." Cài đặt `tidyEnabled` (bật), `autoTidy` (tắt; chỉ note đã xong).
+2. **Gõ cửa sổ đang dùng** (`petcore/foreground.js` PowerShell + user32 chạy nền, `petcore/knock.js`): khi nhắc `pre`/`due`/`nag`, nếu được phép (`knockEnabled`, ≥ 15 phút từ lần trước, không toàn màn hình, không phải cửa sổ của app, máy không rảnh) bé nhảy tới mép cửa sổ đang dùng, gõ cộc cộc (`knock` + tiếng gõ, `pet:knock`) rồi nhắc như thường. Mọi lỗi/timeout 6s → đường cũ; nhắc lịch không bao giờ mất. Quyết định: gõ cả cho `due` (không chỉ pre/nag) vì chủ dự án muốn "vỗ vào app để nhắc"; giới hạn 15 phút giữ cho không phiền.
+3. **11 hành động mới** trong placeholder: `knock`, `carry_note`, `crumple`, `throw`, `peek_note`, `sit_on_note`, `yawn`, `stretch`, `read`, `cheer`, `play_cat`; não dùng: ngáp trước khi ngủ, vươn vai khi dậy, đọc khi đứng cạnh note, ngồi trên note, thò đầu sau note, chơi với mèo đen khi rảnh lâu, reo mừng khi `reminder:done`.
+4. `game:outfit` → lưu `pet.outfit`, gửi renderer (chưa vẽ đồ). Menu chuột phải thêm "Phòng của Mochi" (`ctx.game.open()`).
+5. Ghi nhanh dùng câu `reply` của `ctx.notes.quickCapture` (notes soạn), lỗi thì nói `message`.
+6. Sửa lỗi QA: BUG-014 (tờ Dặn dò NaN → "Buổi sáng"…), BUG-023 (thoại theo intent của note/nhắc), BUG-030 (số phút hoãn theo "Hoãn mặc định"), dùng `reminderId` khi Xong/Hoãn, toast dự phòng có nút qua `ctx.alarms.toast`. BUG-016 đã sửa từ Đợt 2. BUG-024: CPU đứng yên phần bé ~2,6% (idle ≥ 400ms/khung).
+
+**Nghiệm thu** (xvfb; ảnh `docs/rooms/core/d2b-*.png`; xvfb không có compositor nên cửa sổ trong suốt chồng nhau hiện nền đen)
+- `d2b-01-hoi-don.png`, `d2b-02-mang-note.png`, `d2b-03-vo-nem.png`: bấm "Dọn đi" → note sang ngăn `trash`, note khác nguyên; "Giữ lại" → không đổi; đường `note:expired` thật qua bus đạt.
+- `d2b-04-go-cua.png`: (MOCHI_FAKE_FG) bé tới mép cửa sổ gõ, rồi nhắc; "Xong rồi" → `reminder.done=true`.
+- `d2b-05-hanh-dong.png`, `d2b-06-cai-dat.png`, `d2b-07-dan-do.png`.
+- Luồng 0.1 đạt. CPU đứng yên (30s, mọi tiến trình Electron, 2 note): trung bình 2,6% một nhân. `npm test`, `validate.js`, `test-pack.js` đạt.
+
+**Cách chạy thử thêm**: `MOCHI_TIDY_DEMO=<ms>`; `MOCHI_PET_DEMO=tidyask|expire|memo` (+ `MOCHI_PET_REASON`, `MOCHI_PET_WHEN`, `MOCHI_PET_NOTEY`); `MOCHI_PET_CLICKBTN="Dọn đi,ms;…"` (bấm nút theo chữ); `MOCHI_FAKE_FG="x,y,w,h"` + `MOCHI_KNOCK_NOLIMIT=1`; `MOCHI_PET_DEMO2=rect|sleep|cheer|read|cat|peeknote` (+ `MOCHI_DEMO_EDGE=1`, `MOCHI_DEMO_SIT=1`).
+
+**Đang dở / việc tiếp theo**
+1. **Thử trên Windows**: `foreground.js` (PowerShell 5.1, Add-Type, DPI per-monitor, ExecutionPolicy/antivirus) chưa chạy thật — lỗi thì gõ cửa tự tắt im lặng. Cùng danh sách thử chuột thật của Đợt 2.
+2. Hình tạm: `peek_note`/`sit_on_note`/`read` vẽ sẵn mép note trong sprite nên lệch với note thật; `knock`/`throw`… mặc bộ đồ khác mochi (mượn placeholder). Chờ art vẽ 11 action mới.
+3. Màn hình rất rộng: bé đi tới thùng tối đa 22s, quá thì ném từ xa. `autoTidy=true` chưa thử riêng.
+4. Vẽ trang phục theo `game:outfit` khi art có lớp đồ.
+
+**Vướng mắc**: không.
+
+## Đề xuất cho phòng điều hành (2B)
+1. Log khi chạy: `No handler registered for 'paper:get'` — `src/main/paper/index.js` có lẽ chưa được `main.js` nạp (danh sách thư mục phòng chỉ gồm alarms/petcore/game/persona).
+2. `docs/spec/03-animation.md` + ART-BRIEF: thêm 14 action tuỳ chọn của core (`climb`, `point`, `write`, `knock`, `carry_note`, `crumple`, `throw`, `peek_note`, `sit_on_note`, `yawn`, `stretch`, `read`, `cheer`, `play_cat`); quy ước hình gốc hướng sang phải; đạo cụ (tờ giấy, cục giấy) do core vẽ ngoài sprite cho `carry_note/crumple/throw`.
+3. `01-data.md` ngăn `pet`: thêm `settings.tidyEnabled|autoTidy|knockEnabled`, `outfit`. `02-events.md`: `pet:knock` hiện core phát `{target:'foreground'}` cho cả `pre/due/nag`; kind sân khấu `tidy` (35).
+4. Phím tắt gợi ý: Ctrl+Alt+G → `ctx.game.open()`; tray thêm "Dọn note hết hạn…" nếu muốn (core có thể công bố `ctx.pet.tidyNow()`).
+5. Gửi persona: câu `memo` buổi sáng đang nói "Cậu mở máy rồi nè" — nên lọc theo `when`.

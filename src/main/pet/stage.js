@@ -316,7 +316,7 @@ function create(ctx, deps = {}) {
     const tg = await guarded(sess, () => kn.target(), null);
     const r = tg && tg.rect;
     if (!r || !Number.isFinite(r.x) || !Number.isFinite(r.y)) return false;
-    const res = await guarded(sess, () => actor.goToRect(r, { prefer: 'right' }), null);
+    const res = await guarded(sess, () => actor.goToRect(r, { prefer: 'right', fast: true }), null);
     if (!res || !res.ok) return false;
     call(actor, 'play', 'knock', { loop: true });
     call(actor, 'sound', 'knock');
@@ -355,7 +355,7 @@ function create(ctx, deps = {}) {
     }
     call(actor, 'setStage', true);
     let knocked = false;
-    if (kind === 'pre' || kind === 'nag') knocked = await tryKnock(sess, actor);
+    if (kind === 'pre' || kind === 'nag' || kind === 'due') knocked = await tryKnock(sess, actor);
     if (STAGE_KINDS.has(kind) && !knocked) {
       let target = null;
       if (kind === 'pre' || kind === 'due' || kind === 'tidy') target = p.noteId || null;
@@ -488,6 +488,7 @@ function create(ctx, deps = {}) {
         }
         sess.listening = false;
         p._asked = true;   // không hỏi lại dù bị ngắt giữa chừng
+        A('hush');         // tắt bong bóng hỏi + nút trong lúc mang note đi
         stopPoint(sess);
         const tidy = ctx.pet && ctx.pet.tidy;
         let ok = null;   // true đã dọn, false lỗi, null không rõ (treo)

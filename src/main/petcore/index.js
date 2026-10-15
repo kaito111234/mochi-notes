@@ -92,6 +92,7 @@ function init(ctx) {
     const mood = MODES.includes(opts.mood) ? opts.mood : core.curMode;
     settleAll();                                       // hình mới cắt ngang hình cũ
     const token = ++tokenSeq;
+    if (process.env.MOCHI_PET_LOG) console.log('[play]', action, opts.loop ? 'loop' : 'once', Date.now() % 100000, action === 'idle' && process.env.MOCHI_PLAY_STACK ? new Error().stack.split('\n').slice(2, 5).join(' | ') : '');
     core.window.cmd({ op: 'play', action, mood, loop: !!opts.loop, token });
     if (opts.loop) return Promise.resolve();
     return new Promise(resolve => {
@@ -302,6 +303,19 @@ function init(ctx) {
         }
       }
       else if (what === 'menu') core.menu.popup();
+      else if (what === 'tidyask') {        // MOCHI_PET_NOTEY = y của note; hỏi dọn note đầu tiên (không cần note:expired)
+        const y = Number(process.env.MOCHI_PET_NOTEY) || 640;
+        const id = ctx.windows.notes.keys().next().value;
+        const w = id && ctx.windows.notes.get(id);
+        if (w && ctx.alive(w)) { const b = w.getBounds(); w.setBounds({ x: 700, y, width: b.width, height: b.height }); }
+        const n = id && ctx.findNote(id);
+        ctx.pet.stage.request({ kind: 'tidy', priority: 35, payload: { noteId: id, reason: 'done', title: n ? String(n.text || '').slice(0, 30) : 'Note' }, ttlMs: 30 * 60000 });
+      }
+      else if (what === 'expire') {          // phát bus note:expired như phòng notes (đường thật của tidy.js)
+        const id = ctx.windows.notes.keys().next().value;
+        bus.emit('note:expired', { noteId: id, reason: process.env.MOCHI_PET_REASON || 'done' });
+      }
+      else if (what === 'memo') bus.emit('memo:due', { memoId: 'demo1', text: 'Nhớ uống thuốc nha', when: process.env.MOCHI_PET_WHEN || 'morning' });   // đúng đường của phòng alarms
       else if (what === 'settings') core.settingsWin && core.settingsWin.open();
       else if (what === 'hide') ctx.pet.hideFor(3600000);
       else if (what === 'drop') core.window.emit('dropText', { text: process.env.MOCHI_PET_TYPE || 'https://example.com/trang', kind: 'url' });

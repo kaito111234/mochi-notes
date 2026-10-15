@@ -53,7 +53,7 @@
 
   var MAX_PARALLEL = 8;
   var MIN_MS = 16;
-  var IDLE_MIN_MS = 260;
+  var IDLE_MIN_MS = 400;
 
   function encodeSrc(s) { return String(s).split('/').map(encodeURIComponent).join('/'); }
   // src tuyệt đối (file:, data:, http(s):, blob:) dùng nguyên; tương đối thì ghép baseUrl.

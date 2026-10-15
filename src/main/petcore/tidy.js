@@ -70,11 +70,11 @@ function createTidy(core) {
   function planBin(noteB) {
     const { wa, p } = workAreaNearPet();
     const mid = wa.x + wa.width / 2;
-    // phía xa bé hơn; chừa lề ~170px để né chuông góc dưới phải
+    // phía GẦN bé hơn (bé đi chậm, ~60px/s: đi xuyên màn hình mất cả chục giây); chừa lề ~170px để né chuông góc dưới phải
     const petLeft = p ? p.x < mid : true;
-    let x = petLeft ? wa.x + wa.width - BIN_W - 170 : wa.x + 40;
+    let x = petLeft ? wa.x + 40 : wa.x + wa.width - BIN_W - 170;
     if (noteB && x < noteB.x + noteB.width && x + BIN_W > noteB.x && noteB.y + noteB.height > wa.y + wa.height - BIN_H) {
-      x = petLeft ? wa.x + 40 : wa.x + wa.width - BIN_W - 170;   // đè lên note thì đổi bên
+      x = petLeft ? wa.x + wa.width - BIN_W - 170 : wa.x + 40;   // đè lên note thì đổi bên
     }
     x = Math.max(wa.x, Math.min(wa.x + wa.width - BIN_W, x));
     lastBin = { x: Math.round(x), y: Math.round(wa.y + wa.height - BIN_H), width: BIN_W, height: BIN_H };
@@ -158,7 +158,7 @@ function createTidy(core) {
       try {
         const px = (core.body && fn(core.body, 'pos') && core.body.pos()) || null;
         const prefer = px && px.x > br.x + BIN_W / 2 ? 'right' : 'left';
-        if (fn(core.body, 'goToRect')) await withTimeout(core.body.goToRect(br, { prefer }), 12000, null);
+        if (fn(core.body, 'goToRect')) await withTimeout(core.body.goToRect(br, { prefer }), 22000, null);
       } catch (_) { /* vẫn ném */ }
       walking = false;
       clearInterval(follow); timers.delete(follow);
