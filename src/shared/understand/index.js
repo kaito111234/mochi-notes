@@ -104,6 +104,7 @@
     }
     if (h === null) {
       if (!key) return null;
+      if (key === 'dem' && !/(?<![a-z])(?:nay|mai)(?![a-z])/.test(f)) return null; // "đêm" một mình (2 đêm, thức đêm, đêm qua) không phải giờ
       return { h: PERIOD_DEFAULT[key][0], mi: PERIOD_DEFAULT[key][1], per: key, clock: false };
     }
     if (key === 'chieu' || key === 'toi') { if (h < 12) h += 12; }
@@ -368,7 +369,7 @@
       let t = today.getTime();
       if (t <= now) {
         if (wake && !T.per) { const d2 = new Date(today); d2.setDate(d2.getDate() + 1); t = d2.getTime(); }
-        else if (!T.per && T.h < 12 && t + 12 * HOUR > now) t += 12 * HOUR;
+        else if (!T.per && T.h > 0 && T.h < 12 && t + 12 * HOUR > now) t += 12 * HOUR;
         else { const d2 = new Date(today); d2.setDate(d2.getDate() + 1); t = d2.getTime(); }
       }
       return { due: t, wake };

@@ -46,5 +46,12 @@ t('"mai" thường vẫn hiểu', () => assert.deepStrictEqual(got('mai 9h họp
 t('tiêu đề note không bị đổi số chữ thành số', () => assert.strictEqual(U.understand('Hai giờ chiều họp nhóm', NOW).title, 'Hai giờ chiều họp nhóm'));
 t('tất định: hai lần gọi giống nhau', () => assert.deepStrictEqual(U.understand('nửa tiếng nữa họp\n9.30 sáng mai gọi', NOW), U.understand('nửa tiếng nữa họp\n9.30 sáng mai gọi', NOW)));
 
+for (const x of ['đi 3 ngày 2 đêm', 'thức đêm code', 'ca đêm', 'đêm qua nằm mơ']) eq(x, []);
+eq('đêm nay xem phim', [['Xem phim', '15/10 22:00']]);
+eq('đêm mai gọi mẹ', [['Gọi mẹ', '16/10 22:00']]);
+eq('11h đêm đi ngủ', [['Đi ngủ', '15/10 23:00']]);
+eq('0h họp', [['Họp', '16/10 00:00']]);
+eq('0h', [['Việc lúc 00:00', '16/10 00:00']]);
+
 console.log('understand2.test: ' + pass + ' đạt, ' + fail + ' hỏng (' + (pass + fail) + ' ca)');
 process.exit(fail ? 1 : 0);

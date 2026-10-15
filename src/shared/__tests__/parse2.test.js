@@ -116,6 +116,17 @@ eq('goi khach 2 phut nua', '2026-10-15 10:02');
 eq('thu 6 10h30', '2026-10-16 10:30');
 for (const s of ['tối ưu website', 'chiều dài bàn', 'kế hoạch năm nay', 'tỷ lệ 16:9', 'mua 500g thịt', 'mua 3 hộp sữa', 'phòng 302', 'iPhone 15 Pro Max 256GB']) nul(s);
 
+/* "đêm" đứng một mình không phải giờ */
+for (const s of ['đi 3 ngày 2 đêm', 'thức đêm', 'ca đêm', 'đêm qua', 'đi Đà Lạt 3 ngày 2 đêm']) nul(s);
+eq('đêm nay', '2026-10-15 22:00');
+eq('đêm mai', '2026-10-16 22:00');
+eq('tối nay', '2026-10-15 20:00');
+eq('tối mai', '2026-10-16 20:00');
+eq('11h đêm', '2026-10-15 23:00');
+eq('2h đêm', '2026-10-16 02:00');
+eq('0h', '2026-10-16 00:00');
+span('thức đêm', []);
+
 /* leadFor: không báo trước dài hơn thời gian còn lại (BUG-025) */
 t('leadFor: hạn còn 2 phút -> báo đúng giờ', () => {
   const a = P.analyze('gọi khách 2 phút nữa', NOW.getTime());

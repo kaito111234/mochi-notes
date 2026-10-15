@@ -5,16 +5,22 @@
   const MASK = '\u0001';
 
   /** Chữ thường, bỏ dấu, đ->d. GIỮ NGUYÊN ĐỘ DÀI chuỗi (để dùng chỉ số chung với chuỗi gốc đã NFC). */
+  const FOLD_CACHE = new Map();
   function foldChars(s) {
     let out = '';
     for (let i = 0; i < s.length; i++) {
-      const c = s[i];
+      const c = s[i], cc = c.charCodeAt(0);
+      if (cc < 128) { out += (cc >= 65 && cc <= 90) ? String.fromCharCode(cc + 32) : c; continue; }
+      const hit = FOLD_CACHE.get(c);
+      if (hit !== undefined) { out += hit; continue; }
+      const before = out.length;
       if (c === 'đ') { out += 'd'; continue; }
       if (c === 'Đ') { out += 'd'; continue; }
       let r = c.normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (r.length !== 1) r = c;
       const lo = r.toLowerCase();
       out += lo.length === 1 ? lo : r;
+      FOLD_CACHE.set(c, out.slice(before));
     }
     return out;
   }

@@ -31,6 +31,13 @@
     while (i < s.length) {
       let j = i + 1;
       const cp = s.charCodeAt(i);
+      if (cp < 128 && !(j < s.length && s.charCodeAt(j) >= 0x300 && s.charCodeAt(j) <= 0x36f)) { /* đường nhanh: ASCII thuần */
+        let c = s[i]; const u0 = cp >= 65 && cp <= 90;
+        if (u0) c = c.toLowerCase();
+        const f0 = (cp === 32 || (cp >= 9 && cp <= 13)) ? ' ' : c;
+        lo.push(cp >= 9 && cp <= 13 ? c : c); fa.push(f0); up.push(u0); st.push(i); en.push(j);
+        i = j; continue;
+      }
       const astral = cp >= 0xd800 && cp < 0xdc00 && j < s.length && (s.charCodeAt(j) & 0xfc00) === 0xdc00;
       if (astral) j++;
       while (j < s.length && COMB.test(s[j])) j++;
@@ -143,8 +150,10 @@
   }
 
   /** Chuỗi cùng độ dài, số bằng chữ trong ngữ cảnh giờ/khoảng thời gian đã đổi thành chữ số ("hai giờ chiều" -> "2    giờ chiều"). */
+  const NUMW_HINT = /(?:kh[oô]ng|m[oộố]t|hai|ba|b[oố]n|t[ưu]|n[aă]m|l[aă]m|s[aáu]u|b[aả]y|t[aá]m|ch[ií]n|m[uưứ][oờ]i)/i;
   function normNum(text) {
     const src = String(text == null ? '' : text).normalize('NFC');
+    if (!NUMW_HINT.test(src)) return src;
     const P = prep(src);
     numWords(P);
     if (!P.nw || !P.nw.length) return src;
@@ -364,6 +373,8 @@
       if (PEREXCL[p] && PEREXCL[p].test(nx)) return null;
       if (wd !== PERCANON[p] && wd !== p) return null;
       if (wd === p && wd !== PERCANON[p] && (p === 'sang' || p === 'toi' || p === 'dem') && !buoi && !adj(a, b, adjTypes[p])) return null;
+      /* "đêm" đứng một mình (đi 3 ngày 2 đêm, thức đêm, ca đêm, đêm qua) không phải giờ: chỉ nhận khi kề giờ ("11h đêm") hoặc "đêm nay/đêm mai" */
+      if (p === 'dem' && !adj(a, b, ['clock', 'mai', 'nay'])) return null;
       const t = { type: 'per', per: p };
       if (buoi) t.a = bs;
       return t;
