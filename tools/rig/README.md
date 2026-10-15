@@ -11,6 +11,7 @@ Mọi công cụ nhận `--rig <rig.json>` (mặc định `art/rig/mochi/rig.jso
 | Xem nhanh một tư thế | `node tools/rig/pose.js --out x.png [--face happy] [--pose '{"bones":{"forearm_r":{"r":90}}}'] [--scale 2] [--bg white\|checker\|none]` |
 | Xem một khung của action | `node tools/rig/pose.js --out x.png --from idle/normal/loop/3` |
 | Dựng gói | `node tools/rig/build.js [--only idle,walk] [--out assets/pet/mochi] [--actions dir] [--faces] [--frames-only] [--keep-svg]` |
+| Dựng gói theo đồ | `node tools/rig/outfit.js --body body_default --outer outer_black_white\|none --out <dir> [--only a,b] [--faces]` (xem `art/rig/mochi/WARDROBE.md`) |
 | Dựng ảnh bán thân mặt | `node tools/rig/faces.js [--out assets/pet/mochi]` (hoặc `build.js --faces`) |
 | Lưới khung 1 action | `node tools/rig/sheet.js --contact idle` → `art/review/contact_idle.png` |
 | Lưới 18 mặt | `node tools/rig/sheet.js --faces` → `art/review/faces.png` |
@@ -45,6 +46,11 @@ Mọi công cụ nhận `--rig <rig.json>` (mặc định `art/rig/mochi/rig.jso
 - `$ref` + `override`: mood copy mood khác (đã giải kế thừa/tween) rồi đè từng khung theo mảng override **cùng độ dài** của từng phase (mỗi phần tử là khung từng phần, gộp như inherit). Đã hỗ trợ.
 - `.js`: `module.exports = { action:'idle', moods:{...} }` (hoặc hàm trả về đối tượng) — tạo khung bằng vòng lặp/sin; cùng cấu trúc như JSON.
 
+## Tủ đồ: `follow`, `covers`, `outfit.js`
+- Lớp trong rig.json có thể khai `"follow":"<idLớp>","dz":0.5`: z = z hiện tại của lớp được bám (kể cả khi `frame.z` ghi đè) + dz; `hide`/`opacity` của lớp chủ áp lên lớp bám (khai riêng cho lớp bám thì ưu tiên). Dùng cho `outer_*` bám `torso`/`upper_arm_*`/`forearm_*`, nên action cũ không cần đổi.
+- `"covers":["upper_arm_l"]`: khi lớp này được vẽ, lớp liệt kê bị bỏ qua.
+- `outfit.js` tạo parts tạm = gốc + body + outer rồi gọi build.js. Parts gốc giữ một bản sao `outer_*` để build.js trần ra đúng hình mặc định.
+
 ## Thêm mới
 - **Action**: tạo file trong `actions/`, chạy `build.js --only <tên>`, xem bằng `sheet.js --contact <tên>`. Chân phải giữ ở anchor (đường đỏ y=392 trong lưới).
 - **Mặt**: thêm khoá vào `faces` của rig.json (phòng điều hành), vẽ `parts/face/<khoá>.svg` (+ `.over.svg`), dùng `"face":"<khoá>"`; `faces.js` dựng ảnh bán thân 256×256 cho 18 khoá đầu (cắt canvas [92,60,216,216]).
@@ -53,3 +59,9 @@ Mọi công cụ nhận `--rig <rig.json>` (mặc định `art/rig/mochi/rig.jso
 
 ## Cấu trúc
 `lib/rig.js` (ma trận + ghép SVG), `lib/action.js` (đọc action, inherit/tween/$ref), `lib/util.js` (tham số, chạy Electron), `build.js`, `faces.js`, `pose.js`, `sheet.js`, `pack.base.json`, `svg2png.js`.
+
+## Nén PNG
+`build.js` mặc định nén PNG vừa dựng thành PNG bảng màu (PLTE + tRNS, ≤128 màu, không dither) — nhỏ hơn ~4,4× (46 MB → ~10 MB cho cả gói), sai khác trung bình ~0,4/255. Tắt bằng `--no-quantize`.
+- Nén tại chỗ PNG có sẵn: `node tools/rig/quantize.js assets/pet/mochi [--max 128] [--keep 16]` (`--max` số màu tối đa, `--keep` số màu phẳng phổ biến nhất giữ nguyên chính xác; ảnh ≤ max màu được giữ đúng 100%). Chạy lại trên file đã nén vô hại.
+- Mã: `lib/quant.js` (median-cut có trọng số + alpha; alpha=0 gom về một chỉ số). Ảnh so sánh: `art/review/quantize_compare.png`.
+- `tools/anim/png.js` (core) đọc được color type 3 + tRNS; Chromium/Electron hiển thị bình thường.

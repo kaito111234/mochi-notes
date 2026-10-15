@@ -64,10 +64,10 @@ Thư mục `art/rig/mochi/parts/`. Biến thể dùng hậu tố: `hand_r.open.s
 | 4 | Chân trái: đùi / ống+giày | `thigh_l.svg`, `shin_l.svg` | thigh_l / shin_l |
 | 5 | Chân phải | `thigh_r.svg`, `shin_r.svg` | thigh_r / shin_r |
 | 6 | Váy | `skirt.svg` | hips |
-| 7 | Thân: sơ mi, cà vạt, áo khoác thân | `torso.svg` | chest |
+| 7 | Thân: sơ mi, cà vạt (body) / áo khoác thân (outer, tuỳ chọn, bám torso z+1) | `torso.svg` / `outer_torso.svg` | chest |
 | 8 | Cổ + choker | `neck.svg` | chest |
-| 9 | Tay trên trái/phải (tay áo khoác) | `upper_arm_l.svg`, `upper_arm_r.svg` | upper_arm_* |
-| 10 | Cẳng tay (ống tay rộng, viền trắng) | `forearm_l.svg`, `forearm_r.svg` | forearm_* |
+| 9 | Tay trên trái/phải (tay áo sơ mi; áo khoác `outer_upper_arm_*` bám z+0.5 và che tay áo sơ mi) | `upper_arm_l.svg`, `upper_arm_r.svg` | upper_arm_* |
+| 10 | Cẳng tay (tay áo sơ mi có măng sét; áo khoác `outer_forearm_*` ống rộng viền trắng bám z+0.5) | `forearm_l.svg`, `forearm_r.svg` | forearm_* |
 | 11 | Bàn tay | `hand_l.svg`, `hand_r.svg` (+ `.open` `.fist` `.hold` `.point`) | hand_* |
 | 12 | Đầu: da mặt, tai, bóng tóc trên trán | `head.svg` | head |
 | 13 | Mặt (mắt, miệng, má) | `face/<key>.svg` | head |
@@ -90,3 +90,6 @@ Thêm khoá phục vụ hình động: `blink` (nhắm nhẹ, cong xuống), `cl
 
 ## 7. Action (`tools/rig/actions/<action>.json`)
 Xem `tools/rig/README.md` (phòng art viết). Tóm tắt: mỗi phase là danh sách khung; mỗi khung có `ms`, `face`, `bones` {tên: {r, x, y, sx, sy}} (độ, px, tỉ lệ), `swap` {lớp: biến thể}, `show`/`hide`, `z` {lớp: z mới}, `global` {r, px, py, x, y}. Khung kế thừa khung trước nếu `"inherit": true`.
+
+## 7. Tủ đồ (body × outer)
+Hai khe độc lập: `body` (torso, skirt, thigh_*, shin_*, upper_arm_*, forearm_*) và `outer` (`outer_torso`, `outer_upper_arm_*`, `outer_forearm_*`). Lớp rig có `follow`/`dz` (bám z, ẩn, opacity của lớp chủ) và `covers` (che lớp khác). Chi tiết và quy tắc vẽ: `WARDROBE.md`; dựng: `tools/rig/outfit.js`.

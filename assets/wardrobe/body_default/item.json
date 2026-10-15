@@ -1,0 +1,8 @@
+{
+  "id": "body_default",
+  "slot": "body",
+  "name": "Sơ mi trắng, cà vạt xanh, váy đen, tất đen, bốt",
+  "replaces": [],
+  "hides": [],
+  "notes": "Bộ thân mặc định = các bộ phận gốc trong art/rig/mochi/parts/ (torso, skirt, thigh_*, shin_*, upper_arm_*, forearm_*). Không cần file thay thế. Chưa có trong assets/game/catalog.json (đề xuất thêm)."
+}
