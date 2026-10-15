@@ -21,6 +21,45 @@
 - `BUGS.md` có danh sách ưu tiên; 5 lỗi nặng nhất có ảnh.
 
 ## Trạng thái
+_Cập nhật 2026-10-15 — lượt 3._ Thử trên `main` @ 4b31347 (Đợt 3 đã gộp) — `room/qa` đã gộp main (merge 8371afb). `room/core` Đợt 2B vẫn chưa gộp.
+
+**Đã xong lượt 3** (theo yêu cầu điều hành)
+1. Chạy lại toàn bộ: unit 238/0 (HCM, 7 skip DST) + 245/0 (NY), `npm test` xanh; E2E cả bộ một lệnh: 159 test, 119 pass / 19 fail / 21 skip (core2b skip vì chưa gộp core, packaged skip khi không đặt biến). Phân loại 19 ca đỏ: 3 do giao diện Đợt 3 đổi có chủ ý (list-2, note-persist 4, paper-game 5 tab Album) → đã sửa test; 1 do máy quá tải (notes2-6, chạy riêng xanh, nới chờ); còn lại là lỗi thật.
+2. `BUGS.md`: **đóng 19 lỗi** (hiểu giờ BUG-002/004/005/009–011/032/033, 012, 013, 015, 023, 025–027, 029, 031, 051, 052), mở 5 lỗi mới (BUG-055…059), hạ BUG-034 xuống Nhẹ.
+3. Ca E2E tính năng mới (đã có từ lượt 2, cập nhật lượt 3): mẫu giấy đổi/lưu/mở lại (note-persist 6, paper-game 1), checklist tick + xu (paper-game 3), nhiều nhắc/note (reminder 7, 7b, **7c mới**, notes2-2), ghi nhanh (notes2-1), thùng rác + khôi phục (list 3c–3g, notes2-4), Phòng của Mochi 6 tab + gacha trừ xu + tủ đồ (paper-game 5), **điểm danh + túi đồ ăn (5b mới)**, tắt game hoá (paper-game 6), chữ "Đang hiện/Đã cất" (list-l3-1 mới).
+4. Vị trí cửa sổ BUG-013/015: `layout.test.js` 4/5 xanh — chuông/popup né cửa sổ bé, dời khi bé đi; ca 1 đỏ vì core chưa công bố `occupiedRect` (BUG-034).
+5. Đóng gói: `--win zip --x64` chạy được 2m10s; zip 114 MB, win-unpacked 243 MB, app.asar 14,4 MB (assets/pet 12,2 MB, wardrobe 0,65 MB). Không lọt test/docs/art/tools/scripts; file thừa: `assets/paper/deco/README.md`; `assets/wardrobe` có trong gói nhưng chưa dùng. `packaged.test.js` 8/9 (đỏ BUG-040). package.json chưa nhận đề xuất NSIS/icon.
+
+**Lỗi đang mở**: 0 Chặn · **2 Nặng** (BUG-055 core: Xong nhắc 1 làm mất nhắc 2 cùng note — đã tự tái hiện; BUG-007 paper) · 21 Vừa · 12 Nhẹ = 35.
+**Theo phòng**: paper 12 · core 10 · notes 7 · game 4 · điều hành 2.
+
+**Lệnh chạy test**
+- Toàn bộ E2E (~50 phút): `bash test/e2e/run.sh` · một nhóm: `bash test/e2e/run.sh test/e2e/<nhóm>.test.js` · perf rút gọn `PERF_RUNS=1 PERF_IDLE_MS=5000`.
+- Lên nhánh khác: `MOCHI_E2E_ROOT=<worktree> bash test/e2e/run.sh test/e2e/core2b.test.js`.
+- Bản đóng gói: `npx electron-builder --win zip --x64 --config.directories.output=/tmp/qa-dist` → `MOCHI_PACKAGED_APP=/tmp/qa-dist/win-unpacked/resources/app.asar bash test/e2e/run.sh test/e2e/packaged.test.js`.
+- Logic: `node test/unit/run.js` (2 múi giờ).
+
+**Kết quả lượt 3 theo bộ** (sau khi sửa test): list 11/4 (BUG-035×2, 036, 037) · note-persist 11/2 (BUG-017) · note-format đỏ 1c (BUG-007) · notes2 11/0 · reminder 17/2 (BUG-055) · paper-game 11/2 (BUG-038, 039) · layout 4/1 (BUG-034) · alarm-memo 7/1 (BUG-014) · data xanh · core2b trên main: đỏ 4a (014), 4c (030), 4d (016), còn lại skip/xanh · packaged 8/1 (BUG-040) · perf, smoke, ux-shots, ux2-shots (13) xanh.
+**Hiệu năng** (xvfb, 3 lần): khởi động 1 note 0,95 s, 30 note 5,3 s; PSS 1 note 558 MB (lượt 2: 337 → BUG-059), 30 note 960 MB; CPU rảnh 1 note ~5%, 30 note ~3,5%; hiện tất cả 30 note 5,0 s; 30 nhắc cùng lúc không treo; 200 note mở danh sách 0,45 s.
+
+**Chưa kiểm được** (cần Windows thật): bộ cài NSIS, âm thanh, toast có nút, acrylic/note trong suốt thật, gõ cửa (user32), chuột thật, DPI/đa màn hình, RAM thật.
+
+**Việc tiếp theo**
+1. Khi `room/core` gộp: chạy `core2b` + toàn bộ; kiểm lại BUG-045/046 (nhánh đã lên @4ceb710), BUG-055.
+2. Khi paper/notes sửa: chạy lại `list`, `note-persist`, `note-format`, `paper-game`.
+3. Chụp lại 220x160 cho BUG-019; thêm assert chống cắt/che nút ở note nhỏ (BUG-018/019/041/042).
+4. NSIS + `packaged.test.js` trên Windows/CI.
+
+## Đề xuất cho phòng điều hành
+_Lượt 3._
+1. **Gấp — core BUG-055** (Nặng): `mascotWindow.js` `dropNote` phải lọc theo `reminderId`; `stage.js` truyền `reminderId` vào `completeNote/snoozeNote`. Áp dụng cho cả `room/core` trước khi gộp.
+2. Giao lỗi: **paper** BUG-007 (Nặng), 035, 037, 039, 017, 018, 019, 041–043, 048, 049 · **core** BUG-055, 059 (RAM cửa sổ bé), 014 (gộp room/core), 044, 016, 045, 046, 034, 030, 024 · **notes** BUG-036, 038, 020, 050, 053, 056, 028 · **game** BUG-040, 057 (cùng art/core: hiện đồ đang mặc, nạp `assets/wardrobe`), 047, 058.
+3. Gộp `room/core` sau khi sửa BUG-055 (và nên cả 045/046); QA sẽ chạy `core2b` + toàn bộ ngay sau gộp.
+4. `package.json` build (chưa nhận từ lượt 2): `nsis` + khối từ `build/nsis.json`, `win.icon: assets/icon.ico`, `files` thêm `"!assets/paper/deco/README.md"`, cân nhắc `compression: maximum`, quyết định `signAndEditExecutable` + ký số; CI windows-latest dựng NSIS và chạy `packaged.test.js`.
+5. Xưng hô (BUG-028): `docs/persona/MOCHI.md:34` và mã notes đang lệch nhau — chốt một bên.
+6. `scripts/test-all.js`: nay có thể thêm `node test/unit/run.js` (xanh cả 2 múi giờ).
+
+### Lượt 2 (lưu lại)
 _Cập nhật 2026-10-15 — lượt 2._ Thử trên `main` @ 70ebdd3 (đã gộp Đợt 2) + nhánh `room/core` @ 610178f (Đợt 2B, chưa gộp).
 
 **Đã xong lượt 2**
@@ -36,7 +75,7 @@ _Cập nhật 2026-10-15 — lượt 2._ Thử trên `main` @ 70ebdd3 (đã gộ
 - Bản đóng gói: `npx electron-builder --win zip --x64 --config.directories.output=/tmp/qa-dist` rồi `MOCHI_PACKAGED_APP=/tmp/qa-dist/win-unpacked/resources/app.asar bash test/e2e/run.sh test/e2e/packaged.test.js`.
 - Logic: `node test/unit/run.js` (2 múi giờ).
 
-**Kết quả lượt 2** (mỗi file chạy riêng; đỏ = lỗi thật, trừ ghi chú)
+Kết quả lượt 2 (mỗi file chạy riêng; đỏ = lỗi thật, trừ ghi chú)
 | Bộ | Pass / Fail | Đỏ vì |
 |---|---|---|
 | unit (mỗi TZ) | 226 / 12 (+7 skip DST) | parse BUG-002/004/005/009/010, understand BUG-033, store BUG-031 |
@@ -66,10 +105,3 @@ _Cập nhật 2026-10-15 — lượt 2._ Thử trên `main` @ 70ebdd3 (đã gộ
 3. Chạy NSIS + `packaged.test.js` trên Windows/CI (windows-latest); đo RAM/CPU trên Windows.
 4. Thêm assert chống cắt chữ/che nút ở note nhỏ (BUG-018/019/041/042) để thành test đỏ thay vì chỉ ảnh.
 
-## Đề xuất cho phòng điều hành
-1. Giao lỗi (thứ tự ưu tiên trong `BUGS.md`): **notes** BUG-032, 033 (Nặng, `understand/index.js`), 002/004/005/009/010, 012, 036, 038, 020, 025, 027–029, 031, 050, 053 · **paper** BUG-007 (Nặng), 035, 037, 039, 017–019, 041–043, 026, 048, 049, 052 · **core** BUG-034 (công bố `occupiedRect`/`pet:moved` — mở khoá 013/015), 044, 045, 046, 016, 030 (đọc `store.section('alarms')`), 024 · **game** BUG-040 (`preview.js:8`), 047 · **persona** BUG-051 (chốt "xu" hay "kẹo").
-2. Gộp `room/core` (xem kết luận trên). Sau gộp nhắc trễ ~6 s sẽ làm đỏ `reminder.test.js` 2a cho tới khi sửa BUG-045.
-3. `package.json` (từ `findings/build.md`): thêm `nsis` vào `win.target` + khối `nsis` từ `build/nsis.json`; `win.icon` → `assets/icon.ico`; script `"dist:win:installer": "electron-builder --win nsis --x64"`; `files` thêm `"!assets/paper/deco/README.md"`; cân nhắc `"compression":"maximum"`; quyết định `signAndEditExecutable` (bật trên Windows/CI) và chứng chỉ ký số (SmartScreen).
-4. CI Windows (GitHub Actions windows-latest) để dựng NSIS và chạy `packaged.test.js`; tự cập nhật nên dùng electron-updater + GitHub Releases (phương án và rủi ro trong `findings/build.md`), chưa thêm thư viện.
-5. `scripts/test-all.js`: có thể thêm `test/unit/store-recovery.test.js` (xanh); chưa thêm `test/unit/run.js` toàn bộ cho tới khi notes sửa parse/understand.
-6. Thống nhất xưng hô (BUG-028) và đơn vị tiền ("xu", BUG-051) trong `docs/persona/MOCHI.md`.
