@@ -8,8 +8,12 @@
     $('line').textContent = data.line || ''; $('line').hidden = !data.line;
     const ul = $('items'); ul.textContent = '';
     for (const it of data.items) { const li = document.createElement('li'); li.textContent = it.text; ul.appendChild(li); }
-    $('btnStay').hidden = !data.quitting;
-    $('btnOk').textContent = data.quitting ? 'Nhớ rồi, thoát' : 'Nhớ rồi';
+    const st = $('btnStay'), ok = $('btnOk');
+    st.hidden = !data.quitting;
+    st.textContent = 'Chưa thoát';
+    st.title = 'Đóng lời dặn, Mochi Notes vẫn chạy; lần sau cậu thoát tớ sẽ dặn lại';
+    ok.textContent = data.quitting ? 'Thoát luôn' : 'Nhớ rồi';
+    ok.title = data.quitting ? 'Cậu đã nhớ lời dặn, thoát Mochi Notes luôn' : 'Cậu đã nhớ, tớ sẽ không dặn lại lần này';
   }
   $('btnOk').addEventListener('click', () => {
     if (data.quitting) window.mochi.memos.quitNow();

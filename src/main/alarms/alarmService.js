@@ -9,7 +9,7 @@ const path = require('path');
 const { app, ipcMain, BrowserWindow, Notification, dialog, screen, powerMonitor } = require('electron');
 const { getBox, normalize, normAlarm } = require('./box.js');
 const L = require('./alarmLogic.js');
-const { placeAvoiding, needsMove } = require('./placement.js');
+const { placeAvoiding, needsMove, petRectFor, petVisible } = require('./placement.js');
 
 const RING_W = 360, RING_H = 262;
 const SOUND_EXT = ['mp3', 'wav', 'ogg', 'm4a'];
@@ -55,9 +55,7 @@ function init(ctx) {
   }
 
   // ---------- cửa sổ chuông ----------
-  const petRect = () => {
-    try { return ctx.pet && typeof ctx.pet.occupiedRect === 'function' ? ctx.pet.occupiedRect() : null; } catch (_) { return null; }
-  };
+  const petRect = () => petRectFor(ctx, screen.getPrimaryDisplay().workArea);
   function placeRing(win) {
     const a = screen.getPrimaryDisplay().workArea;
     const p = placeAvoiding(a, { width: RING_W, height: RING_H }, petRect(), 16);
@@ -146,7 +144,7 @@ function init(ctx) {
     if (alarm.noteId) { info.noteId = alarm.noteId; const t = noteTitle(alarm.noteId); if (t) info.noteTitle = t; }
     try {
       const ln = ctx.persona && typeof ctx.persona.pick === 'function' ? ctx.persona.pick('alarm', { label: info.label, time: info.time }) : null;
-      if (ln && typeof ln.text === 'string' && ln.text.trim()) info.line = ln.text.trim().slice(0, 140);
+      if (!petVisible(ctx) && ln && typeof ln.text === 'string' && ln.text.trim()) info.line = ln.text.trim().slice(0, 140);
     } catch (_) { /* câu thoại không ảnh hưởng chuông */ }
     ringing.set(rid, info);
 

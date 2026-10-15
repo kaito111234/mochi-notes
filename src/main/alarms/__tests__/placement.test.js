@@ -1,6 +1,6 @@
 'use strict';
 const assert = require('assert');
-const { placeAvoiding: P, needsMove, intersects, overlapArea } = require('../placement.js');
+const { placeAvoiding: P, needsMove, intersects, overlapArea, defaultPetRect, petRectFor, petVisible } = require('../placement.js');
 
 let n = 0;
 const t = (name, fn) => { fn(); n++; console.log('ok', name); };
@@ -92,5 +92,36 @@ t('needsMove: chỉ khi giao', () => {
 t('kết quả là số nguyên', () => {
   const p = P(WA, S, { x: 1300.4, y: 700.7, width: 120.2, height: 140.1 });
   assert.ok(Number.isInteger(p.x) && Number.isInteger(p.y));
+});
+t('defaultPetRect: góc dưới phải workArea', () => {
+  assert.deepStrictEqual(defaultPetRect(WA), { x: 1140, y: 460, width: 300, height: 400 });
+});
+t('petRectFor: ưu tiên occupiedRect của core', () => {
+  const r = { x: 5, y: 6, width: 7, height: 8 };
+  assert.deepStrictEqual(petRectFor({ pet: { occupiedRect: () => r } }, WA), r);
+});
+t('petRectFor: dùng bounds cửa sổ bé khi đang hiện', () => {
+  const b = { x: 1140, y: 463, width: 300, height: 397 };
+  const w = { isDestroyed: () => false, isVisible: () => true, getBounds: () => b };
+  assert.deepStrictEqual(petRectFor({ pet: {}, windows: { pet: w } }, WA), b);
+});
+t('petRectFor: cửa sổ bé đang ẩn -> null; bé tắt -> null; chưa có cửa sổ -> mặc định', () => {
+  const hid = { isDestroyed: () => false, isVisible: () => false, getBounds: () => ({}) };
+  assert.strictEqual(petRectFor({ windows: { pet: hid } }, WA), null);
+  assert.strictEqual(petRectFor({ settings: () => ({ mascotEnabled: false }) }, WA), null);
+  assert.deepStrictEqual(petRectFor({ settings: () => ({ mascotEnabled: true }) }, WA), defaultPetRect(WA));
+  assert.deepStrictEqual(petRectFor({}, WA), defaultPetRect(WA));
+});
+t('petRectFor: lỗi không ném', () => {
+  assert.strictEqual(petRectFor({ pet: { occupiedRect() { throw new Error('x'); } } }, WA), null);
+});
+t('chuông 360x236 né vùng bé mặc định: sang trái bé', () => {
+  const p = P(WA, { width: 360, height: 236 }, defaultPetRect(WA), 16);
+  assert.ok(!intersects({ x: p.x, y: p.y, width: 360, height: 236 }, defaultPetRect(WA)));
+});
+t('petVisible', () => {
+  assert.strictEqual(petVisible({ pet: { actor: { visible: () => true } } }), true);
+  assert.strictEqual(petVisible({ pet: { actor: { visible: () => false } } }), false);
+  assert.strictEqual(petVisible({}), false);
 });
 console.log(n + ' ca placement xanh');
