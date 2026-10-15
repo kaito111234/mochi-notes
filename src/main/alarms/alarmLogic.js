@@ -18,7 +18,9 @@ function decide(alarm, now, settings, recur) {
   if (!keep.enabled) return Object.assign(keep, { nextAt: null });
   if (alarm.nextAt == null) {
     // thiếu nextAt (vd mới nạp) -> tính lại, không kêu
-    return Object.assign(keep, { nextAt: R.alarmNextAt(alarm, now) });
+    const nx = R.alarmNextAt(alarm, now);
+    // một lần mà không còn lần kế -> tắt (không treo "bật" mà không bao giờ kêu)
+    return Object.assign(keep, { nextAt: nx, enabled: nx == null && !alarm.repeat ? false : keep.enabled });
   }
   const graceMs = Math.max(0, (settings && settings.missedGraceMin != null ? settings.missedGraceMin : 30)) * 60000;
   const c = R.catchUp(alarm.nextAt, now, graceMs);

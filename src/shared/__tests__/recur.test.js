@@ -129,6 +129,20 @@ t('DST: weekly T2 và monthly qua đổi giờ', () => {
 });
 
 /* ---- alarmNextAt / catchUp ---- */
+t('alarmNextAt: monthly thiếu byMonthDay không trôi (31/1 -> 28/2 -> 31/3)', () => {
+  const a = { enabled: true, time: '08:00', date: '2027-01-31', createdAt: L(2027, 1, 5), repeat: { freq: 'monthly' } };
+  const n1 = R.alarmNextAt(a, L(2027, 1, 31, 9)); assert.strictEqual(fmt(n1), '2027-02-28 08:00');
+  const n2 = R.alarmNextAt(a, n1); assert.strictEqual(fmt(n2), '2027-03-31 08:00');
+  const b = { enabled: true, time: '08:00', createdAt: L(2027, 1, 31, 7), repeat: { freq: 'monthly' } };  // không date: lấy createdAt
+  assert.strictEqual(fmt(R.alarmNextAt(b, L(2027, 2, 28, 9))), '2027-03-31 08:00');
+});
+t('alarmNextAt: weekly thiếu byDay giữ thứ của date/anchor', () => {
+  const a = { enabled: true, time: '08:00', date: '2026-10-14', createdAt: L(2026, 10, 1), repeat: { freq: 'weekly' } }; // thứ Tư
+  const n1 = R.alarmNextAt(a, L(2026, 10, 14, 9)); assert.strictEqual(fmt(n1), '2026-10-21 08:00');
+  assert.strictEqual(fmt(R.alarmNextAt(a, L(2026, 10, 22, 9))), '2026-10-28 08:00');
+  assert.strictEqual(next({ repeat: { freq: 'weekly', anchor: L(2026, 10, 14, 12) }, time: '08:00' }, L(2026, 10, 22, 9)), '2026-10-28 08:00');
+});
+
 t('alarmNextAt: tắt -> null', () => assert.strictEqual(R.alarmNextAt({ enabled: false, time: '08:00', repeat: { freq: 'daily' } }, L(2026, 10, 15, 0)), null));
 t('alarmNextAt: lặp + một lần + date', () => {
   const now = L(2026, 10, 15, 9);

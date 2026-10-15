@@ -69,12 +69,12 @@ function init(ctx) {
     if (b) n.bounds = b; else { n.bounds.x += (nudge % 10) * 24; n.bounds.y += (nudge % 10) * 24; }
   }
 
-  function importAlarms(parsed) {
+  function importAlarms(parsed, idMap) {
     if (!parsed.alarms.length && !parsed.memos.length) return;
     const R = require('../../shared/recur.js');
     const L = require('../alarms/alarmLogic.js');
     const box = getBox(ctx);
-    const res = T.mergeAlarmBox(box, parsed, { normAlarm, normMemo, computeNext: (a, now) => L.computeNext(a, now, R) }, Date.now());
+    const res = T.mergeAlarmBox(box, parsed, { normAlarm, normMemo, computeNext: (a, now) => L.computeNext(a, now, R) }, Date.now(), idMap);
     if (!res.alarms.length && !res.memos.length) return;
     const snapA = JSON.parse(JSON.stringify({ alarms: box.list, missed: box.missed, settings: box.settings, sounds: box.sounds }));
     const snapM = JSON.parse(JSON.stringify({ memos: box.memos, settings: box.settings }));
@@ -105,10 +105,11 @@ function init(ctx) {
           const ext = path.extname(f).toLowerCase();
           if (ext === '.json') {
             const parsed = T.parseImportJson(text);
-            const m = T.mergeImported(pool, parsed.notes, newId, { now: Date.now() });
-            pool.push(...m.added); added.push(...m.added);
+            const m = T.mergeImported(pool, parsed.notes, newId, { now: Date.now(), pastDone: true });
+            for (const x of m.added) { pool.push(x); added.push(x); }
             if (m.invalid) errors.push(base + ': bỏ qua ' + m.invalid + ' mục không hợp lệ');
-            importAlarms(parsed);
+            try { T.applyNoteMeta(getBox(ctx).noteMeta, parsed.noteMeta, m.idMap, m.added); } catch (e) { console.error('[notes] import noteMeta', e); }
+            importAlarms(parsed, m.idMap);
           } else if (ext === '.txt' || ext === '.md') {
             const html = ext === '.md' ? T.markdownToHtml(text) : T.textToHtml(text);
             const now = Date.now();
@@ -173,6 +174,14 @@ function init(ctx) {
     return { notes: T.summarizeBackup(notes, ctx.store.data.notes) };
   }
 
+  /** Giữ 10 bản mochi-data-before-restore-*.json mới nhất (tên chứa mốc thời gian nên sắp theo tên). */
+  function pruneBeforeRestore(dir) {
+    try {
+      const old = fs.readdirSync(dir).filter(f => /^mochi-data-before-restore-[\w-]+\.json$/.test(f)).sort().reverse().slice(10);
+      for (const f of old) { try { fs.unlinkSync(path.join(dir, f)); } catch (_) { /* bỏ qua */ } }
+    } catch (_) { /* bỏ qua */ }
+  }
+
   function restore(_e, file, ids) {
     try {
       const notes = loadBackup(file);
@@ -182,8 +191,9 @@ function init(ctx) {
         const dir = bdir();
         fs.mkdirSync(dir, { recursive: true });
         if (fs.existsSync(ctx.store.file)) fs.copyFileSync(ctx.store.file, path.join(dir, 'mochi-data-before-restore-' + T.stampStr(new Date()) + '.json'));
+        pruneBeforeRestore(dir);
       } catch (e) { console.error('[notes] không chép được bản trước khi khôi phục', e); return { ok: false, restored: 0 }; }
-      const plan = T.planRestore(notes, ctx.store.data.notes, Array.isArray(ids) ? ids.filter(x => typeof x === 'string') : null);
+      const plan = T.planRestore(notes, ctx.store.data.notes, Array.isArray(ids) ? ids.filter(x => typeof x === 'string') : null, Date.now());
       const now = Date.now();
       let restored = 0;
       for (const n of plan.add) {
@@ -199,6 +209,10 @@ function init(ctx) {
         const w = ctx.windows.notes.get(n.id);
         if (ctx.alive(w) && !ctx.useGlass()) { try { w.setBackgroundColor(ctx.COLOR_BG[n.color]); } catch (_) { /* bỏ qua */ } }
         ctx.notes.noteChanged(n);
+        // renderer bỏ qua note:updated khi editor đang focus -> đóng rồi mở lại cửa sổ để chắc chắn hiện bản khôi phục
+        if (ctx.alive(w)) {
+          try { ctx.notes.closeNoteWin(n.id); ctx.notes.openNote(n.id, { focus: false }); } catch (e) { console.error('[notes] mở lại cửa sổ note', e); }
+        }
       }
       if (restored) { ctx.store.save(); ctx.notes.notifyList(); }
       return { ok: true, restored };

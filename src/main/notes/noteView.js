@@ -9,8 +9,13 @@ const ZMIN = 0.5, ZMAX = 3;
 function init(ctx) {
   const box = () => getBox(ctx);
 
+  const BAD = new Set(['__proto__', 'constructor', 'prototype']);
+  const okId = id => typeof id === 'string' && !!id && !BAD.has(id) && !!(ctx.findNote && ctx.findNote(id));
+  const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
   function metaOf(id) {
-    const m = (box().noteMeta || {})[id] || {};
+    const nm = box().noteMeta;
+    const m = (nm && typeof nm === 'object' && own(nm, id) && nm[id]) || {};
     const n = ctx.findNote && ctx.findNote(id);
     const repeat = (n && n.reminder && n.reminder.repeat) || m.repeat || null;
     return { repeat, zoom: typeof m.zoom === 'number' ? m.zoom : 1, locked: !!m.locked };
@@ -23,13 +28,13 @@ function init(ctx) {
     return payload;
   }
 
-  ipcMain.handle('notes2:getMeta', (_e, id) => (typeof id === 'string' ? metaOf(id) : { repeat: null, zoom: 1, locked: false }));
+  ipcMain.handle('notes2:getMeta', (_e, id) => (okId(id) ? metaOf(id) : { repeat: null, zoom: 1, locked: false }));
 
   ipcMain.handle('notes2:setView', (_e, id, patch) => {
-    if (typeof id !== 'string' || !id || !patch || typeof patch !== 'object') return null;
+    if (!okId(id) || !patch || typeof patch !== 'object') return null;
     const b = box();
     if (!b.noteMeta || typeof b.noteMeta !== 'object') b.noteMeta = {};
-    const m = b.noteMeta[id] || (b.noteMeta[id] = {});
+    const m = own(b.noteMeta, id) && b.noteMeta[id] ? b.noteMeta[id] : (b.noteMeta[id] = {});
     if (patch.zoom !== undefined) {
       const z = Number(patch.zoom);
       if (Number.isFinite(z)) {
@@ -46,7 +51,7 @@ function init(ctx) {
   ctx.bus.on('note:deleted', p => {
     const id = p && p.id;
     const b = box();
-    const m = id && b.noteMeta && b.noteMeta[id];
+    const m = typeof id === 'string' && !BAD.has(id) && b.noteMeta && own(b.noteMeta, id) && b.noteMeta[id];
     if (!m) return;
     delete m.zoom; delete m.locked;
     if (!Object.keys(m).length) delete b.noteMeta[id];

@@ -155,4 +155,56 @@ t('hourly: mỗi 2 tiếng', () => {
 t('đã bấm done lẻ (không repeat) vẫn done như 0.1', () => {
   const n = mk('họp 3h chiều nay', NOW); assert.ok(S.markDone(n)); assert.strictEqual(n.reminder.done, true);
 });
+
+t('tick: lặp chưa fired, máy tắt nhiều ngày -> đúng 1 due, nhảy mốc mới nhất', () => {
+  const n = mk('uống thuốc 8h sáng mỗi ngày', NOW);
+  n.reminder.due = at(2026, 10, 10, 8, 0);
+  const now = at(2026, 10, 13, 9, 0);
+  const st = { lastNag: now, busy: true };
+  const a = S.tick([n], now, st);
+  assert.deepStrictEqual(a.events.map(e => e.type), ['due']);
+  assert.strictEqual(n.reminder.due, at(2026, 10, 13, 8, 0));
+  assert.strictEqual(S.tick([n], now + 1000, st).events.length, 0);
+});
+t('tick: hourly tắt máy lâu -> tính trực tiếp, 1 due', () => {
+  const n = { id: 'h', text: 'uống nước', reminder: null };
+  S.setRepeat(n, { freq: 'hourly', interval: 2 }, NOW);
+  const now = NOW + 1000 * 3600000 + 5 * 60000;
+  const t0 = Date.now();
+  const a = S.tick([n], now, { busy: true });
+  assert.ok(Date.now() - t0 < 200);
+  assert.deepStrictEqual(a.events.map(e => e.type), ['due']);
+  assert.strictEqual(n.reminder.due, NOW + 1000 * 3600000);
+});
+t('tick: nhảy mốc -> preFired đúng theo lead', () => {
+  const n = mk('uống thuốc 8h sáng mỗi ngày', NOW);
+  n.reminder.lead = 10 * 60000; n.reminder.due = at(2026, 10, 10, 8, 0); n.reminder.preFired = false;
+  const a = S.tick([n], at(2026, 10, 13, 9, 0), { busy: true });
+  assert.deepStrictEqual(a.events.map(e => e.type), ['due']);
+  assert.strictEqual(n.reminder.preFired, true);
+  // roll sang mốc tương lai rồi tới vùng lead -> có 'pre'
+  S.rollRepeat(n, at(2026, 10, 13, 9, 0));
+  assert.strictEqual(n.reminder.preFired, false);
+  assert.deepStrictEqual(S.tick([n], at(2026, 10, 14, 7, 55), { busy: true }).events.map(e => e.type), ['pre']);
+});
+t('setReminder giữ repeat cũ nhưng đổi giờ -> anchor theo giờ mới', () => {
+  const n = mk('uống thuốc 8h sáng mỗi ngày', NOW);
+  S.setReminder(n, { due: at(2026, 10, 14, 9, 30), lead: 0 }, NOW);
+  assert.strictEqual(n.reminder.repeat.anchor, at(2026, 10, 14, 9, 30));
+  S.rollRepeat(n, at(2026, 10, 14, 10, 0));
+  assert.strictEqual(n.reminder.due, at(2026, 10, 15, 9, 30));
+});
+t('chữ lặp không có giờ -> không tự tạo nhắc lặp', () => {
+  for (const x of ['danh sách việc hàng ngày', 'mỗi ngày', 'nộp báo cáo mỗi tuần']) {
+    const n = mk(x, NOW);
+    assert.ok(!n.reminder || !n.reminder.repeat, x);
+  }
+});
+t('htmlToText tuyến tính với "<" lặp & đúng với HTML thường', () => {
+  const t0 = Date.now();
+  S.htmlToText('<'.repeat(1e5));
+  assert.ok(Date.now() - t0 < 500);
+  assert.strictEqual(S.htmlToText('<div>a &amp; b<br>c</div><p>x<b>y</b></p>'), 'a & b\nc\nxy');
+  assert.strictEqual(S.htmlToText('1 < 2 <b>x</b> > 3'), '1 < 2 x > 3'.replace('1 < 2 x', '1 x'));
+});
 console.log('OK ' + passed + ' ca');

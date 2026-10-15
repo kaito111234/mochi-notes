@@ -91,12 +91,13 @@ function normalize(stored) {
     .filter(x => x && isStr(x.soundFile)).map(x => ({ soundFile: x.soundFile, name: isStr(x.name) ? x.name : x.soundFile }));
   if (stored.noteMeta && typeof stored.noteMeta === 'object') {
     for (const [id, m] of Object.entries(stored.noteMeta)) {
+      if (id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
       if (!m || typeof m !== 'object') continue;
       const o = {};
       const r = normRepeat(m.repeat); if (r) o.repeat = r;
       if (isNum(m.zoom) && m.zoom >= 0.5 && m.zoom <= 3) o.zoom = m.zoom;
       if (m.locked) o.locked = true;
-      if (Object.keys(o).length) d.noteMeta[id] = o;
+      if (Object.keys(o).length && !Object.prototype.hasOwnProperty.call(d.noteMeta, id)) d.noteMeta[id] = o;
     }
   }
   const s = stored.settings && typeof stored.settings === 'object' ? stored.settings : {};

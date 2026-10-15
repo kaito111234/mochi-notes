@@ -72,8 +72,10 @@ function init(ctx) {
       if (its.length) notify(its);
     });
     win.on('closed', () => {
+      const wasQuit = popup === win && pending && pending.quitting;
       if (popup === win) { popup = null; popupReady = false; pending = null; }
       clearQuitTimer();
+      if (wasQuit && !quitAllowed) quitFlag = false;   // "Ở lại"/đóng popup: lần thoát sau vẫn dặn
     });
     win.loadFile(path.join(ctx.paths.src, 'alarms/memo.html'));
     win.once('ready-to-show', () => { if (ctx.alive(win)) win.showInactive(); });
@@ -157,7 +159,9 @@ function init(ctx) {
   function doQuit() {
     clearQuitTimer(); quitAllowed = true;
     const now = new Date();
-    for (const m of box().memos) if (m.when === 'before-shutdown') L.markShown(m, now);
+    let due = [];
+    try { due = L.dueMemos(box().memos, now, 'before-shutdown'); } catch (_) { /* bỏ qua */ }
+    for (const m of due) L.markShown(m, now);   // chỉ memo thực sự đến hạn
     save();
     app.quit();
   }

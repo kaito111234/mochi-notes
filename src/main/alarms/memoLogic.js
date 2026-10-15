@@ -1,6 +1,8 @@
 'use strict';
 // Logic thuần của "Dặn dò" (không đụng Electron) — test trong __tests__/memo.test.js.
 // Mọi thời gian là giờ địa phương. Khung giờ: morning [06:00,11:00), noon [11:00,14:00), evening [17:00,22:00).
+// Bù: memo của khung ĐÃ BẮT ĐẦU hôm nay mà chưa hiện thì hiện ở lần đầu người dùng có mặt, đến hết ngày
+// (morning từ 06:00, noon từ 11:00, evening từ 17:00); nhiều khung bị lỡ thì gộp hiện cùng lúc.
 
 const SLOTS = [
   { when: 'morning', from: 6 * 60, to: 11 * 60 },
@@ -38,7 +40,14 @@ function dueMemos(memos, now, kind, opts) {
   let when;
   if (kind === 'startup') when = 'startup';
   else if (kind === 'before-shutdown') when = 'before-shutdown';
-  else if (kind === 'tick') { if (o.idle) return []; when = slotOf(now); if (!when) return []; }
+  else if (kind === 'tick') {
+    if (o.idle) return [];
+    const d = now instanceof Date ? now : new Date(now);
+    const mins = d.getHours() * 60 + d.getMinutes();
+    const started = SLOTS.filter(s => mins >= s.from).map(s => s.when);
+    if (!started.length) return [];
+    return (memos || []).filter(m => started.includes(m.when) && eligibleToday(m, now));
+  }
   else return [];
   return (memos || []).filter(m => m.when === when && eligibleToday(m, now));
 }

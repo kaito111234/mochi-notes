@@ -16,17 +16,28 @@ const MIN = 6e4;
 const NAG_AFTER = 10 * MIN;   // quá hạn > 10 phút mới nhắc dai
 const NAG_EVERY = 15 * MIN;
 
+/** Bỏ thẻ <...> bằng một lượt quét (tương đương /<[^>]*>/g nhưng tuyến tính). */
+function stripTags(s) {
+  let out = '', i = 0;
+  for (;;) {
+    const a = s.indexOf('<', i);
+    if (a < 0) return out + s.slice(i);
+    const b = s.indexOf('>', a + 1);
+    if (b < 0) return out + s.slice(i);   // không còn '>' thì không còn thẻ nào
+    out += s.slice(i, a);
+    i = b + 1;
+  }
+}
+
 function htmlToText(html) {
-  return String(html || '')
+  return stripTags(String(html || '')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(div|p|li|h[1-6]|ul|ol)>/gi, '\n')
-    .replace(/<[^>]*>/g, '')
+    .replace(/<\/(div|p|li|h[1-6]|ul|ol)>/gi, '\n'))
     .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
-
 /** Dòng đầu tiên không rỗng, tối đa 80 ký tự. */
 function noteTitle(text) {
   const lines = String(text || '').split(/\r?\n/);
@@ -93,7 +104,12 @@ function repeatFromText(text, now) {
   if (!p || !isRepeat(p.repeat)) return null;
   const rule = withAnchor(p.repeat, p.repeat.freq === 'hourly' ? now : undefined);
   let time = p.time;
-  if (!time) { const a = P.analyze(text, now); time = a.timed && a.due ? hmOf(a.due) : '08:00'; }
+  if (!time && rule.freq !== 'hourly') {
+    // Chỉ tự tạo nhắc lặp khi chữ có GIỜ tường minh; không thì hành vi như 0.1.
+    const a = P.analyze(text, now);
+    if (!(a.timed && a.due)) return null;
+    time = hmOf(a.due);
+  }
   const due = nextOf(rule, time, now);
   if (due == null) return null;
   return { repeat: withAnchor(rule, due), due };
@@ -131,7 +147,11 @@ function setReminder(note, r, now = Date.now()) {
   if (!r || !Number.isFinite(r.due)) { note.reminder = null; return null; }
   const lead = Number.isFinite(r.lead) && r.lead > 0 ? r.lead : 0;
   // r.repeat: undefined = giữ lịch lặp hiện có; null = bỏ; object = đặt mới.
-  const repeat = r.repeat === undefined ? (note.reminder && note.reminder.repeat) : r.repeat;
+  let repeat = r.repeat === undefined ? (note.reminder && note.reminder.repeat) : r.repeat;
+  if (r.repeat === undefined && isRepeat(repeat) && repeat.freq !== 'hourly' &&
+      !(repeat.freq === 'weekly' && repeat.byDay) && !(repeat.freq === 'monthly' && repeat.byMonthDay)) {
+    repeat = Object.assign({}, repeat, { anchor: r.due });   // đổi giờ -> lần sau theo giờ mới
+  }
   note.reminder = mkReminder(r.due, lead, P.intentOf(note.text).k, false, now,
     isRepeat(repeat) ? withAnchor(repeat, r.due) : null);
   if (!note.reminder.repeat) delete note.reminder.repeat;
@@ -199,18 +219,27 @@ function tick(notes, now, state) {
     const r = n.reminder;
     if (!r || r.done) continue;
     let ch = false;
-    // Nhắc lặp đã báo mà chưa xong: tới lần kế tiếp thì bỏ lần cũ, không nhắc dai chồng chất.
-    if (r.repeat && r.fired) {
+    // Nhắc lặp: nếu đã tới lần kế sau r.due (dù đã báo hay chưa, vd máy tắt qua nhiều chu kỳ)
+    // thì nhảy tới mốc MỚI NHẤT <= now và chỉ phát đúng 1 'due' cho mốc đó.
+    if (r.repeat) {
       const tm = timeOfReminder(r);
       let nx = nextOf(r.repeat, tm, r.due);
       if (nx != null && now >= nx) {
-        // nhảy tới mốc MỚI NHẤT <= now (mốc đó chưa được báo nên sẽ phát 'due' đúng 1 lần ngay sau đây)
-        for (let i = 0; i < 400; i++) {
-          const nn = nextOf(r.repeat, tm, nx);
-          if (nn == null || nn > now) break;
-          nx = nn;
+        const rp = r.repeat;
+        if (rp.freq === 'hourly' && Number.isFinite(rp.anchor) && rp.interval !== 0) {
+          const step = (rp.interval > 0 ? rp.interval : 1) * 3600000;
+          const cand = rp.anchor + Math.floor((now - rp.anchor) / step) * step;
+          if (cand >= nx && cand <= now) nx = cand;
+        } else {
+          for (let i = 0; i < 5000; i++) {
+            const nn = nextOf(rp, tm, nx);
+            if (nn == null || nn > now) break;
+            nx = nn;
+          }
         }
-        r.due = nx; r.fired = false; r.done = false; r.preFired = true; ch = true;
+        r.due = nx; r.fired = false; r.done = false;
+        r.preFired = !(r.lead > 0 && now < nx - r.lead);
+        ch = true;
       }
     }
     if (!r.preFired && r.lead > 0 && now >= r.due - r.lead && now < r.due) {

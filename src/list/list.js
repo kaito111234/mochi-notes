@@ -212,6 +212,7 @@
     p.setAttribute('aria-hidden', String(!open));
     p.inert = !open;
     ['listView', 'alarmView', 'memoView'].forEach(id => { $(id).inert = open; });
+    $('tabs').inert = open;
     $('btnSettings').setAttribute('aria-expanded', String(open));
     (open ? $('btnBack') : $('btnSettings')).focus({ preventScroll: true });
   }
@@ -242,6 +243,7 @@
     toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
   }
   window.MochiList = { toast, el, setTab, setPanel, onTab: (n, fn) => { hooks[n] = fn; }, isPanelOpen: () => panelOpen, getTab: () => curTab };
+  hooks.note = () => { render(); };
   $('tabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) setTab(t.dataset.tab); });
   $('tabs').addEventListener('keydown', e => {
     const names = Object.keys(TABS), i = names.indexOf(curTab);
@@ -316,7 +318,7 @@
 
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape' || e.defaultPrevented) return;
-    const sh = document.querySelector('.sheet.open');
+    const sh = document.querySelector('#' + TABS[curTab] + ' .sheet.open');
     if (sh) { const b = sh.querySelector('.sheet-head .icon-btn'); if (b) b.click(); return; }
     if (confirmId) { confirmId = null; renderCards(); }
     else if (panelOpen) setPanel(false);

@@ -22,8 +22,10 @@
     const root = $('mmGroups'), empty = $('mmEmpty');
     root.textContent = '';
     empty.textContent = '';
-    WHENS.forEach(([k, label]) => {
-      const list = memos.filter(m => m.when === k);
+    const known = WHENS.map(w => w[0]);
+    const groups = WHENS.concat([['__other', 'Khác']]);
+    groups.forEach(([k, label]) => {
+      const list = memos.filter(m => k === '__other' ? !known.includes(m.when) : m.when === k);
       if (!list.length) return;
       const g = el('section', 'mm-group');
       g.setAttribute('aria-label', label);

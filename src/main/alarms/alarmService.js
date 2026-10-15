@@ -72,7 +72,9 @@ function init(ctx) {
       win.setAlwaysOnTop(true, 'screen-saver');
       try { win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }); } catch (_) { /* bỏ qua */ }
       win.on('closed', () => {
-        if (ringWin === win) { ringWin = null; ringReady = false; }
+        // chỉ khi cửa sổ vừa đóng chính là ringWin hiện tại (cửa sổ cũ đóng muộn không được tắt chuông mới)
+        if (ringWin !== win) return;
+        ringWin = null; ringReady = false;
         // đóng bằng tay (Alt+F4) = tắt mọi chuông đang kêu
         for (const id of [...ringing.keys()]) endRing(id, 'stopped', null, true);
       });
@@ -108,23 +110,26 @@ function init(ctx) {
 
   /** Kêu ngay. alarm: bản ghi thật hoặc giả (thử). */
   function ring(alarm, { test = false, at = Date.now() } = {}) {
+    const rid = test ? 'test:' + String(alarm.id).replace(/^test:/, '') : alarm.id;   // id riêng: không đè chuông thật
     const info = {
-      alarmId: alarm.id, label: alarm.label || '', time: alarm.time || hm(at),
+      alarmId: rid, label: alarm.label || '', time: alarm.time || hm(at),
       sound: alarm.sound || box.settings.defaultSound, snoozeMin: alarm.snoozeMin || box.settings.defaultSnoozeMin,
       volume: box.settings.volume, ringMaxMin: box.settings.ringMaxMin, test: !!test
     };
     if (alarm.soundFile) info.soundFile = alarm.soundFile;
     if (alarm.noteId) { info.noteId = alarm.noteId; const t = noteTitle(alarm.noteId); if (t) info.noteTitle = t; }
-    ringing.set(alarm.id, info);
+    ringing.set(rid, info);
 
-    ctx.bus.emit('alarm:ring', { alarmId: alarm.id, label: info.label, noteId: info.noteId });
-    try {
-      if (ctx.pet && ctx.pet.stage && ctx.pet.stage.request) {
-        ctx.pet.stage.request({ kind: 'alarm', priority: 100, payload: { alarmId: alarm.id, label: info.label, noteId: info.noteId } });
-      } else if (ctx.pet && ctx.pet.enqueue) {
-        ctx.pet.enqueue({ type: 'alarm', alarmId: alarm.id, label: info.label });
-      }
-    } catch (_) { /* bé không ảnh hưởng chuông */ }
+    if (!test) {   // kêu thử: không phát bus / không gọi sân khấu bé
+      ctx.bus.emit('alarm:ring', { alarmId: alarm.id, label: info.label, noteId: info.noteId });
+      try {
+        if (ctx.pet && ctx.pet.stage && ctx.pet.stage.request) {
+          ctx.pet.stage.request({ kind: 'alarm', priority: 100, payload: { alarmId: alarm.id, label: info.label, noteId: info.noteId } });
+        } else if (ctx.pet && ctx.pet.enqueue) {
+          ctx.pet.enqueue({ type: 'alarm', alarmId: alarm.id, label: info.label });
+        }
+      } catch (_) { /* bé không ảnh hưởng chuông */ }
+    }
 
     const ok = showRingWin();
     pendingSend.push(info);
@@ -132,7 +137,7 @@ function init(ctx) {
     let mascotOff = false;
     try { mascotOff = ctx.settings().mascotEnabled === false; } catch (_) { /* bỏ qua */ }
     if (!ok || mascotOff) {
-      notify('Báo thức ' + info.time, info.label || 'Đã tới giờ', () => showRingWin());
+      notify('Báo thức ' + info.time, info.label || 'Đã tới giờ', () => { if (ringing.size) showRingWin(); });
     }
     return true;
   }
@@ -140,10 +145,13 @@ function init(ctx) {
   /** Kết thúc một chuông. kind: 'stopped' | 'snoozed'. */
   function endRing(id, kind, minutes, fromClose) {
     if (!ringing.has(id)) return false;
+    const wasTest = !!ringing.get(id).test;
     ringing.delete(id);
     const k = pendingSend.findIndex(i => i.alarmId === id); if (k >= 0) pendingSend.splice(k, 1);
-    if (kind === 'snoozed') ctx.bus.emit('alarm:snoozed', { alarmId: id, minutes });
-    else ctx.bus.emit('alarm:stopped', { alarmId: id });
+    if (!wasTest) {
+      if (kind === 'snoozed') ctx.bus.emit('alarm:snoozed', { alarmId: id, minutes });
+      else ctx.bus.emit('alarm:stopped', { alarmId: id });
+    }
     if (!fromClose) {
       ctx.send(ringWin, 'alarm:ringEnd', { alarmId: id });
       if (!ringing.size && ctx.alive(ringWin)) { const w = ringWin; ringWin = null; ringReady = false; w.destroy(); }
@@ -178,12 +186,24 @@ function init(ctx) {
   }
 
   // ---------- thao tác ----------
+  /** Điền sẵn byMonthDay/byDay/anchor từ ngày đang chọn (hoặc hôm nay) để lặp không trôi. */
+  function fillRepeat(a, now) {
+    if (!a.repeat) return;
+    const r = a.repeat;
+    const dm = a.date ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(a.date) : null;
+    const base = dm ? new Date(+dm[1], +dm[2] - 1, +dm[3], 12) : new Date(now);
+    if (r.freq === 'monthly' && !r.byMonthDay) r.byMonthDay = base.getDate();
+    if (r.freq === 'weekly' && !(r.byDay && r.byDay.length)) r.byDay = [base.getDay()];
+    if (r.anchor == null) r.anchor = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 12).getTime();
+  }
+  const repKey = r => { if (!r) return ''; const o = Object.assign({}, r); delete o.anchor; return JSON.stringify(o); };
   function fixNext(a, now) { a.nextAt = L.computeNext(a, now, R); if (a.nextAt == null && !a.repeat && a.enabled) a.enabled = false; }
   function create(input) {
     const s = box.settings, now = Date.now(), i = input && typeof input === 'object' ? input : {};
     const a = normAlarm(Object.assign({
       sound: s.defaultSound, snoozeMin: s.defaultSnoozeMin
     }, i, { id: newId(), createdAt: now, nextAt: null, snoozedUntil: undefined, lastFiredAt: undefined }));
+    fillRepeat(a, now);
     fixNext(a, now);
     box.list.push(a);
     commit();
@@ -193,10 +213,18 @@ function init(ctx) {
     const cur = find(id); if (!cur) return null;
     const p = patch && typeof patch === 'object' ? patch : {};
     const merged = Object.assign({}, cur, p, { id: cur.id, createdAt: cur.createdAt, nextAt: null });
+    if (merged.repeat) merged.repeat = Object.assign({}, merged.repeat);
     delete merged.snoozedUntil;
     const a = normAlarm(merged);
     if (!a) return null;
-    fixNext(a, Date.now());
+    const now = Date.now();
+    const sameWhen = a.time === cur.time && (a.date || '') === (cur.date || '') && repKey(a.repeat) === repKey(cur.repeat);
+    if (sameWhen && cur.repeat) a.repeat = cur.repeat;     // giữ anchor cũ khi lặp không đổi
+    else fillRepeat(a, now);
+    if (sameWhen && a.enabled && cur.enabled && cur.snoozedUntil != null) {
+      // đổi nhãn/âm khi đang hoãn: giữ hoãn và nextAt (một lần không tự tắt)
+      a.snoozedUntil = cur.snoozedUntil; a.nextAt = cur.nextAt;
+    } else fixNext(a, now);
     Object.assign(cur, a);
     for (const k of Object.keys(cur)) if (!(k in a)) delete cur[k];
     commit();
@@ -303,11 +331,17 @@ function init(ctx) {
     persist();
   }
 
-  tick();                                   // bù báo thức lỡ lúc máy tắt
-  const timer = setInterval(tick, 1000);
+  // Tick bù đầu tiên chạy SAU 'app:startup' để module phòng khác đã init và nghe được alarm:ring.
+  let firstTick = false;
+  const runFirst = () => { if (firstTick) return; firstTick = true; tick(); };
+  if (ctx.bus && typeof ctx.bus.once === 'function') {
+    ctx.bus.once('app:startup', () => setTimeout(runFirst, 0));
+    const fb = setTimeout(runFirst, 5000); if (fb.unref) fb.unref();   // dự phòng nếu không có sự kiện
+  } else setTimeout(runFirst, 0);
+  const timer = setInterval(() => { if (firstTick) tick(); }, 1000);
   if (timer.unref) timer.unref();
-  ctx.bus.on('app:resume', tick);
-  try { powerMonitor.on('resume', tick); } catch (_) { /* môi trường thử */ }
+  ctx.bus.on('app:resume', () => { if (firstTick) tick(); });
+  try { powerMonitor.on('resume', () => { if (firstTick) tick(); }); } catch (_) { /* môi trường thử */ }
 
   if (process.env.MOCHI_DEV_RING === '1') {
     setTimeout(() => {

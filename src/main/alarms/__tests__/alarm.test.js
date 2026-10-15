@@ -47,6 +47,10 @@ t('bật mà thiếu nextAt -> tính lại, không kêu', () => {
   const d = L.decide(base({ repeat: { freq: 'daily' } }), at(6, 0), S, R);
   assert.strictEqual(d.action, 'none'); assert.strictEqual(d.nextAt, at(7, 0));
 });
+t('một lần bật, thiếu nextAt và không còn lần kế -> tắt', () => {
+  const d = L.decide(base({ date: '2026-10-10' }), at(6, 0), S, R);
+  assert.strictEqual(d.action, 'none'); assert.strictEqual(d.nextAt, null); assert.strictEqual(d.enabled, false);
+});
 t('hoãn: nextAt = now + N phút; kêu xong lặp tính lại từ repeat', () => {
   const now = at(7, 1);
   const p = L.snoozePatch(now, 10);

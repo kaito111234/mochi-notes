@@ -10,8 +10,10 @@
   if (!id) { M.closeWindow(); return; }
 
   let note = null;
+  let metaPushed = false;
   let shownHtml = null;      // html mới nhất đã hiển thị/đã lưu
   let saveTimer = 0;
+  let dirty = false;         // có chữ chưa lưu được (lưu lỗi) — không để applyNote ghi đè
   let hintTimer = 0;
   let lastTrigger = null;
   let locked = false, zoom = 1, meta = { repeat: null, zoom: 1, locked: false };
@@ -308,13 +310,20 @@
     clearTimeout(saveTimer); saveTimer = 0;
     if (!note) return;
     const html = currentHtml();
-    if (html === shownHtml) return;
+    if (html === shownHtml) { dirty = false; return; }
+    const prevShown = shownHtml;
     shownHtml = html;
+    dirty = true;
     const text = html ? ed.innerText : '';
     try {
       const r = await M.updateNote(id, { html, text });
+      dirty = html !== currentHtml();
       if (r) applyNote(r, { noHtml: true });
-    } catch (_) { /* giữ nguyên, lần lưu sau thử lại */ shownHtml = null; }
+    } catch (_) {
+      // lưu lỗi: giữ cờ dirty, không cho applyNote ghi đè chữ chưa lưu, thử lại sau
+      shownHtml = prevShown; dirty = true;
+      clearTimeout(saveTimer); saveTimer = setTimeout(flush, 2000);
+    }
   }
   function afterEdit() { toggleEmpty(); schedule(); updateFmtState(); }
 
@@ -331,7 +340,7 @@
     $('pin').hidden = !n.alwaysOnTop;
     menu.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-checked', String(b.dataset.color === n.color)));
     menu.querySelector('[data-act="top"]').setAttribute('aria-checked', String(!!n.alwaysOnTop));
-    if (!opts.noHtml && document.activeElement !== ed && n.html !== shownHtml) {
+    if (!opts.noHtml && !dirty && !saveTimer && document.activeElement !== ed && n.html !== shownHtml) {
       shownHtml = n.html || '';
       ed.innerHTML = sanitizeHtml(shownHtml);
       toggleEmpty();
@@ -528,7 +537,7 @@
     let r = await M.setReminder(id, { due, lead: +$('remLead').value || 0 });
     if (r) applyNote(r, { noHtml: true });
     if (N2.setRepeat && sel !== 'custom') {
-      const want = sel === repKey(cur) ? cur : buildRepeat(sel, due);
+      const want = buildRepeat(sel, due);
       if (want || cur) {
         try { const r2 = await N2.setRepeat(id, want); if (r2 && r2.id) applyNote(r2, { noHtml: true }); } catch (_) {}
         try { if (N2.getMeta) { meta = await N2.getMeta(id); renderChip(); } } catch (_) {}
@@ -601,7 +610,21 @@
   });
   ed.addEventListener('input', e => {
     if (hist.busy) return;
-    if (e.inputType === 'insertFromDrop') { histCommit(); ed.innerHTML = sanitizeHtml(ed.innerHTML); }
+    if (e.inputType === 'insertFromDrop') {
+      histCommit();
+      const clean = sanitizeHtml(ed.innerHTML);
+      if (clean !== ed.innerHTML) {
+        const so = selOffsets();
+        ed.innerHTML = clean;
+        if (so) {
+          try {
+            const [n1, o1] = posAt(so[0]), [n2, o2] = posAt(so[1]);
+            const r = document.createRange(); r.setStart(n1, o1); r.setEnd(n2, o2);
+            const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r);
+          } catch (_) {}
+        }
+      }
+    }
     afterEdit();
     if (/^(insertFromDrop|deleteByCut|deleteByDrag|insertFromYank|format)/.test(e.inputType || '')) histCommit(); else histTyping();
     if (!findBar.hidden) { clearTimeout(findTimer); findTimer = setTimeout(() => runFind(true), 200); }
@@ -698,6 +721,7 @@
   M.onSettingsChanged(applySettings);
   M.onNoteUpdated(n => { if (n && n.id === id) applyNote(n); });
 
+  ed.setAttribute('contenteditable', 'false');   // chờ biết note có bị khoá không
   (async () => {
     let n = null, s = null;
     try { [n, s] = await Promise.all([M.getNote(id), M.getSettings()]); } catch (_) {}
@@ -706,10 +730,12 @@
     applyNote(n);
     toggleEmpty();
     if (hist.idx < 0) histInit();
-    if (N2.getMeta) { try { const m = await N2.getMeta(id); if (m) { meta = m; applyZoom(m.zoom); applyLocked(m.locked); renderChip(); } } catch (_) {} }
+    let got = false;
+    if (N2.getMeta) { try { const m = await N2.getMeta(id); if (m) { got = true; meta = m; applyZoom(m.zoom); applyLocked(m.locked); renderChip(); } } catch (_) {} }
+    if (!got && !metaPushed) applyLocked(false);
   })();
   if (N2.onMeta) N2.onMeta(m => {
     if (!m || m.id !== id) return;
-    meta = m; applyZoom(m.zoom); applyLocked(m.locked); renderChip();
+    metaPushed = true; meta = m; applyZoom(m.zoom); applyLocked(m.locked); renderChip();
   });
 })();

@@ -24,12 +24,21 @@ t('slotOf evening và khoảng trống', () => {
   assert.strictEqual(L.slotOf(at(22, 0)), null);
   assert.strictEqual(L.slotOf(at(0, 30)), null);
 });
-t('tick hiện memo đúng khung', () => {
+t('tick hiện memo đúng khung (đã hiện khung trước thì không lặp)', () => {
   const ms = [M({ id: 'a' }), M({ id: 'b', when: 'evening' }), M({ id: 'c', when: 'noon' })];
   assert.deepStrictEqual(L.dueMemos(ms, at(8, 0), 'tick').map(m => m.id), ['a']);
+  assert.deepStrictEqual(L.dueMemos(ms, at(5, 0), 'tick'), []);
+  ms[0].lastShownDay = '2026-10-14';
   assert.deepStrictEqual(L.dueMemos(ms, at(12, 0), 'tick').map(m => m.id), ['c']);
-  assert.deepStrictEqual(L.dueMemos(ms, at(18, 0), 'tick').map(m => m.id), ['b']);
+  ms[2].lastShownDay = '2026-10-14';
   assert.deepStrictEqual(L.dueMemos(ms, at(15, 0), 'tick'), []);
+  assert.deepStrictEqual(L.dueMemos(ms, at(18, 0), 'tick').map(m => m.id), ['b']);
+});
+t('bù: mở máy sau khung thì hiện bù, nhiều khung bị lỡ gộp cùng lúc', () => {
+  const ms = [M({ id: 'a' }), M({ id: 'c', when: 'noon' }), M({ id: 'b', when: 'evening' })];
+  assert.deepStrictEqual(L.dueMemos(ms, at(11, 45), 'tick').map(m => m.id), ['a', 'c']);   // sau 11:30
+  assert.deepStrictEqual(L.dueMemos(ms, at(15, 0), 'tick').map(m => m.id), ['a', 'c']);
+  assert.deepStrictEqual(L.dueMemos(ms, at(23, 30), 'tick').map(m => m.id), ['a', 'c', 'b']); // đến hết ngày
 });
 t('gom nhiều memo cùng lúc', () => {
   const ms = [M({ id: 'a' }), M({ id: 'b' }), M({ id: 'c', enabled: false })];

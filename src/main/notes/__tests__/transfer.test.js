@@ -175,4 +175,77 @@ t('planRestore: thêm lại, ghi đè, lọc theo ids', () => {
   assert.strictEqual(some.add.length, 1); assert.strictEqual(some.overwrite.length, 0);
 });
 
+const timed = (name, fn) => t(name, () => { const t0 = Date.now(); fn(); const d = Date.now() - t0; assert.ok(d < 500, name + ' mất ' + d + 'ms'); });
+const PAYLOADS = {
+  'button không đóng': '<button '.repeat(1e4),
+  'span ngoặc kép lẻ': '<span "<'.repeat(2e4),
+  'script không đóng': '<script '.repeat(1e5),
+  'thẻ b lặp': '<b '.repeat(2e5),
+  'chú thích mở': '<!-- '.repeat(1e5),
+  '2MB khoảng trắng': ' '.repeat(2 * 1024 * 1024),
+  '2MB khoảng trắng + xuống dòng': ' '.repeat(2 * 1024 * 1024) + '\n',
+  'dòng trống rồi chữ': '<div><br></div>\n'.repeat(2e4) + 'x'
+};
+for (const [k, v] of Object.entries(PAYLOADS)) {
+  timed('hiệu năng sanitizeHtml: ' + k, () => { T.sanitizeHtml(v); });
+  timed('hiệu năng textToHtml/markdownToHtml/htmlToMarkdown: ' + k, () => { T.textToHtml(v); T.markdownToHtml(v); T.htmlToMarkdown(v); });
+}
+timed('hiệu năng markdown inline lặp', () => { T.markdownToHtml('<u>'.repeat(3e5) + '\n' + '!['.repeat(5e5) + '\n' + '<u>'.repeat(1e3)); });
+t('tokenizer: thẻ hợp lệ sau thẻ hỏng vẫn được giữ', () => {
+  assert.strictEqual(T.sanitizeHtml('<b "x <i>y</i>'), '&lt;b "x <i>y</i>');
+  assert.strictEqual(T.sanitizeHtml('<div title=">">a</div>'), '<div>a</div>');
+  assert.strictEqual(T.sanitizeHtml('<SCRIPT>x</Script >y'), 'y');
+  assert.strictEqual(T.sanitizeHtml('a<button>x</button>b<heading>c'), 'abc');
+});
+t('html quá 2MB: cắt ảnh, còn quá thì bỏ note', () => {
+  const img = '<img src="data:image/png;base64,' + 'A'.repeat(T.MAX_HTML) + '">';
+  const a = T.sanitizeNote({ id: 'big', html: '<div>chữ</div>' + img });
+  assert.strictEqual(a.html, '<div>chữ</div>');
+  assert.strictEqual(T.sanitizeNote({ id: 'big2', html: '<div>' + 'x'.repeat(T.MAX_HTML) + '</div>' }), null);
+});
+t('sanitizeNote từ chối id __proto__; mergeImported cấp id mới', () => {
+  for (const id of ['__proto__', 'constructor', 'prototype']) assert.strictEqual(T.sanitizeNote({ id }), null);
+  const m = T.mergeImported([], [note({ id: '__proto__' })], newId);
+  assert.strictEqual(m.added.length, 1); assert.ok(!/^__/.test(m.added[0].id));
+});
+t('parseImportJson giới hạn 5000 note, đọc noteMeta', () => {
+  assert.throws(() => T.parseImportJson(JSON.stringify({ notes: new Array(5001).fill({ id: 'x' }) })), /5000/);
+  assert.deepStrictEqual(T.parseImportJson(JSON.stringify({ notes: [], noteMeta: { a: { zoom: 2 } } })).noteMeta, { a: { zoom: 2 } });
+});
+t('sanitizeReminder giữ repeat; nhập reminder quá hạn -> done, lặp thì không', () => {
+  const rep = { freq: 'daily' };
+  const r = T.sanitizeNote({ id: 'x', reminder: { due: 9000, repeat: rep } }, { now: 5000 }).reminder;
+  assert.deepStrictEqual(r.repeat, rep);
+  const past = T.sanitizeNote({ id: 'x', reminder: { due: 1000 } }, { now: 5000, pastDone: true }).reminder;
+  assert.strictEqual(past.done, true);
+  const pastRep = T.sanitizeNote({ id: 'x', reminder: { due: 1000, repeat: rep } }, { now: 5000, pastDone: true }).reminder;
+  assert.strictEqual(pastRep.done, false); assert.strictEqual(pastRep.fired, true);
+  assert.strictEqual(T.sanitizeNote({ id: 'x', reminder: { due: 1000 } }, { now: 5000 }).reminder.done, false);
+});
+t('noteMeta: xuất, ánh xạ id mới khi nhập, alarm noteId', () => {
+  const j = T.buildExportJson([], { list: [], memos: [], noteMeta: { a: { zoom: 2 } } }, 0);
+  assert.deepStrictEqual(j.noteMeta, { a: { zoom: 2 } });
+  const cur = [T.sanitizeNote(note({ id: 'a', html: '<div>khác</div>' }))];
+  const m = T.mergeImported(cur, [note({ id: 'a', reminder: { due: 9000 } })], newId);
+  const nid = m.added[0].id;
+  assert.notStrictEqual(nid, 'a');
+  const meta = {};
+  T.applyNoteMeta(meta, { a: { zoom: 2, locked: true, repeat: { freq: 'weekly', byDay: [1] } }, zz: { zoom: 2 } }, m.idMap, m.added);
+  assert.deepStrictEqual(Object.keys(meta), [nid]);
+  assert.strictEqual(meta[nid].zoom, 2); assert.strictEqual(meta[nid].locked, true); assert.strictEqual(meta[nid].repeat.freq, 'weekly');
+  assert.strictEqual(m.added[0].reminder.repeat.freq, 'weekly');
+  const B = require('../../alarms/box.js');
+  const box = { list: [], memos: [] };
+  T.mergeAlarmBox(box, { alarms: [{ id: 'al', time: '08:00', noteId: 'a' }], memos: [] }, { normAlarm: B.normAlarm, normMemo: B.normMemo }, Date.now(), m.idMap);
+  assert.strictEqual(box.list[0].noteId, nid);
+});
+t('planRestore: giữ repeat khi ghi đè, quá hạn không réo ngay', () => {
+  const rep = { freq: 'daily' };
+  const cur = [T.sanitizeNote(note({ id: 'b', html: '<div>sau</div>', reminder: { due: 9000, repeat: rep } }))];
+  const bk = [note({ id: 'b', html: '<div>trước</div>', reminder: { due: 1000 } })];
+  const p = T.planRestore(bk, cur, null, 5000).overwrite[0].patch.reminder;
+  assert.deepStrictEqual(p.repeat, rep);
+  assert.strictEqual(p.fired, true); assert.strictEqual(p.preFired, true);
+});
+
 console.log('\n' + n + ' ca đạt');

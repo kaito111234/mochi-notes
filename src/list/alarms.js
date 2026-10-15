@@ -165,6 +165,19 @@
     f.alDateWrap.hidden = v !== 'once';
     f.alDowWrap.hidden = v !== 'weekly';
     f.alMonWrap.hidden = v !== 'monthly';
+    keepHint();
+  }
+  const isCustomRep = r => !!r && (r.freq === 'hourly' || (r.interval && r.interval > 1));
+  function keepHint() {
+    let h = $('alKeep');
+    if (!h) {
+      h = el('p', 'hint'); h.id = 'alKeep'; h.hidden = true;
+      f.alRep.insertAdjacentElement('afterend', h);
+    }
+    const orig = f.alForm && f.alForm._orig;
+    const show = isCustomRep(orig) && !dirtyRep;
+    h.hidden = !show;
+    h.textContent = show ? 'Giữ nguyên: ' + describe({ repeat: orig }) : '';
   }
   function syncSoundUi() {
     f.alSndCustom.hidden = segVal(f.alSnd) !== 'custom';
@@ -210,7 +223,7 @@
     if (![...f.alSnooze.options].some(o => o.value === sm)) { const o = el('option', null, sm + ' phút'); o.value = sm; f.alSnooze.appendChild(o); }
     f.alSnooze.value = sm;
     f.alDel.hidden = !alarm; f.alTest.hidden = !alarm;
-    f.alForm._orig = a.repeat || null;
+    f.alForm._orig = (p.repeat !== undefined ? p.repeat : a.repeat) || null;
     syncRepeatUi(); syncSoundUi();
     openSheet(true);
     setTimeout(() => f.alH.focus({ preventScroll: true }), 30);
@@ -223,6 +236,9 @@
     if (kind === 'once') {
       out.repeat = null;
       out.date = f.alDate.value || defaultDate();
+      const [yy, mo, dd] = out.date.split('-').map(Number);
+      const [hh, mi] = out.time.split(':').map(Number);
+      if (new Date(yy, mo - 1, dd, hh, mi).getTime() <= Date.now()) { L.toast('Giờ này đã qua', true); return null; }
     } else {
       out.date = '';
       if (kind === 'daily') out.repeat = { freq: 'daily' };
@@ -233,7 +249,10 @@
         out.repeat = { freq: 'weekly', byDay: d };
       } else if (kind === 'monthly') out.repeat = { freq: 'monthly', byMonthDay: +f.alMonDay.value || 1 };
       const orig = f.alForm._orig;
-      if (orig && !dirtyRep && (orig.freq === 'hourly' || (orig.interval && orig.interval > 1))) out.repeat = orig;
+      if (isCustomRep(orig) && orig.freq !== 'hourly') {
+        if (!dirtyRep) out.repeat = orig;
+        else if (orig.freq === out.repeat.freq) out.repeat = Object.assign({}, orig, out.repeat); // giữ interval/anchor, lấy byDay/byMonthDay mới
+      } else if (orig && orig.freq === 'hourly' && !dirtyRep) out.repeat = orig;
     }
     const sound = segVal(f.alSnd) || 'chime';
     out.sound = sound;
@@ -297,6 +316,7 @@
     if (!text) return;
     const q = quickParse(text);
     if (!q.time) { L.toast('Chưa hiểu giờ trong câu này. Ví dụ: 6h30 sáng dậy tập', true); return; }
+    if (q.repeat && q.repeat.freq === 'hourly') { L.toast('Báo thức chưa hỗ trợ lặp theo giờ', true); return; }
     inp.value = '';
     openForm(null, { label: q.label, time: q.time, repeat: q.repeat || null, date: q.date || null });
   }
@@ -334,7 +354,9 @@
     f.alDows.addEventListener('click', e => {
       const b = e.target.closest('.dow'); if (!b) return;
       b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+      dirtyRep = true; keepHint();
     });
+    f.alMonDay.addEventListener('change', () => { dirtyRep = true; keepHint(); });
     f.alDate.addEventListener('input', () => { dirtyDate = true; });
     const onTime = () => { if (!editing && !dirtyDate) f.alDate.value = defaultDate(); };
     [f.alH, f.alM].forEach(i => {

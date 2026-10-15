@@ -116,8 +116,17 @@
   function alarmNextAt(alarm, now) {
     if (!alarm || alarm.enabled === false) return null;
     let repeat = alarm.repeat || null;
-    if (repeat && repeat.anchor == null && Number.isFinite(alarm.createdAt) && (repeat.interval > 1 || repeat.freq === 'hourly')) {
-      repeat = Object.assign({}, repeat, { anchor: alarm.createdAt });
+    if (repeat && repeat.anchor == null) {
+      // thiếu byMonthDay/byDay thì ngày gốc lấy từ date || createdAt (không trôi theo afterMs: 31/1 -> 28/2 -> 28/3...)
+      const missing = (repeat.freq === 'monthly' && !Number.isInteger(repeat.byMonthDay)) ||
+        (repeat.freq === 'weekly' && !(Array.isArray(repeat.byDay) && repeat.byDay.length));
+      let anchor = null;
+      if (missing) {
+        const dt = alarm.date ? parseDate(alarm.date) : null;
+        if (dt) anchor = new Date(dt.y, dt.m, dt.d, 12).getTime();
+      }
+      if (anchor == null && Number.isFinite(alarm.createdAt) && (missing || repeat.interval > 1 || repeat.freq === 'hourly')) anchor = alarm.createdAt;
+      if (anchor != null) repeat = Object.assign({}, repeat, { anchor });
     }
     return nextOccurrence({ repeat, time: alarm.time, date: alarm.date }, now);
   }
