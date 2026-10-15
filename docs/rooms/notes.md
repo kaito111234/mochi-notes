@@ -115,3 +115,7 @@ API đã có trong preload (khối notes), chi tiết `docs/rooms/notes/API2.md`
 - Nhiều nhắc: `note.reminders[]` (`{id, due, done, fired, repeat?, title?}`); `note.reminder` vẫn là nhắc chính (chip cũ chạy nguyên). Panel nhắc nên liệt kê từng mục với Xong `mochi.notes2.doneItem(id, rid)`, Hoãn `snoozeItem(id, rid, phút)`, Sửa `setReminderItem(id, rid|null, {due, lead, repeat, title})`, Xoá `removeReminderItem(id, rid)`.
 - Gợi ý `checklist` ghi ra text dạng `- [ ] …` (mỗi dòng một `<div>`) để chế độ checklist của paper nhận. Note có ảnh → `checklist`/`split` trả `ok:false` (không làm mất ảnh).
 - Không cần nạp `understand` trong renderer; nếu muốn xem trước không qua IPC: `<script>` theo thứ tự `shared/parse.js`, `shared/recur.js`, `shared/understand/entities.js`, `shared/understand/index.js` → `window.MochiUnderstand.understand(text)`.
+
+## ĐỢT 2B — chủ dự án bổ sung
+1. **Thùng rác note** (xoá mềm): `ctx.notes.trash(id)`, `ctx.notes.restore(id)`, tự xoá hẳn sau 30 ngày; tab/khu "Thùng rác" trong danh sách. Xoá thường cũng vào thùng rác.
+2. **Note hết hạn**: `ctx.notes.expiredCandidates()` → note đang dán mà (a) mọi nhắc đã Xong, hoặc (b) quá hạn > 24 giờ chưa xong, hoặc (c) checklist đã tick hết. Phát `note:expired {noteId, reason}` (tối đa 1 lần/note/ngày) để bé tới hỏi dọn.
