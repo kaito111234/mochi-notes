@@ -1,6 +1,7 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 # Manifest locale (file 3/3)
 PackageIdentifier: Joiha.MochiNotes
-PackageVersion: 0.9.4
+PackageVersion: 0.10.0
 PackageLocale: en-US
 Publisher: Joiha
 PublisherUrl: https://github.com/kaito111234
@@ -16,5 +17,6 @@ Tags:
   - reminder
   - desktop-pet
   - electron
+ReleaseNotesUrl: https://github.com/kaito111234/mochi-notes/releases/tag/v0.10.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

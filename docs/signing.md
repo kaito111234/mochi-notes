@@ -48,7 +48,7 @@ Hiện workflow build + publish chung một lệnh (`electron-builder --publish 
 Cài qua trình quản lý gói giúp người dùng ít gặp SmartScreen hơn (tải bằng winget vẫn kiểm hash) và để AI/script cài tự động.
 
 ### winget (microsoft/winget-pkgs)
-Mẫu manifest: `packaging/winget/*.yaml` (3 file). Quy trình:
+Mẫu manifest: `packaging/winget/*.yaml` (3 file). Hướng dẫn chi tiết cách gửi PR: `docs/winget.md`. Tóm tắt:
 1. Phát hành Release trước, lấy SHA256 trong `SHA256SUMS.txt` → điền vào file installer (VIẾT HOA).
 2. Cập nhật `PackageVersion` và URL trong cả 3 file.
 3. Kiểm thử cục bộ: `winget validate packaging\winget` rồi `winget install --manifest packaging\winget` (cần bật `winget settings --enable LocalManifestFiles`).

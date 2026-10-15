@@ -80,6 +80,7 @@
       "artifactName": "MochiNotes-${version}-${arch}.${ext}"
     },
     "nsis": {
+      "buildUniversalInstaller": false,
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,

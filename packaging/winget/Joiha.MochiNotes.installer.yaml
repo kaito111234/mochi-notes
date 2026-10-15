@@ -1,18 +1,20 @@
-# Manifest installer (file 2/3). Thay SHA256 bang gia tri trong SHA256SUMS.txt cua Release (viet HOA).
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+# Manifest installer (file 2/3). SHA256 lay tu SHA256SUMS.txt cua Release (viet HOA).
 PackageIdentifier: Joiha.MochiNotes
-PackageVersion: 0.9.4
+PackageVersion: 0.10.0
 InstallerType: nullsoft
 Scope: user
 InstallModes:
   - interactive
   - silent
 UpgradeBehavior: install
+ReleaseDate: 2026-10-15
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/kaito111234/mochi-notes/releases/download/v0.9.4/MochiNotes-Setup-0.9.4-x64.exe
-    InstallerSha256: REPLACE_WITH_UPPERCASE_SHA256_X64
+    InstallerUrl: https://github.com/kaito111234/mochi-notes/releases/download/v0.10.0/MochiNotes-Setup-0.10.0-x64.exe
+    InstallerSha256: 53B08C69DADE0E2BE0635317D109A8748F595B7C6EA599A8D4BF6533CF8CF2F7
   - Architecture: arm64
-    InstallerUrl: https://github.com/kaito111234/mochi-notes/releases/download/v0.9.4/MochiNotes-Setup-0.9.4-arm64.exe
-    InstallerSha256: REPLACE_WITH_UPPERCASE_SHA256_ARM64
+    InstallerUrl: https://github.com/kaito111234/mochi-notes/releases/download/v0.10.0/MochiNotes-Setup-0.10.0-arm64.exe
+    InstallerSha256: 50B40CC28C35C7D3E5BBF7A6BB80608C8EB3CDA52293238582E90AEBA5191E06
 ManifestType: installer
 ManifestVersion: 1.6.0

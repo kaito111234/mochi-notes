@@ -41,6 +41,8 @@ jobs:
           node tools/check-pack.js
 
       # Build NSIS x64 + arm64, portable x64, zip x64 (cau hinh trong package.json -> build.win.target)
+      # nsis.buildUniversalInstaller=false: chi tao Setup rieng tung arch, khong tao bo cai gop x64+arm64.
+      # latest.yml liet ke ca hai; electron-updater chon file co ten chua process.arch.
       # --publish always: upload len GitHub Release kem latest.yml + .blockmap cho tu cap nhat.
       - name: Build va publish
         run: npx electron-builder --win --publish always
