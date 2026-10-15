@@ -243,7 +243,7 @@
 
   /* ---------- tách mệnh đề ---------- */
   const WORD_SEP = /(?<=^|\s)(?:và|va|rồi|roi|rùi|xong|sau đó|sau do)(?=\s|$)/giu;
-  const FILL = new Set(['luc', 'vao', 'khoang', 'tam', 'la', 'thi', 'nhe', 'nha', 'ngay', 'buoi', 'nay', 'va', 'roi']);
+  const FILL = new Set(['luc', 'vao', 'khoang', 'la', 'thi', 'nhe', 'nha', 'ngay', 'buoi', 'nay', 'va', 'roi']);
   function hasTimeWord(part) {
     if (ownTime(part)) return true;
     const f = fold1(part), lo = lower1(part);
@@ -443,12 +443,17 @@
       contentLines.push(i);
       if (body.trim().length > 90) longLine = true;
       if (!QUICK.test(fold1(body))) continue; // không chữ số/buổi/giờ -> chắc chắn không có giờ
+      let lineDate = header;
       for (const g of splitClauses(body)) {
         if (items.length >= MAX_ITEMS) break;
         const clause = body.slice(g.s, g.e).trim();
         if (!clause) continue;
-        const it = makeItem(clause, { now, nowD, header, line: i });
-        if (it) { it.priority = linePrio(ln, i); items.push(it); }
+        const it = makeItem(clause, { now, nowD, header: lineDate, line: i });
+        if (it) {
+          it.priority = linePrio(ln, i); items.push(it);
+          // ngày riêng của mệnh đề này áp cho các mệnh đề sau trong cùng dòng không có ngày riêng
+          if (!it.repeat && ownDate(fold1(nz(clause)), lower1(clause), nowD)) { const dd = new Date(it.due); lineDate = new Date(dd.getFullYear(), dd.getMonth(), dd.getDate()); }
+        }
       }
     }
     if (clItems.length >= 2 || hasBox) {

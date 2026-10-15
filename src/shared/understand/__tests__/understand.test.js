@@ -83,9 +83,21 @@ table([
   ['họp 11h, gọi khách', [['Họp, gọi khách', '15/10 11:00']]],
   ['mua sữa và trứng', []],
   ['11h, họp nhóm, 14h, gọi khách', [['Họp nhóm', '15/10 11:00'], ['Gọi khách', '15/10 14:00']]],
-  ['mai 9h họp, 14h gọi khách', [['Họp', '16/10 09:00'], ['Gọi khách', '15/10 14:00']]],
+  ['mai 9h họp, 14h gọi khách', [['Họp', '16/10 09:00'], ['Gọi khách', '16/10 14:00']]],
   ['mua 1,5 kg cam lúc 17h', [['Mua 1,5 kg cam', '15/10 17:00']]],
   ['họp 11h, đi chợ 17h, nấu cơm 18h30', [['Họp', '15/10 11:00'], ['Đi chợ', '15/10 17:00'], ['Nấu cơm', '15/10 18:30']]],
+]);
+
+/* ---- ngày áp cho các mệnh đề sau trong cùng một dòng ---- */
+table([
+  ['Mai: 7h đón con, 10h nộp báo cáo cho chị Hoa gấp', [['Đón con', '16/10 07:00'], ['Nộp báo cáo cho chị Hoa gấp', '16/10 10:00']]],
+  ['thứ 6 họp 9h, 14h gặp khách', [['Họp', '16/10 09:00'], ['Gặp khách', '16/10 14:00']]],
+  ['mai 8h đi khám, 15h họp', [['Đi khám', '16/10 08:00'], ['Họp', '16/10 15:00']]],
+  ['họp 11h hôm nay, mai 14h gặp khách', [['Họp', '15/10 11:00'], ['Gặp khách', '16/10 14:00']]],
+  ['T6: 8h họp và 10h gọi khách', [['Họp', '16/10 08:00'], ['Gọi khách', '16/10 10:00']]],
+  ['mai 8h đi khám, thứ 7 9h đá bóng, 11h tắm', [['Đi khám', '16/10 08:00'], ['Đá bóng', '17/10 09:00'], ['Tắm', '17/10 11:00']]],
+  ['Mai:\n7h đón con, 10h họp\n15h gọi khách', [['Đón con', '16/10 07:00'], ['Họp', '16/10 10:00'], ['Gọi khách', '16/10 15:00']]],
+  ['họp 14h, gọi khách 16h', [['Họp', '15/10 14:00'], ['Gọi khách', '15/10 16:00']]],
 ]);
 
 /* ---- nhiều dòng + ngày chung ---- */

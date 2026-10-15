@@ -176,7 +176,8 @@ function init(ctx) {
         .map(r => ({ title: r.title, due: r.due }));
       const title = S.noteTitle(note.text) || 'ghi chú';
       const def = L.buildReply(title, upcoming, now);
-      const reply = pickLine({ title, time: upcoming[0] ? L.hm(upcoming[0].due) : '', count: upcoming.length }, def);
+      // Có nhắc: luôn đọc lại giờ cụ thể (câu persona chung chung dễ làm mất thông tin giờ).
+      const reply = upcoming.length ? def : pickLine({ title, time: '', count: 0 }, def);
       const ins = understandText(note.text, now);
       return { ok: true, note, insight: ins ? L.buildView(ins, note, now) : null, reply };
     } catch (e) { console.error('[notes] quickCapture', e); return { ok: false, message: 'Không ghi được note' }; }
@@ -187,6 +188,15 @@ function init(ctx) {
   const h = (ch, fn) => ipcMain.handle(ch, (_e, ...a) => { try { return fn(...a); } catch (e) { console.error('[notes] ' + ch, e); return fail('Có lỗi xảy ra'); } });
   h('notes2:insight', v => insight(v));
   h('notes2:applySuggestion', (id, sid) => applySuggestion(id, sid));
+  // Thử không màn hình: MOCHI_DEV_CAPTURE="câu 1|câu 2" -> ghi nhanh lúc khởi động, in kết quả.
+  if (process.env.MOCHI_DEV_CAPTURE) {
+    setTimeout(() => {
+      for (const t of process.env.MOCHI_DEV_CAPTURE.split('|')) {
+        const r = quickCapture(t, { source: 'pet' });
+        console.log('[notes] dev capture', JSON.stringify({ reply: r.reply, reminders: r.note && r.note.reminders.map(x => x.title) }));
+      }
+    }, 3000);
+  }
   h('notes2:quickCapture', (text, o) => quickCapture(text, o && typeof o === 'object' ? { source: o.source } : {}));
 }
 
