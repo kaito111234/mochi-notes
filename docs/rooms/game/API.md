@@ -199,3 +199,6 @@ MochiPreview.render(container, worn, catalog, { size: 220, mode: 'normal' })   /
 ```
 Id tab: `wardrobe`, `gacha`, `shop`, `quests`, `stats`. CSS mỗi tab chỉ dùng lớp có tiền tố riêng (`.wd-`, `.gc-`, `.sh-`, `.qs-`, `.st-`); token màu/thành phần chung (`--r-common`, `--r-rare`, `--r-epic`, `--r-legend`, `.btn`, `.btn-primary`, `.card`, `.chip`, `.coin`) do `room.css` định nghĩa.
 Xem thử không cần Electron: `python3 -m http.server <cổng>` ở gốc repo, mở `http://localhost:<cổng>/src/game/test/preview.html` (nạp `test/mock-api.js` giả lập `window.mochi.game` + catalog qua fetch).
+
+## Đợt 3 (xem `API-dot3.md`)
+Thêm `api.game.checkin/buy/feedBag/claimSet`, View `checkin/bag/album`, `quests.weekly` 3 mục, `game:reward` chỉ phát khi `candy > 0` (kèm `count`), tab `album`, `catalog.sets`. Ngăn `game` thêm `checkin`, `inventory.food`, `album.claimed`, `flags.captureSeen`, `counters.tidy/captures` (migrate trong `logic/box.js`).
