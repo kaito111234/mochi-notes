@@ -29,7 +29,7 @@ function bellShow(bones, file, dx, dy) {
   const loc = ap(inv(Mb), W);                                   // vị trí đích trong hệ xương
   return { id: 'bell', file, bone: 'hand_r', x: r2(loc[0] - rc[0]), y: r2(loc[1] - rc[1]), r: r2(-th), _c: W };
 }
-const BELL_W = { dx: 22, dy: -38 };
+const BELL_W = { dx: 41, dy: -44 };
 
 function lerpBones(A, B, t) {
   const out = {};
@@ -57,17 +57,17 @@ function loopFrame(i) {
     head: { r: r2(-2 * s), y: r2(-0.5 * s) },
     hair_back: { r: r2(5 * s) }, sidelock_l: { r: r2(-6 * s) }, sidelock_r: { r: r2(-5 * s) },
     ahoge: { r: r2(10 * s) }, ribbon: { r: r2(-7 * s) },
-    upper_arm_r: { r: r2(-60 + 3 * s) }, forearm_r: { r: r2(-90 + 10 * s) }, hand_r: { r: r2(-10 * s) },
+    upper_arm_r: { r: r2(-52 + 3 * s) }, forearm_r: { r: r2(-100 + 10 * s) }, hand_r: { r: r2(-10 * s) },
     upper_arm_l: { r: r2(62 - 4 * s) }, forearm_l: { r: r2(88 - 6 * s) }, hand_l: { r: r2(5 * s) },
   };
   const bs = bellShow(bones, sh ? 'props/bell_shake.svg' : 'props/bell.svg', BELL_W.dx, BELL_W.dy);
-  const bx = bs._c[0], by = bs._c[1]; delete bs._c;
+  const bx = bs._c[0], by = bs._c[1]; delete bs._c; if (process.env.RDBG) console.error("bell", i, bx.toFixed(1), by.toFixed(1));
   return {
     ms: 100, face: 'shout', bones, swap: { hand_r: 'fist', hand_l: 'fist' },
     z: { hand_r: 205 },
     show: [
       bs,
-      { id: 'ring_fx', file: sh ? 'fx/ring_lines2.svg' : 'fx/ring_lines.svg', bone: 'none', x: bx - 248, y: by - 230, z: 118 },
+      { id: 'ring_fx', file: sh ? 'fx/ring_lines2.svg' : 'fx/ring_lines.svg', bone: 'none', x: bx - 262, y: by - 230, z: 118 },
     ],
   };
 }
