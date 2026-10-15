@@ -3,7 +3,7 @@
 // nhận tin 'pet:msg' (lọc theo danh sách cho phép) và phát tới người nghe actor.on(type, fn).
 const path = require('path');
 const { pathToFileURL } = require('url');
-const { BrowserWindow, ipcMain } = require('electron');
+const { BrowserWindow, ipcMain, screen } = require('electron');
 
 // Các loại tin renderer -> main được phép (docs/rooms/core/ARCH.md mục 2).
 const ALLOWED = new Set(['ready', 'packReady', 'animEnd', 'lift', 'drop', 'interact', 'button', 'sayEnd', 'noteClick', 'hover']);
@@ -140,10 +140,41 @@ function createWindow(core) {
     emit(type, data);
   }
 
+  let ignoring = true;
   ipcMain.on('pet:ignore', (e, v) => {
-    if (alive() && e.sender === win.webContents) win.setIgnoreMouseEvents(!!v, { forward: true });
+    if (process.env.MOCHI_PET_LOG) console.log('[pet:ignore]', v);
+    if (alive() && e.sender === win.webContents) { ignoring = !!v; win.setIgnoreMouseEvents(ignoring, { forward: true }); }
   });
-  ipcMain.on('pet:msg', (e, type, data) => onMsg(e.sender, String(type), data));
+  // Gỡ lỗi/nghiệm thu: MOCHI_PET_CLICK="x,y,ms[;x,y,ms...]" — sau ms (tính từ khi tạo module) giả lập một cú click chuột
+  // trái tại toạ độ (x,y) trong cửa sổ bé, đi qua đường sự kiện DOM thật của renderer (xvfb không di chuột được).
+  if (process.env.MOCHI_PET_CLICK) {
+    for (const part of String(process.env.MOCHI_PET_CLICK).split(';')) {
+      const [x, y, ms] = part.split(',').map(Number);
+      if (![x, y, ms].every(Number.isFinite)) continue;
+      setTimeout(() => {
+        if (!alive()) return;
+        const wc = win.webContents;
+        win.setIgnoreMouseEvents(false);
+        wc.sendInputEvent({ type: 'mouseMove', x, y });
+        wc.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1 });
+        setTimeout(() => { if (alive()) wc.sendInputEvent({ type: 'mouseUp', x, y, button: 'left', clickCount: 1 }); }, 60);
+      }, ms);
+    }
+  }
+  // Linux (X11) không hỗ trợ forward chuột khi đang click xuyên: main dò con trỏ ~12 lần/s và hỏi renderer
+  // điểm đó có trúng thân bé/bong bóng không (op 'pointer'). Windows/macOS dùng forward gốc, không có timer này.
+  if (process.platform !== 'win32' && process.platform !== 'darwin') {
+    setInterval(() => {
+      if (!ignoring || !ready || !alive() || !win.isVisible()) return;
+      const c = screen.getCursorScreenPoint(), b = win.getBounds();
+      if (c.x < b.x || c.y < b.y || c.x >= b.x + b.width || c.y >= b.y + b.height) return;
+      rawSend({ op: 'pointer', x: c.x - b.x, y: c.y - b.y });
+    }, 80);
+  }
+  ipcMain.on('pet:msg', (e, type, data) => {
+    if (process.env.MOCHI_PET_LOG) console.log('[pet:msg]', type, JSON.stringify(data).slice(0, 120));
+    onMsg(e.sender, String(type), data);
+  });
 
   return {
     ensure, cmd, on, emit, relayout, sendSettings, computeLayout,

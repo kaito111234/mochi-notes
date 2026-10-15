@@ -288,6 +288,12 @@
         placeNote(); placeBubble(); break;
       case 'say': say(c); break;
       case 'hush': hush(); break;
+      case 'pointer': { // chỉ Linux: main dò con trỏ thay cho forward chuột
+        if (faded) break;
+        const el = document.elementFromPoint(c.x, c.y);
+        if (overUi(el) || overChar(c.x, c.y)) { setIgnore(false); setHover(true); }
+        break;
+      }
       case 'note': setNote(c.note); break;
       case 'sound': sound(c.name); break;
       case 'shake': shaker.classList.toggle('shake', !!c.on); break;
