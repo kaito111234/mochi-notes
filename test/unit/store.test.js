@@ -28,7 +28,10 @@ test('nạp lại dữ liệu hợp lệ nguyên vẹn (vòng đi vòng về, c�
   assert.strictEqual(s.isFirstRun, false);
   assert.strictEqual(s.notes.length, 1);
   const n = s.notes[0];
-  assert.deepStrictEqual(n, good('n_1', { text: 'Họp 3h chiều ở phòng 302 ✓', reminder: { due: 123456, lead: 600000, intent: 'meet', auto: false, preFired: true, fired: false, done: false } }));
+  // Đặc tả Đợt 2 (01-data.md, commit 70ebdd3): normalizeNote thêm remindMuted:[] + reminders[] (nguồn sự thật);
+  // reminder = primary, được cấp id 'r1' khi migrate. Đã cập nhật kỳ vọng theo đặc tả mới (không phải lỗi).
+  const rem = { id: 'r1', due: 123456, lead: 600000, intent: 'meet', auto: false, preFired: true, fired: false, done: false };
+  assert.deepStrictEqual(n, good('n_1', { text: 'Họp 3h chiều ở phòng 302 ✓', reminder: rem, reminders: [rem], remindMuted: [] }));
   assert.strictEqual(s.settings.sound, false);
   assert.strictEqual(s.settings.glass, true);
 });
@@ -77,7 +80,8 @@ test('reminder: due sai kiểu -> null; lead âm -> 0; trường thiếu có m�
   const by = id => s.notes.find(n => n.id === id).reminder;
   assert.strictEqual(by('a'), null);
   assert.strictEqual(by('b'), null);
-  assert.deepStrictEqual(by('c'), { due: 1000, lead: 0, intent: 'task', auto: true, preFired: false, fired: false, done: false });
+  // Đợt 2: migrate reminder -> reminders[] cấp id 'r1' cho nhắc duy nhất (đặc tả mới, có chủ ý).
+  assert.deepStrictEqual(by('c'), { id: 'r1', due: 1000, lead: 0, intent: 'task', auto: true, preFired: false, fired: false, done: false });
   assert.deepStrictEqual(by('d').repeat, { freq: 'weekly', interval: 2, byDay: [1, 3], anchor: 5 });
   assert.strictEqual(by('e').repeat, undefined);
   assert.strictEqual(by('f'), null);
@@ -90,22 +94,30 @@ test('trạng thái reminder đã báo/xong được giữ qua nạp lại', () 
   assert.deepStrictEqual([r.auto, r.preFired, r.fired, r.done], [false, true, true, true]);
 });
 
-test('file hỏng JSON: dùng mặc định, giữ .bak, không ném lỗi', () => {
+// Đặc tả mới (01-data.md "Chống mất dữ liệu", commit 70ebdd3): KHÔNG còn mochi-data.json.bak.
+// File hỏng -> cất bản hỏng thành mochi-data.corrupt-YYYYMMDD-HHMMSS.json (store.corruptCopy); có bản sao lưu hợp lệ thì khôi phục.
+const corruptFiles = dir => fs.readdirSync(dir).filter(f => /^mochi-data\.corrupt-\d{8}-\d{6}(-\d+)?\.json$/.test(f));
+test('file hỏng JSON (không có sao lưu): dùng mặc định, cất bản hỏng corrupt-*.json, không ném lỗi', () => {
   const dir = mk();
   put(dir, '{"notes": [ {"id": "n_1" ');
   const s = createStore(dir);
   assert.deepStrictEqual(s.notes, []);
-  assert.ok(fs.existsSync(path.join(dir, 'mochi-data.json.bak')));
-  assert.strictEqual(fs.readFileSync(path.join(dir, 'mochi-data.json.bak'), 'utf8'), '{"notes": [ {"id": "n_1" ');
+  assert.strictEqual(s.recoveredFrom, null);
+  const c = corruptFiles(dir);
+  assert.strictEqual(c.length, 1);
+  assert.strictEqual(fs.readFileSync(path.join(dir, c[0]), 'utf8'), '{"notes": [ {"id": "n_1" ');
+  assert.strictEqual(s.corruptCopy, path.join(dir, c[0]));
 });
 
-test('gốc là mảng / notes không phải mảng: coi là hỏng, có .bak', () => {
+test('gốc là mảng / notes không phải mảng / rỗng: coi là hỏng, cất bản hỏng', () => {
   for (const bad of ['[]', '{"notes": {"a":1}}', 'null', '"x"', '']) {
     const dir = mk();
     put(dir, bad);
     const s = createStore(dir);
     assert.deepStrictEqual(s.notes, [], bad);
-    assert.ok(fs.existsSync(path.join(dir, 'mochi-data.json.bak')), 'bak cho ' + JSON.stringify(bad));
+    const c = corruptFiles(dir);
+    assert.strictEqual(c.length, 1, 'bản hỏng cho ' + JSON.stringify(bad));
+    assert.strictEqual(fs.readFileSync(path.join(dir, c[0]), 'utf8'), bad);
   }
 });
 
@@ -115,14 +127,16 @@ test('file có BOM vẫn đọc được', () => {
   assert.strictEqual(createStore(dir).notes.length, 1);
 });
 
-test('settings: sai kiểu bị bỏ, khoá lạ không lọt vào settings', () => {
+test('settings: khoá đã biết sai kiểu bị bỏ (về mặc định), khoá lạ được giữ', () => {
   const dir = mk();
   put(dir, { notes: [], settings: { sound: 'yes', glass: false, mascotIdle: 1, volume: 9, hack: true } });
   const s = createStore(dir);
   assert.strictEqual(s.settings.sound, true);
   assert.strictEqual(s.settings.glass, false);
   assert.strictEqual(s.settings.mascotIdle, false);
-  assert.ok(!('volume' in s.settings) && !('hack' in s.settings));
+  // Đặc tả mới (01-data.md): khoá lạ của settings được GIỮ NGUYÊN khi ghi lại (phòng khác/bản mới hơn). Cập nhật theo đặc tả.
+  assert.strictEqual(s.settings.volume, 9);
+  assert.strictEqual(s.settings.hack, true);
 });
 
 test('settings là null/mảng không làm hỏng việc nạp notes', () => {

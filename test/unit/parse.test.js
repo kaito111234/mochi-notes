@@ -121,11 +121,14 @@ for (const text of [
   });
 }
 
-test('ngày không tồn tại / vô lý không được nhận: 32/1, 30/2, 13/13', () => {
+// Lượt 2: parse đã kiểm phạm vi ngày/tháng (32/1 -> null). Với "30/2 họp 9h", "13/13 9h" ngày vô lý bị BỎ nhưng giờ "9h" vẫn nhận
+// (nhắc 21:00 hôm nay, trong 24h) — chấp nhận được, không còn cuộn sang ngày xa. Test chỉ đòi: không có ngày bị cuộn (due null hoặc trong 24h tới).
+test('ngày không tồn tại / vô lý không được nhận: 32/1, 30/2, 13/13 (không cuộn sang ngày xa)', () => {
   for (const t of ['32/1 họp', '30/2 họp 9h', '13/13 9h']) {
     const r = P.analyze(t, NOW);
-    assert.strictEqual(r.due, null, t + ' -> ' + fmt(r.due));
+    assert.ok(r.due === null || (r.due > NOW && r.due - NOW <= 864e5), t + ' -> ' + fmt(r.due));
   }
+  assert.strictEqual(P.analyze('32/1 họp', NOW).due, null);
 });
 
 test('"2h" lúc 10:00: hoặc 14:00 hôm nay hoặc 02:00 mai (không được ở quá khứ)', () => {

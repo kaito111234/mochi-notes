@@ -1,73 +1,52 @@
-## unit — tóm tắt
-- Lệnh: `node test/unit/run.js` (chạy mọi `test/unit/*.test.js` lần lượt với TZ=Asia/Ho_Chi_Minh rồi America/New_York; thoát 1 nếu lỗi). Từng file: `TZ=... node --test test/unit/parse.test.js`.
-- Kết quả: 183 test/TZ. Asia/Ho_Chi_Minh: 146 pass, 30 fail, 7 skip (ca DST chỉ chạy ở New_York). America/New_York: 153 pass, 30 fail, 0 skip.
-- File: `stage.test.js` (22 test, xanh hết), `parse.test.js` (~100 ca, 29 đỏ), `store.test.js` (25 test, 1 đỏ), `recur.test.js` (32 test, xanh hết cả hai TZ: DST, cuối tháng, năm nhuận, weekdays).
-- `store.js` không export normalizeNote/normalizeReminder nên test qua nạp file bằng `createStore(thư mục tạm)`. `stage.js` test bằng ctx/actor/Notification giả (không cần Electron), `timeScale` nhỏ.
-- Giờ giả cho parse: Thứ Năm 15/10/2026 10:00 giờ máy (truyền `now` vào `analyze`).
-- Không có lỗi ở stage.js, recur.js, store.js (trừ F-unit-8 Nhẹ). Toàn bộ lỗi nằm ở `src/shared/parse.js` (phòng notes).
+## unit — lượt 2 (main @70ebdd3)
+- Lệnh: `node test/unit/run.js` (mọi `test/unit/*.test.js`, lần lượt TZ=Asia/Ho_Chi_Minh rồi America/New_York; run.js tự quét file mới). Từng file: `TZ=... node --test test/unit/<f>.test.js`.
+- Kết quả: 245 test/TZ. HCM: 226 pass, 12 fail, 7 skip (ca DST chỉ chạy ở New_York). New_York: 233 pass, 12 fail. Hai TZ cho cùng 12 ca đỏ.
+- File: stage (22, xanh), recur (32, xanh), parse (~100), store (25), MỚI `store-recovery.test.js` (18, xanh), MỚI `understand.test.js` (44, 4 đỏ).
+- Lượt 1: 14 đỏ -> lượt 2 phân loại từng ca (dưới). Đã đóng các lỗi lượt 1 phía parse (BUG-003, 004 trừ "nửa đêm", 011 ở parse.analyze, 010 phần lớn).
 
-### F-unit-1: "thứ N tuần sau/tới" bị hiểu thành "N tuần nữa"
-- Mức: Nặng
-- Phòng: notes
-- Tái hiện: `analyze('thứ 6 tuần sau 9h', now)`; test đỏ: `giờ: "thứ 6 tuần sau 9h"`, `"thứ 2 tuần sau 9h"`, `"thứ 4 tuần tới 14h"`.
-- Kỳ vọng: thứ 6 tuần sau = 23/10/2026 09:00. Thực tế: 26/11/2026 (6 tuần sau), mất cả giờ (timed=false) vì nhánh "N tuần sau" bắt trước.
-- Nguyên nhân khả dĩ: src/shared/parse.js:46 regex `(\d+)\s*(...|tuần)\s*(nữa|sau|tới)` khớp "6 tuần sau" trong "thứ 6 tuần sau"; cần loại trường hợp đứng sau "thứ" (lookbehind) hoặc xử lý "thứ N" trước. (Dạng chữ "thứ hai tuần sau" đúng.)
-- Độ chắc: 3/3 lần, cả 2 TZ.
+### 1. Phân loại 14 ca đỏ ban đầu
+| Ca | Kết luận | Xử lý |
+|---|---|---|
+| store: vòng đi vòng về | Đặc tả đổi có chủ ý (01-data.md: thêm `reminders[]`, `remindMuted`, id `r1`) | Cập nhật kỳ vọng, comment lý do |
+| store: reminder due sai kiểu... | Có chủ ý (nhắc duy nhất được cấp id `r1`) | Cập nhật kỳ vọng |
+| store: file hỏng JSON; gốc là mảng | Có chủ ý: không còn `.bak`, thay bằng `mochi-data.corrupt-*.json` + khôi phục `backups/` | Viết lại 2 test theo đặc tả |
+| store: settings khoá lạ | Có chủ ý (01-data.md: khoá lạ được giữ) | Đổi kỳ vọng: giữ khoá lạ, khoá biết sai kiểu vẫn về mặc định |
+| store: trường lạ trên note/reminder | LỖI THẬT còn (F-unit-8, BUG-031) | Giữ đỏ |
+| parse: "nửa tiếng nữa", "nua tieng nua" | LỖI THẬT (null) | Giữ đỏ |
+| parse: "1h30 nữa họp" | LỖI THẬT (13:30 thay vì 11:30) | Giữ đỏ |
+| parse: "20-10 9h" | LỖI THẬT (ra 21:00 hôm nay, mất ngày) | Giữ đỏ |
+| parse: "nửa đêm" | LỖI THẬT (ra 22:00; "12h đêm"/"0h"/"2h đêm" đã đúng) | Giữ đỏ |
+| parse: "đọc 3/4 cuốn sách", "chia 1/2 cái bánh" | LỖI THẬT (ra 3/4/2027, 1/2/2027) | Giữ đỏ |
+| parse: ngày vô lý 32/1, 30/2, 13/13 | Một phần sửa: 32/1 -> null; "30/2 họp 9h", "13/13 9h" ngày bị bỏ nhưng giờ 9h vẫn nhận (21:00 hôm nay), hết cuộn sang ngày xa | Nới kỳ vọng (null hoặc trong 24h), ghi comment; 32/1 vẫn đòi null |
 
-### F-unit-2: Số kèm đơn vị "500g" bị đọc thành giờ 00:00
-- Mức: Nặng (nhắc nhầm từ số thường)
-- Phòng: notes
-- Tái hiện: `analyze('mua 500g thịt', now)` -> due 12:00 hôm nay, timed. `analyze('mua 500g thịt lúc 5h chiều')` -> 12:00 thay vì 17:00. Test đỏ: `không phải giờ: "mua 500g thịt"`, `giờ: "mua 500g thịt lúc 5h chiều"`.
-- Kỳ vọng: không có nhắc / 17:00. Thực tế: "00g" khớp `(\d{1,2})\s*g`.
-- Nguyên nhân khả dĩ: parse.js:62 regex giờ không có biên trái (`(?<!\d)`) và nhận `g` là "giờ".
-- Độ chắc: 3/3.
+### 2. Đối chiếu lỗi cũ
+| Mã | Trạng thái | Chứng cứ |
+|---|---|---|
+| BUG-002 | MỘT PHẦN | "500g", "50-60k", "2-3 lần" hết nhận; "3/4", "1/2" còn thành ngày 2027 (parse.test.js ca 79, 80 đỏ). understand.js thì không nhận (xanh) |
+| BUG-003 | ĐÃ SỬA | "thứ 6 tuần sau 9h" = 23/10 09:00 (xanh) |
+| BUG-004 | MỘT PHẦN | "0h", "12h đêm", "2h đêm" đúng; "nửa đêm" còn sai (22:00) — ca 51 đỏ |
+| BUG-005 | CÒN | "1h30 nữa họp" vẫn 13:30 (ca 8 đỏ) |
+| BUG-009 | MỘT PHẦN | "1 tiếng rưỡi nữa", "sau 5 phút..." đúng; "nửa tiếng nữa" vẫn null (ca 6 đỏ) |
+| BUG-010 | MỘT PHẦN | "hop 3h chieu nay", "thu 6 10h30", "goi khach 2 phut nua", "8 gio toi" đúng; "nua tieng nua" còn null (ca 64 đỏ) |
+| BUG-011 | MỘT PHẦN | parse.analyze: "tối ưu", "sáng tạo", "chiều dài", "năm nay", "16:9" hết nhận. NHƯNG `understand()` (đường Ghi nhanh/gợi ý) còn sinh mục: xem N-unit-1 |
+| BUG-012 | CHƯA KẾT LUẬN ở unit | `analyze` lúc 16:00 vẫn trả due 15:00 (quá khứ) và `understand` không gợi ý remind (đúng API2). Việc chip/nhắc dai có hiện hay không là E2E (scheduler.js:224, 271) |
+| BUG-022 | ĐÃ SỬA | `store-recovery`: ngăn sai kiểu -> mặc định + cất nguyên bản `mochi-data.section-<tên>-*.json` (xanh) |
+| BUG-031 | MỘT PHẦN | khoá lạ của settings đã giữ; trường lạ trên note/reminder vẫn mất (store.test ca "trường lạ" đỏ) |
 
-### F-unit-3: Phân số/khoảng số bị đọc thành ngày
-- Mức: Nặng (nhắc nhầm từ số thường)
-- Phòng: notes
-- Tái hiện: "đọc 3/4 cuốn sách" -> 3/4/2027; "chia 1/2 cái bánh" -> 1/2/2027; "giá 50-60k" -> năm 2031; "tập 2-3 lần mỗi tuần" -> 2/3/2027; "32/1 họp" -> 1/2/2027; "30/2 họp 9h" -> 2/3/2027; "13/13 9h" -> 13/1/2027. Test đỏ: `không phải giờ: ...` và `ngày không tồn tại / vô lý ...`.
-- Kỳ vọng: không nhận (ngày>31/tháng>12/ngày không tồn tại, hoặc số đứng giữa chữ không phải ngày tháng) -> due=null. Thực tế: Date tự cuộn ngày, ra nhắc xa vô nghĩa.
-- Nguyên nhân khả dĩ: parse.js:46-49 không kiểm tra phạm vi ngày/tháng và không kiểm tra Date có khớp lại (new Date(y,m-1,d).getDate()===d).
-- Độ chắc: 3/3.
+### 3. Lỗi mới
+#### N-unit-1: `understand()` coi "tối/sáng/chiều" đứng một mình là giờ -> nhắc rác
+- Mức: Nặng (nhắc sai từ câu thường; Ghi nhanh/bé "ghi giúp" dùng chính hàm này)
+- Phòng: notes (`src/shared/understand/index.js`, PER_ACC/PERIOD_DEFAULT ~dòng 62-70)
+- Tái hiện: `node --test test/unit/understand.test.js` (4 ca đỏ). `understand('tối ưu website')` -> mục "Ưu website" 20:00 + gợi ý `remind:k:uu website`; "sáng tạo nội dung" -> 08:00; "đo chiều dài bàn" -> 15:00; "ưu tiên sáng tạo" -> 08:00.
+- Kỳ vọng: không có mục/gợi ý (như `parse.analyze`, đã không nhận các câu này). "tối nay ăn gì" thì hợp lệ (20:00).
+- Thực tế: tiêu đề còn bị cắt mất chữ ("Ưu website", "Tạo nội dung").
+- Độ chắc: 3/3, hai TZ. Ảnh: không (logic thuần).
 
-### F-unit-4: "0h", "12h đêm", "2h đêm", "nửa đêm" sai giờ
-- Mức: Nặng (sai giờ hẳn)
-- Phòng: notes
-- Tái hiện: `analyze('0h')` -> 12:00 hôm nay (kỳ vọng 00:00 ngày mai). `'12h đêm'` -> 12:00 trưa (kỳ vọng 00:00). `'2h đêm'` -> 14:00 (kỳ vọng 02:00 ngày mai). `'nửa đêm'` -> null (kỳ vọng 00:00 ngày mai). Test đỏ cùng tên.
-- Nguyên nhân khả dĩ: parse.js:76-79 mọi "đêm/khuya" có h<12 đều +12; không xử lý 12h đêm = 0h và đêm 1-5h là rạng sáng; parse.js:84 `h<12 && d+12h>now` đổi "0h" thành 12:00. recur.js:242 xử lý đêm/khuya đúng hơn — nên dùng chung logic.
-- Độ chắc: 3/3.
+### 4. Test mới đã thêm
+- `understand.test.js` (44): nhiều việc/dòng, key ổn định/#2, ngày chung "Mai:"/"Thứ 6:", checklist nhiều ký hiệu, SĐT/tiền/link/email/#thẻ/người/nơi/ưu tiên, gợi ý (remind, remind-all, split, alarm, checklist, call/message/link/email), 18 câu thường mỗi câu một test, phân số, đầu vào rác (null/số/lone surrogate/100KB/5000 dòng/XSS), giới hạn ≤100 mục, entities.js chịu rác, hành vi BUG-012.
+- `store-recovery.test.js` (18): migrate reminder -> reminders[] (id `r1`, cùng tham chiếu primary), reminders[] là nguồn sự thật + sắp xếp, ≤20, id duy nhất/ổn định qua 3 vòng nạp-ghi, remindMuted ≤50; file hỏng -> khôi phục bản `backups/` hợp lệ mới nhất (bỏ bản hỏng), bản hỏng được giữ không ghi đè lần 2, tối đa 5 bản hỏng, bản hỏng không lọt backups/, không sao lưu file hỏng, ngăn sai kiểu cất ra file riêng, ngăn lạ giữ nguyên, chống `__proto__`.
 
-### F-unit-5: "1h30 nữa", "1 tiếng rưỡi nữa", "nửa tiếng nữa", "sau 5 phút" không hiểu / sai giờ
-- Mức: Nặng cho "1h30 nữa họp" (hiểu thành 13:30 thay vì 11:30), Vừa cho các câu còn lại (không nhận ra -> không có nhắc)
-- Phòng: notes
-- Tái hiện: `analyze('1h30 nữa họp')` -> 13:30 (kỳ vọng 11:30). `'1 tiếng rưỡi nữa'` -> null. `'nửa tiếng nữa'` -> null. `'sau 5 phút nhắc tôi gọi mẹ'` -> null (kỳ vọng 10:05).
-- Nguyên nhân khả dĩ: parse.js:46 chỉ khớp `<số> <đơn vị> <nữa|sau|tới>` liền nhau; thiếu dạng "sau N đơn vị", "N giờ M nữa", "rưỡi", "nửa tiếng".
-- Độ chắc: 3/3.
-
-### F-unit-6: Từ thường chứa buổi trong ngày bị coi là giờ (sáng/tối/chiều/nay)
-- Mức: Vừa
-- Phòng: notes
-- Tái hiện: "tối ưu website" -> 20:00 hôm nay; "sáng tạo nội dung" -> 08:00 (hoặc mai); "đo chiều dài bàn" -> 15:00; "kế hoạch năm nay" -> 21:00 hôm nay; "tỷ lệ 16:9" -> 16:09 hôm nay. Tạo nhắc tự động nhầm từ ghi chú bình thường.
-- Kỳ vọng: không có nhắc (hoặc chỉ khi đi cùng giờ/ngày rõ ràng, "tối ưu" không phải buổi tối, "năm nay" không phải "hôm nay").
-- Nguyên nhân khả dĩ: parse.js:65 (`/sáng|trưa|chiều|tối|đêm|khuya/` không có biên từ/ngữ cảnh), parse.js:63 (`/hôm nay| nay /`), parse.js:67 regex giờ nhận `:` cho "16:9".
-- Độ chắc: 3/3.
-
-### F-unit-7: Gõ không dấu không được hiểu (người dùng Việt hay gõ không dấu)
-- Mức: Vừa
-- Phòng: notes
-- Tái hiện: "hop 3h chieu nay" (ra chiều thiếu: 10:00/mai?), "8 gio toi", "thu 6 10h30", "nua tieng nua", "goi khach 2 phut nua", "mai 9h hop" (đúng giờ nhưng intent = task thay vì meet). Test đỏ cùng tên.
-- Kỳ vọng: hiểu như bản có dấu (recur.js đã có strip() không dấu, parse.js thì không).
-- Nguyên nhân khả dĩ: parse.js:41, INTENTS (parse.js:10-18) và các regex chỉ có dấu; nên chuẩn hoá NFD+bỏ dấu như recur.js:170.
-- Độ chắc: 3/3.
-
-### F-unit-8: Trường lạ trên note/reminder bị loại khi nạp-ghi lại
-- Mức: Nhẹ
-- Phòng: notes (normalizeNote/normalizeReminder)
-- Tái hiện: nạp note có `pinned:true`, `reminder.snoozedUntil:99` rồi `save()+flushSync()` -> mất. Test đỏ: `trường lạ trên note/reminder ... không bị mất khi nạp-ghi`.
-- Kỳ vọng: giữ trường chưa biết (bản mới ghi, bản cũ mở lại rồi ghi sẽ làm mất dữ liệu). Hợp đồng 01-data chỉ bảo đảm ngăn lạ cấp cao (test ngăn lạ xanh), nên mức Nhẹ.
-- Nguyên nhân khả dĩ: store.js:29-35 và 41-56 dựng object mới chỉ với trường đã biết.
-
-### Ghi chú (không phải lỗi)
-- Giờ đã qua trong ngày: "họp 9h" lúc 14:00 -> 21:00 cùng ngày (chấp nhận); "9h sáng" lúc 10:00 -> mai 9:00 (đúng). "tối nay 8h" lúc 21:00 hoặc "9h sáng nay" lúc 10:00 trả due trong quá khứ (không assert, nhắc ngay) — nên để phòng notes cân nhắc.
-- stage.js: toàn bộ 22 test xanh (ưu tiên, ngắt/quay lại, ttl, nhắc >=60 không bỏ, cancel, chống trùng alarm/memo, thông báo dự phòng, actor lỗi).
-- recur.js: toàn bộ xanh ở cả hai múi giờ (DST New_York 8/3 và 1/11/2026, 31 hằng tháng, 29/2 nhuận, 2100 không nhuận, weekdays qua cuối tuần/tháng/năm).
+### 5. Ghi chú
+- Giờ đã qua: "họp 9h" lúc 10:00 trong câu nhiều giờ -> 21:00 cùng ngày (lượt 1 đã nêu, chấp nhận).
+- `store.js` vẫn không export `normalizeNote`; test qua `createStore(thư mục tạm)`.
+- `understand.test.js` dùng giờ giả 06:00 để "9h" không bị đẩy sang tối.
