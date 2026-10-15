@@ -131,3 +131,29 @@ _Cập nhật 2026-10-15 (lượt 3). Đợt 2 đã xong từ lượt 2 (xem "Tr
 **Đề xuất cho điều hành (2B)**: `scripts/test-all.js` thêm `src/main/notes/__tests__/trash.test.js`, `expiry.test.js` (cùng danh sách mục A ở trên); `01-data.md` ghi ngăn `trash` (chủ: notes) và `noteMeta[id].expiredDay`.
 **Gửi phòng paper (2B)**: nút xoá trong cửa sổ note gọi `mochi.deleteNote(id)` như cũ — nay là chuyển vào thùng rác, nên đổi chữ xác nhận thành "Chuyển vào thùng rác?" (khôi phục được 30 ngày trong danh sách).
 
+
+---
+## Trạng thái lượt 4 — sửa lỗi QA (Đợt 1/2/2B đã xong từ trước)
+_Cập nhật 2026-10-15. Nhánh `room/notes` = main + 4 commit sửa lỗi._
+
+**Đã xong** (theo `docs/rooms/qa/BUGS.md`)
+- Hiểu giờ (`parse.js`, `understand/`): BUG-002 (phân số 3/4, 1/2 không thành ngày), 003 ("thứ 6 tuần sau 10h30" ở understand), 004 (+"nửa đêm" = 00:00 hôm sau), 005 ("1h30 nữa" = +1:30), 009 ("nửa tiếng nữa", "trong 5 phút", "5 phút sau"), 011 ("tối ưu", "sáng tạo", "chiều dài"), ngày vô lý 30/2, 13/13, 32/1 bị bỏ. Mới: số bằng chữ ("chín giờ", "hai giờ chiều", "mười giờ rưỡi"), "9.30"/"9.30 sáng" (không nhận "1.5kg", "giá 9.30", "v3.10"), "mai mốt" = hạn mềm (+3 ngày, không giờ), "ngày 20" một mình = 09:00 ngày 20 (đã qua → tháng sau). API thêm `P.normNum`.
+- Main notes: BUG-012 (giờ đã qua trong hôm nay → vẫn lưu nhắc `past:true, fired:true`, không kêu, không nhắc dai; `quickCapture.reply` nói "đã qua rồi"), BUG-025 (`clampLead`: còn ít hơn mức báo trước → lead 0), BUG-020 (hiện tất cả theo lô 2 cửa sổ/40ms, huỷ được — `ctx.notes.cancelOpenAll`), BUG-024 (vòng nhắc ngủ tới mốc kế `S.nextWake`, trần 15s, dậy ngay khi có thay đổi note/settings, `resume`, `unlock-screen`; bé bận → nhịp 1s như cũ; rảnh đo 0 tick CPU/10s), BUG-031 (normalizeNote/normalizeReminder giữ trường lạ), BUG-028 (note mẫu xưng tớ/cậu).
+- Báo thức/dặn dò: BUG-013/015 — `placement.petRectFor`: `occupiedRect()` → bounds `ctx.windows.pet` khi hiện → vùng 300×400 góc dưới phải; chuông/popup đặt né (thường lên trên bé). Bé đang hiện → chuông/popup không lặp câu thoại. BUG-029: nút popup trước khi thoát "Chưa thoát" / "Thoát luôn".
+- Danh sách: "Sắp tới" liệt kê từng nhắc (≤8 + "+N"), ↻ cho nhắc lặp; BUG-027 "Đang hiện / Đã cất", nút "Cất đi / Hiện lên" + tooltip; bảng phím tắt đủ Ctrl+F/F3, Z/Y, Shift+K, +/−/0, Shift+R; xưng tớ/cậu. Dev: `MOCHI_DEV_TAB=shortcuts`.
+- Kiểm tay: ghi nhanh "gọi khách 1 phút nữa" kêu đúng phút với vòng nhắc mới (bé + thông báo).
+
+**Test**: thêm `parse2.test.js` (108), `understand2.test.js` (33), `fixes.test.js` (14), placement +7. Mọi bộ của phòng xanh ở Asia/Ho_Chi_Minh và America/New_York (lệnh ở "Trạng thái Đợt 2"). `npm test` xanh. `node test/unit/run.js`: parse xanh hết; còn đỏ 5 ca store (xem đề xuất F).
+**Ảnh**: `docs/rooms/notes/d3-upcoming.png`, `d3-shortcuts.png`, `d3-ring-avoid-pet.png`, `d3-memo-avoid-pet.png`.
+
+**Việc tiếp theo cụ thể**
+1. "đêm" đứng một mình vẫn = 22:00 → "đi 3 ngày 2 đêm" ra nhắc rác; nên chỉ nhận "đêm" khi có số giờ hoặc "tối/đêm nay".
+2. Khi core có `occupiedRect` chỉ gồm thân + bong bóng: chụp lại ảnh né bé (hiện né cả cửa sổ 300×397 nên hơi rộng; chuông có thể đè note ở góc trên).
+3. Windows thật: toast có nút, âm thanh, kéo-thả, before-quit.
+
+**Vướng mắc**: không.
+
+**Đề xuất cho phòng điều hành (lượt 4)**
+- F. Test qa `test/unit/store.test.js`: ca 160, 163 so object theo hình Đợt 1 — cần thêm `reminders[]`, `remindMuted[]`, `reminder.id` (hợp đồng Đợt 2). Ca 165/166 đòi `.bak` nhưng store giờ giữ `mochi-data.corrupt-*.json` → sửa test. Ca 168 (khoá lạ settings bị bỏ) mâu thuẫn BUG-031 (giữ khoá lạ) → điều hành chốt một hướng.
+- G. Phòng core: thêm `ctx.pet.occupiedRect()` (thân + bong bóng) và `pet:moved`; BUG-014 (tờ "Dặn dò" bé cầm hiện "NaN:NaN") vẫn còn; nếu `pet.pump` cần nhịp riêng thì core tự giữ timer (vòng nhắc notes chỉ tick 1s khi `pet.isBusy()`).
+- H. Phòng paper: chip nhắc đọc `reminder.past` → hiện "15:00 hôm nay · đã qua"; `src/note/insight.js:73` "bé nhắc nha?" → "tớ nhắc nha?"; bảng phím tắt ghi Ctrl+D = "Xoá note" nhưng note.js mở menu — kiểm lại.
