@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g id="blush"><ellipse cx="160" cy="201" rx="9" ry="4.5" fill="#F7B9B5" opacity=".7"/><ellipse cx="240" cy="201" rx="9" ry="4.5" fill="#F7B9B5" opacity=".7"/></g>
+<g id="eye_l"><path d="M159 186Q173 197 187 186" fill="none" stroke="#1F2A44" stroke-width="3.4" stroke-linecap="round"/><path d="M158 187C154 185 152 183 151 180" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/></g>
+<g id="eye_r"><path d="M213 186Q227 197 241 186" fill="none" stroke="#1F2A44" stroke-width="3.4" stroke-linecap="round"/><path d="M242 187C246 185 248 183 249 180" fill="none" stroke="#1F2A44" stroke-width="2.4" stroke-linecap="round"/></g>
+<g id="mouth"><path d="M194 208.5Q200 212.5 206 208.5" fill="none" stroke="#1F2A44" stroke-width="1.8" stroke-linecap="round"/></g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g id="ribbon-tails">
+<path d="M266 140C260 166 258 192 262 216L268 208L274 218C274 190 274 164 274 142Z" fill="#1C1E24" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M276 140C284 162 290 184 288 208L282 202L278 214C276 190 274 164 272 142Z" fill="#0F1013" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M265 150C262 172 262 192 264 208" fill="none" stroke="#5A6070" stroke-width="1.5" stroke-linecap="round"/><path d="M282 152C286 168 287 186 286 200" fill="none" stroke="#5A6070" stroke-width="1.5" stroke-linecap="round"/>
+</g>
+<g id="ribbon-bow" transform="translate(270 135) scale(.85) translate(-270 -135)">
+<path d="M270 134C262 120 248 112 244 122C240 134 248 148 270 136Z" fill="#1C1E24" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M270 134C278 118 294 110 298 122C302 136 292 150 270 136Z" fill="#1C1E24" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M266 130C258 124 252 122 250 126M274 130C282 122 290 120 293 124" fill="none" stroke="#5A6070" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M262 136C256 134 250 130 248 126" fill="none"/>
+<ellipse cx="270" cy="135" rx="6.5" ry="7.5" fill="#0F1013" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M268 131Q270 129 272 131" fill="none" stroke="#5A6070" stroke-width="1.4" stroke-linecap="round"/>
+<circle cx="270" cy="135" r="1.6" fill="#B8C4D8"/>
+</g>
+</svg>

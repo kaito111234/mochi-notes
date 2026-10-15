@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<defs><linearGradient id="hair_front-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B9D0F3"/><stop offset="1" stop-color="#A9C4EE"/></linearGradient></defs>
+<path id="hair_front-bangs" d="M134 214C124 176 130 128 162 104C176 95 190 91 204 91C222 91 242 98 254 112C268 130 272 168 266 204L258 180L250 160L240 164L232 160L222 168L212 186L206 214L200 172L194 158L186 170L178 160L166 176L158 160L150 182L142 196Z" fill="url(#hair_front-g)" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M134 214C126 186 128 156 140 136C150 146 160 150 170 142C186 130 206 124 224 116C226 140 220 156 222 168L212 186L206 214L200 172L194 158L186 170L178 160L166 176L158 160L150 182L142 196Z" fill="#7F9FD6" opacity=".4"/>
+<path d="M226 98C220 120 222 144 232 160 M212 96C200 118 196 142 200 166 M190 100C176 118 168 140 170 160 M160 106C146 124 140 150 142 180 M244 104C254 126 256 146 252 160" fill="none" stroke="#7F9FD6" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M166 108C178 98 192 95 206 96" fill="none" stroke="#D5E4FA" stroke-width="4" stroke-linecap="round"/>
+<path d="M240 106C252 116 258 128 260 142" fill="none" stroke="#D5E4FA" stroke-width="3.5" stroke-linecap="round"/>
+<path d="M206 198L204 208" fill="none" stroke="#D5E4FA" stroke-width="2" stroke-linecap="round"/>
+</svg>

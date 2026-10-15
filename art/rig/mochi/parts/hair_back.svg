@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<defs><linearGradient id="hair_back-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B4CCF0"/><stop offset=".55" stop-color="#A9C4EE"/><stop offset="1" stop-color="#97B5E8"/></linearGradient></defs>
+<path id="hair_back-mass" d="M200 94C148 94 110 130 106 192C102 244 98 292 106 322L98 344L112 328L120 350L134 330L146 348L160 332L174 346L188 332L200 348L212 332L226 346L240 332L254 348L266 330L280 350L288 328L302 344L294 322C302 292 298 244 294 192C290 130 252 94 200 94Z" fill="url(#hair_back-g)" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M150 150C132 190 128 250 134 322L120 350L146 332L152 262C156 220 156 180 150 150Z" fill="#7F9FD6" opacity=".55"/>
+<path d="M250 150C268 190 272 250 266 322L280 350L254 332L248 262C244 220 244 180 250 150Z" fill="#7F9FD6" opacity=".55"/>
+<path d="M164 232C160 270 166 310 174 336L188 332L190 240Z M236 232C240 270 234 310 226 336L212 332L210 240Z" fill="#7F9FD6" opacity=".7"/>
+<path d="M120 200C116 240 114 280 118 316 M110 220C108 260 108 296 112 318 M280 200C284 240 286 280 282 316 M290 220C292 260 292 296 288 318 M150 290L156 340 M250 290L244 340 M200 250L200 340" fill="none" stroke="#7F9FD6" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M118 190C114 220 112 250 114 276 M284 190C288 220 290 250 288 276" fill="none" stroke="#D5E4FA" stroke-width="3" stroke-linecap="round"/>
+</svg>
