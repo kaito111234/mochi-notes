@@ -232,6 +232,7 @@ function create(ctx, deps = {}) {
       const p = Promise.resolve(actor.goToNote(noteId)).then(r => r, () => null);
       res = await sess.wait(T(6000), { promise: p, timeoutValue: null, errorValue: null });
     } catch (e) { if (e instanceof Cancelled) throw e; res = null; }
+    if (process.env.MOCHI_PET_LOG) log('tryPoint', JSON.stringify(res), noteVisible(noteId));
     if (!res || !res.ok || !noteVisible(noteId)) return false;
     sess.pointing = noteId;
     call(actor, 'play', 'point', { loop: true });

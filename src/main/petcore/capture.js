@@ -127,7 +127,7 @@ function createCapture(core) {
     if (open_) { open_ = false; core.window.cmd({ op: 'captureClose' }); core.window.setFocusable(false); setBusy(false); }
     const time = note && typeof note === 'object' ? findTime(note) : null;
     const title = makeTitle(text);
-    say(time ? pickLine('captureSavedTime', { title, time }, 'note_created') : pickLine('captureSaved', {}));
+    say(time ? pickLine('captureSavedTime', { title, time }) : pickLine('captureSaved', {}));
     if (core.shown && !core.stage) {
       try { core.actor.play('happy', {}).then(() => { if (!open_ && !core.stage) core.toIdle(); }); } catch (_) { /* bỏ qua */ }
     }

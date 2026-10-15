@@ -585,7 +585,9 @@ function createBody(core) {
   async function goToNote(noteId) {
     const w = ctx.windows.notes.get(noteId);
     if (!w || !ctx.alive(w) || !w.isVisible() || w.isMinimized()) return { ok: false, side: null };
+    if (!core.shown) { try { await core.actor.show({ corner: true }); } catch (_) { /* bỏ qua */ } }
     if (!walls() || !core.shown || !L() || st.mode === 'lift') return { ok: false, side: null };
+    if (!w || !ctx.alive(w) || !w.isVisible() || w.isMinimized()) return { ok: false, side: null };
     const b = w.getBounds();
     const d = screen.getDisplayMatching(b), wa = d.workArea, half = L().charW / 2, gap = 8;
     const rightX = b.x + b.width + gap + half, leftX = b.x - gap - half;
@@ -595,7 +597,10 @@ function createBody(core) {
     if (side) {
       tx = side === 'right' ? rightX : leftX;
       ty = floorAt(tx, b.y + b.height).y;
-    } else {                                           // note rộng hết màn hình: đứng trên mép trên của nó
+      // sàn cạnh note nằm quá thấp so với note (note lơ lửng trên cao): lên đứng trên mép trên note cho gần
+      if (ty - (b.y + b.height) > L().charH * 1.2 && b.y >= wa.y + L().charH) side = null;
+    }
+    if (!side) {                                           // note rộng hết màn hình: đứng trên mép trên của nó
       tx = clampX(b.x + b.width / 2, wa);
       ty = b.y >= wa.y + L().charH ? b.y : wa.y + wa.height;
     }

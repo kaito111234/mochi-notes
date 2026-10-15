@@ -166,7 +166,7 @@ function createWindow(core) {
   }
   // Linux (X11) không hỗ trợ forward chuột khi đang click xuyên: main dò con trỏ ~12 lần/s và hỏi renderer
   // điểm đó có trúng thân bé/bong bóng không (op 'pointer'). Windows/macOS dùng forward gốc, không có timer này.
-  if (process.platform !== 'win32' && process.platform !== 'darwin') {
+  if (process.platform !== 'win32' && process.platform !== 'darwin' && !process.env.MOCHI_PET_NOPOLL) {
     setInterval(() => {
       if (!ignoring || !ready || !alive() || !win.isVisible()) return;
       const c = screen.getCursorScreenPoint(), b = win.getBounds();

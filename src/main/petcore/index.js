@@ -266,6 +266,33 @@ function init(ctx) {
       else if (what === 'sleep') core.brain.sleep();
       else if (what === 'walk') core.body.walk({ dir: 'left', dist: 400 });
       else if (what === 'peek') core.body.peek('right');
+      else if (what === 'capture') {
+        // MOCHI_PET_TYPE = chữ gõ thử; MOCHI_PET_ENTER = ms sau đó gửi Enter
+        await core.capture.open();
+        const wc = core.window.win().webContents;
+        await new Promise(r => setTimeout(r, 800));
+        if (process.env.MOCHI_PET_TYPE) wc.insertText(process.env.MOCHI_PET_TYPE);
+        const ms = Number(process.env.MOCHI_PET_ENTER);
+        if (isFinite(ms) && ms > 0) {
+          await new Promise(r => setTimeout(r, ms));
+          wc.sendInputEvent({ type: 'keyDown', keyCode: 'Enter' });
+          wc.sendInputEvent({ type: 'keyUp', keyCode: 'Enter' });
+        }
+      }
+      else if (what === 'menu') core.menu.popup();
+      else if (what === 'settings') core.settingsWin && core.settingsWin.open();
+      else if (what === 'hide') ctx.pet.hideFor(3600000);
+      else if (what === 'drop') core.window.emit('dropText', { text: process.env.MOCHI_PET_TYPE || 'https://example.com/trang', kind: 'url' });
+      else if (what === 'point' || what === 'done') {
+        if (process.env.MOCHI_PET_LOG) setInterval(() => { const w = core.window.win(); if (w) console.log('[pet:bounds]', JSON.stringify(w.getBounds())); }, 5000).unref();
+        // note mẫu 0.1 "Uống nước nè, 1 phút nữa" tự có sẵn khi mở lần đầu: chỉ cần chờ ~1 phút
+        // MOCHI_PET_NOTEY = y (mặc định 640): dời note đó xuống thấp để bé có sàn đứng cạnh nó
+        const y = Number(process.env.MOCHI_PET_NOTEY) || 640;
+        for (const [id, w] of ctx.windows.notes) {
+          const n = ctx.findNote(id);
+          if (n && /Uống nước/.test(n.text || '') && ctx.alive(w)) { const b = w.getBounds(); w.setBounds({ x: 700, y, width: b.width, height: b.height }); }
+        }
+      }
     } catch (e) { console.error('[petcore] demo', e); }
   }
 

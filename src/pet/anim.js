@@ -53,6 +53,7 @@
 
   var MAX_PARALLEL = 8;
   var MIN_MS = 16;
+  var IDLE_MIN_MS = 260;
 
   function encodeSrc(s) { return String(s).split('/').map(encodeURIComponent).join('/'); }
   // src tuyệt đối (file:, data:, http(s):, blob:) dùng nguyên; tương đối thì ghép baseUrl.
@@ -296,7 +297,10 @@
     var n = s.frames.length;
     // Loop 1 khung đang lặp mãi: đứng yên, không cần hẹn giờ.
     if (run.phase === 'loop' && run.looping && n === 1) return;
-    this._timer = setTimeout(function () { self._advance(run); }, Math.max(MIN_MS, f.ms || 100));
+    // Đứng yên (idle lặp): nhịp thở chậm lại để tiết kiệm CPU — mỗi lần vẽ lại cửa sổ trong suốt khá tốn.
+    var ms = f.ms || 100;
+    if (run.looping && run.reqAction === 'idle' && ms < IDLE_MIN_MS) ms = IDLE_MIN_MS;
+    this._timer = setTimeout(function () { self._advance(run); }, Math.max(MIN_MS, ms));
   };
 
   Animator.prototype._advance = function (run) {

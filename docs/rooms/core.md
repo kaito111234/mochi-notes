@@ -65,3 +65,47 @@ Chủ dự án muốn **"một pet tự do trên màn hình, tương tác và gi
 4. **Bé gắn với note**: khi nhắc một note đang dán, bé đi tới cạnh cửa sổ note đó, chỉ vào nó (note nháy viền); khi note bị ẩn thì bé giơ tờ note mini như hiện nay.
 5. **Vùng chiếm chỗ**: công bố `ctx.pet.occupiedRect()` + phát `pet:moved {rect}` để cửa sổ chuông/dặn dò của notes né bé; sửa lỗi tờ note sát mép phải.
 6. Giữ ổn định: CPU khi đứng yên < 3% một nhân; nhiều màn hình; khởi động lại nhớ vị trí bé.
+
+## Trạng thái Đợt 2
+_Cập nhật 2026-10-15 — lượt 2 (Đợt 2). Kiến trúc & chia file nội bộ: `docs/rooms/core/ARCH.md` phần "Đợt 2"._
+
+**Quyết định của trưởng phòng (không hỏi lại được)**
+- Gói tạm **chép** sang `assets/pet/placeholder/` (không xoá `assets/pet/mochi/` vì thư mục đó nay thuộc phòng art — tránh xung đột gộp). Engine nạp `mochi` làm gói chính, action thiếu thì mượn từ `placeholder` (`pack.loadCharacter`, khung mượn dùng URL `file:` tuyệt đối + co giãn `fit`).
+- Thêm 3 action ngoài danh sách 03-animation: `climb` (bám tường phải), `point` (chỉ tay sang phải), `write` (ghi chép) — có trong placeholder, thiếu thì fallback `idle`. Xem đề xuất 1.
+- Nháy viền note làm bằng **cửa sổ phủ trong suốt của core** (`petcore/flash.js`), không đụng cửa sổ note của phòng paper; vẫn phát `pet:pointNote` cho ai muốn làm hiệu ứng riêng.
+- Chuỗi đọc lại khi ghi nhanh dùng câu của core (`lines.captureSavedTime`), không dùng `persona.pick('note_created')` vì câu persona lạc đề (ví dụ "Sinh nhật hả?…").
+
+**Đã xong**
+1. Bé ghi note giúp: bấm đúp thân bé / menu "Ghi nhanh" → bong bóng nhập "Cậu muốn tớ ghi gì?" (Enter lưu, Shift+Enter xuống dòng, Esc huỷ, nháp lưu `pet.draft`); gọi `ctx.notes.quickCapture(text,{source})` nếu có, chưa có thì `ctx.notes.createNote({html})`; bé đọc lại "Ghi xong rồi. Tới 15:00 tớ báo cậu họp nhóm 15h nha". Kéo-thả chữ/link vào bé → tạo note (`dropText`). Nhắc lịch chen ngang thì ô nhập tạm đóng, giữ nháp.
+2. Menu chuột phải trên bé (`petcore/menu.js`): Ghi nhanh · Note mới · Danh sách note · Báo thức… · Ẩn/hiện tất cả note · Cho bé ngủ · Ẩn bé 1 giờ · Bé đi lại · Cỡ bé · Cài đặt bé… (cửa sổ `src/pet/settings.*`: luôn trên desktop, đi lại, leo tường, theo con trỏ, cỡ 75–150%).
+3. Tự do hơn: leo tường trái/phải (chỉ mép ngoài cùng), đi trên cạnh trên note / nhảy lên-xuống note / ngồi trên note, thỉnh thoảng đi theo con trỏ ≤ 6s, nấp mép; không tự di chuyển che con trỏ; tôn trọng `walkEnabled`, `climbEnabled`, `followCursor`.
+4. Bé gắn với note: nhắc note đang dán → bé đi tới cạnh note (hoặc lên mép trên note nếu note lơ lửng cao), chỉ tay `point`, viền note nháy hồng, bong bóng + nút như cũ; note ẩn → giơ tờ note mini như Đợt 1. Mọi đường lỗi có timeout 6s rồi rơi về `hold_note` (nhắc lịch tất định).
+5. `ctx.pet.occupiedRect()` + bus `pet:moved {rect}` (≤ 4 lần/s khi di chuyển + 1 lần khi dừng). Sửa tờ note sát mép phải (`goToCorner` chừa lề 220px cho tờ note; bong bóng/tờ note kẹp trong cửa sổ).
+6. Nhớ vị trí (lưu debounce 2s mỗi lần dừng, khôi phục khi khởi động). `ctx.pet.hideFor(ms)` (Ẩn bé 1 giờ — nhắc lịch vẫn hiện bé, xong lại ẩn tới hết giờ).
+
+**Nghiệm thu** (xvfb; ảnh `docs/rooms/core/d2-*.png`)
+- `d2-01-ghi-nhanh.png`, `d2-02-ghi-xong.png`, `d2-03-chi-vao-note.png`, `d2-04-leo-tuong.png`, `d2-05-tren-note.png`, `d2-06-cai-dat.png`, `d2-07-menu.png`. (xvfb không có compositor nên cửa sổ trong suốt chồng lên note hiện khối đen; ở d2-03 phần ruột note được ghép lại từ ảnh trước khi nháy.)
+- Luồng 0.1: note "Uống nước nè, 1 phút nữa" → ~61s bé đi tới chỉ vào note; bấm "Xong rồi" (MOCHI_PET_CLICK) → `reminder.done=true`.
+- Ẩn 1 giờ → nhắc lịch vẫn hiện bé. Khởi động lại → bé đứng đúng chỗ cũ.
+- CPU đứng yên (30s, mọi tiến trình Electron, 2 note): **2,6%** một nhân (trước khi chỉnh idle ≥ 260ms/khung: 3,7–4,0%); tắt bé: 0,6%.
+- `node tools/anim/validate.js assets/pet/placeholder` OK; `node tools/anim/test-pack.js` OK; `npm test` đạt hết.
+
+**Cách chạy thử**: như Đợt 1, thêm biến gỡ lỗi: `MOCHI_PET_DEMO=capture` (+ `MOCHI_PET_TYPE="họp nhóm 15h"`, `MOCHI_PET_ENTER=<ms>`), `menu`, `settings`, `hide`, `drop`, `point`, `done` (+ `MOCHI_PET_NOTEY`); `MOCHI_PET_DEMO2=climb|note|follow`; `MOCHI_PET_NOPOLL=1` (tắt dò con trỏ trên Linux).
+
+**Đang dở / việc tiếp theo**
+1. Thử trên Windows bằng chuột thật: chuột phải → menu, bấm đúp → ô nhập (focus bàn phím, bộ gõ tiếng Việt), kéo-thả chữ/link từ trình duyệt vào bé khi cửa sổ đang click xuyên, leo tường, đa màn hình/DPI, taskbar trái/phải.
+2. Bong bóng khi bé đứng cạnh note có thể che mép note vài chục px — chỉnh `gap` trong `goToNote` hoặc đặt bong bóng lệch ra phía ngoài note.
+3. Note lơ lửng cao không có chỗ đứng trên mép → bé đứng dưới sàn khá xa note (mô hình sàn không cho lơ lửng). Có thể cho bé leo cạnh note.
+4. Sprite placeholder `write`/`climb` bị cắt mép; chờ hình thật của phòng art (cần thêm `climb`, `point`, `write` vào ART-BRIEF).
+5. Khi phòng notes có `ctx.notes.quickCapture` trả `insight` → đọc lại phong phú hơn (nhiều mục giờ, checklist).
+6. Xoá `src/mascot/*` khi điều hành bỏ `paths.mascotHtml`.
+
+**Vướng mắc**: không có.
+
+## Đề xuất cho phòng điều hành (Đợt 2)
+1. `docs/spec/03-animation.md`: thêm action tuỳ chọn `climb` (bám tường, hình gốc bám tường bên phải), `point` (chỉ tay sang phải), `write` (ghi chép); và nói rõ gói `placeholder` là dự phòng theo từng action. Báo phòng persona/art bổ sung vào `docs/art/ART-BRIEF.md`. Phòng art có thể xoá nội dung tạm trong `assets/pet/mochi/` bất cứ lúc nào — engine tự mượn từ placeholder.
+2. `docs/spec/02-events.md`: thêm `pet:moved {rect}` (core, rect DIP màn hình của thân bé) , `pet:pointNote {noteId, on}` (core), và API `ctx.pet.occupiedRect()`, `ctx.pet.hideFor(ms)`, `ctx.pet.flashNote(noteId, ms)`, `ctx.pet.capture.open()`.
+3. `docs/spec/01-data.md` ngăn `pet`: thêm `draft: string`, `hiddenUntil: number`, `settings.climbEnabled`, `settings.followCursor` (bool, mặc định true).
+4. `tray.js`: thêm "Ghi nhanh với bé" → `ctx.pet.capture.open()`, "Cài đặt bé…" (cần core công bố `ctx.pet.openSettings` — core sẵn sàng thêm nếu đồng ý), "Cho bé leo tường" (`climbEnabled`). Phím tắt gợi ý Ctrl+Alt+Space → ghi nhanh.
+5. Gửi phòng notes: `ctx.notes.quickCapture(text, {source:'pet'|'drop'})` nên trả `{note, insight}`, KHÔNG tự mở cửa sổ note đè lên bé khi `source` là `pet` (hoặc mở cạnh bé); cửa sổ chuông/dặn dò né `ctx.pet.occupiedRect()` / nghe `pet:moved`.
+6. Gửi phòng paper: có thể nghe `pet:pointNote` (qua kênh `paper:*` của mình) để làm hiệu ứng riêng trong note; khi đó core sẽ tắt cửa sổ viền nháy để không trùng.
