@@ -19,6 +19,8 @@ const DEMO_COINS = 2000;
 const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const cut = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
 
+const STARTER = ['clip_x', 'neck_tie_blue'];
+
 function createGame(ctx, opts) {
   opts = opts || {};
   const now = opts.now || (() => Date.now());
@@ -27,6 +29,13 @@ function createGame(ctx, opts) {
   const catalog = opts.catalog || catalogLib.loadCatalog();
   const box = ctx.store.section('game', box_.defaults, box_.normalize);
   const slotIds = new Set(catalog.slots.map(s => s.id));
+  // Quà chào mừng (một lần): kẹp tóc chữ X + cà vạt xanh — đúng bộ gốc của bé, để tủ đồ không trống.
+  if (!box.firstUse.welcome) {
+    box.firstUse.welcome = now();
+    for (const id of STARTER) {
+      if (catalog.items.some(i => i.id === id) && !box.inventory.items[id]) box.inventory.items[id] = { count: 1, firstAt: now() };
+    }
+  }
 
   let asleep = false;
   let lastModeKey = '';
@@ -352,7 +361,7 @@ function createGame(ctx, opts) {
   // Chế độ gỡ lỗi chụp ảnh nghiệm thu
   function demo() {
     if (box.stats.candy < DEMO_COINS) {
-      if (!economy.grant(box, { candy: DEMO_COINS, reason: 'demo' }, now())) box.stats.candy += DEMO_COINS;
+      box.stats.candy += DEMO_COINS;   // cộng thẳng, không ghi vào log thống kê
       save();
     }
   }
@@ -395,6 +404,17 @@ function init(ctx) {
     try {
       const tab = process.env.MOCHI_GAME_OPEN;
       if (tab) { const t = setTimeout(() => ctx.game.open(tab), 1500); if (t.unref) t.unref(); }
+      // Nghiệm thu: MOCHI_GAME_DEMO_DONE=<giây> → bấm "Xong" note có hẹn đầu tiên qua API công bố của notes.
+      const sec = Number(process.env.MOCHI_GAME_DEMO_DONE);
+      if (sec > 0) {
+        const t = setTimeout(() => {
+          try {
+            const n = (ctx.store.data.notes || []).find(x => x && x.reminder && !x.reminder.done);
+            if (n && ctx.notes && typeof ctx.notes.completeNote === 'function') ctx.notes.completeNote(n.id);
+          } catch (e) { console.error('[game] demo done:', e); }
+        }, sec * 1000);
+        if (t.unref) t.unref();
+      }
     } catch (e) { console.error('[game]', e); }
   });
   return game;
