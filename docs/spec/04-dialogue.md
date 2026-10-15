@@ -39,3 +39,8 @@ Xưng "tớ", gọi "cậu". Ngại ngùng, dịu dàng, hơi bướng, thích m
 - Câu có `cond.intent` khớp intent hiện tại được ưu tiên tuyệt đối so với câu chung.
 - `memo` dùng `{title}` = nội dung lời dặn.
 - Phân vai: persona tự phát `persona:line` cho tương tác, chào buổi, chatter, done/snooze, alarm_stop/alarm_snooze, reward/levelup, note_created. **Core** khi lên sân khấu cho `alarm/due/pre/memo/nag` gọi `ctx.persona.pick(kind, {title, time, left, label, count, intent})`, `left` dạng "10 phút".
+
+## Quy ước xưng hô (chốt Đợt 2)
+- **Giao diện app** (Cài đặt, nút, tooltip, note mẫu, thông báo hệ thống): app xưng "Mochi", gọi người dùng là "bạn".
+- **Bé Mochi khi nói** (bong bóng thoại, câu của persona): xưng "tớ", gọi người dùng là "cậu".
+- Không trộn "mình/bạn/cậu/tớ" trong cùng một ngữ cảnh.

@@ -1,6 +1,7 @@
 'use strict';
 // Điểm vào mỏng: single instance, vòng đời app, nạp module theo thứ tự rồi gọi init(ctx).
-const { app, Menu, globalShortcut, powerMonitor } = require('electron');
+const { app, Menu, globalShortcut, powerMonitor, Notification } = require('electron');
+const path = require('path');
 const bus = require('./bus.js');
 const ctx = require('./context.js');
 const { createStore } = require('./store.js');
@@ -20,15 +21,37 @@ const modules = [
 ];
 // Module của từng phòng: mỗi phòng sở hữu src/main/<thư mục>/index.js xuất init(ctx).
 // Thư mục chưa tồn tại thì bỏ qua — các phòng KHÔNG sửa danh sách này, chỉ tạo index.js của mình.
-for (const dir of ['alarms', 'petcore', 'game', 'persona']) {
+for (const dir of ['alarms', 'paper', 'petcore', 'game', 'persona']) {
   try { modules.push(require('./' + dir + '/index.js')); }
   catch (e) { if (e.code !== 'MODULE_NOT_FOUND' || !String(e.message).includes(dir + '/index.js')) throw e; }
+}
+
+// Báo người dùng khi file dữ liệu hỏng (store đã cất bản hỏng và khôi phục nếu có bản sao lưu).
+function reportRecovery() {
+  try {
+    const st = ctx.store;
+    if (!st || (!st.recoveredFrom && !st.corruptCopy) || !Notification.isSupported()) return;
+    let body;
+    if (st.recoveredFrom) {
+      const m = /mochi-data-(\d{4})-(\d{2})-(\d{2})\.json$/.exec(path.basename(st.recoveredFrom));
+      const day = m ? m[3] + '/' + m[2] + '/' + m[1] : path.basename(st.recoveredFrom);
+      body = 'Dữ liệu bị hỏng, đã khôi phục từ bản sao lưu ngày ' + day + '. Bản hỏng được giữ lại trong thư mục dữ liệu.';
+    } else {
+      body = 'Dữ liệu bị hỏng và chưa có bản sao lưu để khôi phục. Bản hỏng được giữ lại: ' + path.basename(st.corruptCopy);
+    }
+    new Notification({ title: 'Mochi Notes', body }).show();
+    console.log('[store] ' + body);
+  } catch (_) { /* bỏ qua */ }
 }
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', () => { if (app.isReady()) ctx.list.open(); });
+  app.on('second-instance', (_e, argv) => {
+    // toast.js tự xử lý URL mochi-notes:// (nút Tắt/Hoãn của thông báo)
+    if ((argv || []).some(a => /^mochi-notes:\/\//i.test(String(a)))) return;
+    if (app.isReady()) ctx.list.open();
+  });
   app.on('window-all-closed', () => { /* ở lại khay hệ thống */ });
   app.on('before-quit', () => {
     ctx.quitting = true;
@@ -50,6 +73,7 @@ if (!app.requestSingleInstanceLock()) {
     if (ctx.store.isFirstRun && ctx.store.data.notes.length === 0) ctx.notes.seed();
     ctx.tray.createTray();
     ctx.tray.registerShortcuts();
+    reportRecovery();
     if (app.isPackaged) {
       try { app.setLoginItemSettings({ openAtLogin: !!ctx.settings().startup }); } catch (_) { /* bỏ qua */ }
     }

@@ -6,14 +6,17 @@
   "scripts": {
     "start": "electron .",
     "dist:win": "electron-builder --win zip --x64",
-    "test": "node scripts/test-all.js"
+    "test": "node scripts/test-all.js",
+    "test:e2e": "bash test/e2e/run.sh",
+    "test:unit": "node test/unit/run.js"
   },
   "keywords": [],
   "author": "Joiha",
   "license": "ISC",
   "devDependencies": {
     "electron": "^33.2.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "playwright-core": "1.48.2"
   },
   "productName": "Mochi Notes",
   "build": {

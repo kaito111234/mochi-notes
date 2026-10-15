@@ -92,6 +92,74 @@ function createStore(dir) {
   const raw = {};          // ngăn đọc từ file nhưng chưa ai đăng ký — giữ nguyên để không mất dữ liệu
   const sections = {};     // name -> { value }
 
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = d => d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype'];
+  const KEEP_CORRUPT = 5;
+  let recoveredFrom = null;   // đường dẫn bản sao lưu đã dùng để khôi phục (main/khay báo người dùng)
+  let corruptCopy = null;     // đường dẫn nơi cất bản hỏng
+
+  // Đọc + kiểm hợp lệ một chuỗi JSON; ném lỗi nếu hỏng. Trả { notes, raw, settings } — chưa đụng vào data.
+  function parseText(text) {
+    const j = JSON.parse(String(text).replace(/^\uFEFF/, ''));
+    if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('bad root');
+    if (j.notes !== undefined && !Array.isArray(j.notes)) throw new Error('bad notes');
+    const notes = [], rawOut = {}, seen = new Set();
+    for (const n of (j.notes || [])) {
+      const nn = normalizeNote(n);
+      if (nn && !seen.has(nn.id)) { seen.add(nn.id); notes.push(nn); }
+    }
+    for (const k of Object.keys(j)) if (!['notes', 'settings', 'version'].includes(k) && !UNSAFE_KEYS.includes(k)) rawOut[k] = j[k];
+    const settings = Object.assign({}, DEFAULT_SETTINGS);
+    const s = j.settings && typeof j.settings === 'object' && !Array.isArray(j.settings) ? j.settings : {};
+    for (const k of Object.keys(s)) {
+      if (UNSAFE_KEYS.includes(k)) continue;
+      if (Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, k)) { if (typeof s[k] === 'boolean') settings[k] = s[k]; }
+      else settings[k] = s[k];   // khoá lạ (của phòng khác / bản mới hơn): giữ nguyên khi ghi lại
+    }
+    return { notes, raw: rawOut, settings };
+  }
+  function applyParsed(r) {
+    data.notes = r.notes;
+    data.settings = r.settings;
+    for (const k of Object.keys(r.raw)) raw[k] = r.raw[k];
+  }
+  function pruneByPattern(re, keep) {
+    try {
+      const mt = f => { try { return fs.statSync(path.join(dir, f)).mtimeMs; } catch (_) { return 0; } };
+      const list = fs.readdirSync(dir).filter(f => re.test(f)).sort().sort((a, b) => mt(a) - mt(b));   // cũ nhất trước
+      while (list.length > keep) { try { fs.unlinkSync(path.join(dir, list.shift())); } catch (_) { break; } }
+    } catch (_) { /* bỏ qua */ }
+  }
+  function uniqueName(base, ext) {
+    let name = base + ext, i = 1;
+    while (fs.existsSync(path.join(dir, name))) name = base + '-' + (++i) + ext;
+    return path.join(dir, name);
+  }
+  // Cất bản hỏng: mochi-data.corrupt-YYYYMMDD-HHMMSS.json (giữ tối đa 5).
+  function keepCorrupt() {
+    const target = uniqueName('mochi-data.corrupt-' + stamp(new Date()), '.json');
+    try { fs.renameSync(file, target); } catch (_e) {
+      try { fs.copyFileSync(file, target); } catch (_e2) { return null; }
+    }
+    pruneByPattern(/^mochi-data\.corrupt-\d{8}-\d{6}(-\d+)?\.json$/, KEEP_CORRUPT);
+    return target;
+  }
+  // Tìm bản sao lưu hợp lệ mới nhất trong backups/.
+  function findBackup() {
+    const bdir = path.join(dir, 'backups');
+    let names = [];
+    try { names = fs.readdirSync(bdir).filter(f => /^mochi-data-\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().reverse(); } catch (_) { return null; }
+    for (const f of names) {
+      const full = path.join(bdir, f);
+      try {
+        const text = fs.readFileSync(full, 'utf8');
+        return { file: full, text, parsed: parseText(text) };
+      } catch (_) { /* thử bản kế */ }
+    }
+    return null;
+  }
+
   function load() {
     let text;
     try {
@@ -101,25 +169,19 @@ function createStore(dir) {
       return;
     }
     try {
-      const j = JSON.parse(text.replace(/^﻿/, ''));
-      if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('bad root');
-      if (j.notes !== undefined && !Array.isArray(j.notes)) throw new Error('bad notes');
-      const seen = new Set();
-      for (const n of (j.notes || [])) {
-        const nn = normalizeNote(n);
-        if (nn && !seen.has(nn.id)) { seen.add(nn.id); data.notes.push(nn); }
-      }
-      for (const k of Object.keys(j)) if (!['notes', 'settings', 'version'].includes(k)) raw[k] = j[k];
-      const s = j.settings && typeof j.settings === 'object' ? j.settings : {};
-      for (const k of Object.keys(DEFAULT_SETTINGS)) {
-        if (typeof s[k] === 'boolean') data.settings[k] = s[k];
-      }
+      applyParsed(parseText(text));
     } catch (_) {
-      // File hỏng: giữ lại bản .bak rồi dùng mặc định.
+      // File hỏng: cất bản hỏng (có dấu thời gian), rồi thử bản sao lưu hợp lệ mới nhất.
       data.notes = [];
       data.settings = Object.assign({}, DEFAULT_SETTINGS);
-      try { fs.renameSync(file, file + '.bak'); } catch (_e) {
-        try { fs.copyFileSync(file, file + '.bak'); } catch (_e2) { /* bỏ qua */ }
+      for (const k of Object.keys(raw)) delete raw[k];
+      corruptCopy = keepCorrupt();
+      const b = findBackup();
+      if (b) {
+        applyParsed(b.parsed);
+        recoveredFrom = b.file;
+        // Đặt lại file chính bằng bản đã khôi phục để không có bản hỏng nào lọt vào backups/ hôm nay.
+        try { fs.writeFileSync(file, b.text, 'utf8'); } catch (_) { /* bỏ qua */ }
       }
     }
   }
@@ -153,7 +215,11 @@ function createStore(dir) {
       const bdir = path.join(dir, 'backups');
       fs.mkdirSync(bdir, { recursive: true });
       const target = path.join(bdir, 'mochi-data-' + day + '.json');
-      if (!fs.existsSync(target) && fs.existsSync(file)) fs.copyFileSync(file, target);
+      if (!fs.existsSync(target) && fs.existsSync(file)) {
+        let ok = true;
+        try { JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '')); } catch (_) { ok = false; }   // không sao lưu file hỏng
+        if (ok) fs.copyFileSync(file, target);
+      }
       const old = fs.readdirSync(bdir).filter(f => /^mochi-data-\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort();
       while (old.length > 7) { try { fs.unlinkSync(path.join(bdir, old.shift())); } catch (_) { break; } }
     } catch (_) { /* bỏ qua */ }
@@ -170,7 +236,15 @@ function createStore(dir) {
     if (sections[name]) return sections[name].value;
     let value;
     if (raw[name] !== undefined) {
-      try { value = normalize ? normalize(raw[name]) : raw[name]; } catch (_) { value = defaults(); }
+      try { value = normalize ? normalize(raw[name]) : raw[name]; } catch (_) {
+        // Ngăn sai kiểu/hỏng: cất nguyên bản vào file riêng trước khi dùng mặc định (không mất dữ liệu).
+        try {
+          const target = uniqueName('mochi-data.section-' + String(name).replace(/[^\w-]/g, '_') + '-' + stamp(new Date()), '.json');
+          fs.writeFileSync(target, JSON.stringify(raw[name], null, 2), 'utf8');
+          pruneByPattern(/^mochi-data\.section-.*\.json$/, KEEP_CORRUPT * 2);
+        } catch (_e) { /* bỏ qua */ }
+        value = defaults();
+      }
       delete raw[name];
     } else value = defaults();
     sections[name] = { value };
@@ -195,6 +269,8 @@ function createStore(dir) {
     get notes() { return data.notes; },
     get settings() { return data.settings; },
     get isFirstRun() { return firstRun; },
+    get recoveredFrom() { return recoveredFrom; },
+    get corruptCopy() { return corruptCopy; },
     save,
     flushSync,
     section

@@ -18,6 +18,7 @@
 | `game:mode` | game | `{mode: 'happy'\|'normal'\|'tired'\|'sad', energy, mood, level}` |
 | `game:reward` | game | `{candy, exp, affection, reason}` |
 | `game:levelup` | game | `{level}` |
+| `game:fed` | game | `{foodId, name}` — bé vừa được cho ăn (core có thể chạy action `eat`) |
 | `persona:line` | persona | `{text, face?, anim?, priority, ttlMs?}` — yêu cầu bé nói |
 | `app:startup` / `app:idle` / `app:resume` | điều hành | `{}` — khởi động, máy rảnh, thức dậy sau sleep |
 
@@ -50,3 +51,6 @@ Câu thoại cho mỗi lần lên sân khấu: core hỏi `ctx.persona.pick(even
 | `note:trashed` / `note:restored` | notes | `{noteId}` |
 | `game:outfit` | game | `{worn: {slot: itemId}}` |
 | `pet:knock` | core | `{target: 'foreground'\|'note', noteId?}` |
+| `reminder:pre` / `reminder:due` | notes | `{noteId, reminderId, title}` (thêm `reminderId`, `title`) |
+| `reminder:done` / `reminder:snoozed` | notes | như cũ + `reminderId` |
+| `alarms:layout` | notes | `{ring}` — vị trí cửa sổ chuông (để bé/popup né) |

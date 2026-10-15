@@ -33,6 +33,10 @@ function init(ctx) {
       { label: 'Danh sách note', click: () => ctx.list.open() },
       { label: 'Báo thức…', click: () => ctx.list.open('alarms') },
       { label: 'Dặn dò…', click: () => ctx.list.open('memos') },
+      ...(ctx.game && typeof ctx.game.open === 'function' ? [
+        { label: 'Phòng của Mochi…', click: () => ctx.game.open() },
+        { label: 'Máy gacha', click: () => ctx.game.open('gacha') }
+      ] : []),
       { label: 'Gọi bé ra', click: () => ctx.pet.enqueueHello() },
       { type: 'separator' },
       ...petItems,
@@ -55,6 +59,7 @@ function init(ctx) {
     reg('Ctrl+Alt+H', () => ctx.notes.toggleAll());
     reg('Ctrl+Alt+L', () => ctx.list.open());
     reg('Ctrl+Alt+M', () => ctx.pet.enqueueHello());
+    reg('Ctrl+Alt+G', () => { if (ctx.game && typeof ctx.game.open === 'function') ctx.game.open(); });
   }
   Object.assign(ctx.tray, { rebuild, createTray, registerShortcuts });
 }
