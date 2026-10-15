@@ -17,10 +17,10 @@
     toast: function (text, kind) {
       var box = $('toasts'); if (!box) return;
       var t = document.createElement('div');
-      t.className = 'toast ' + (kind || 'ok'); t.textContent = text;
+      t.className = 'toast t-' + (kind || 'ok'); t.textContent = text;
       box.appendChild(t);
       while (box.children.length > 3) box.removeChild(box.firstChild);
-      setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 2800);
+      setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 300); }, 2400);
     },
     iconUrl: function (p) { return new URL('../../assets/game/' + p, BASE).href; },
     item: function (id) { return ((room.catalog && room.catalog.items) || []).find(function (i) { return i.id === id; }) || null; },
@@ -88,13 +88,15 @@
     num.textContent = coin.toLocaleString('vi-VN');
     if (lastCoin !== null && coin > lastCoin) {
       var w = $('coinIcon').parentNode; w.classList.remove('bump'); void w.offsetWidth; w.classList.add('bump');
+      var f = document.createElement('span'); f.className = 'coin-fly'; f.textContent = '+' + (coin - lastCoin);
+      w.appendChild(f); setTimeout(function () { f.remove(); }, 1200);
     }
     lastCoin = coin;
     // cấp
     $('levelLabel').textContent = 'Cấp ' + (v.level || 1);
     var span = (v.nextLevelExp || 0) - (v.levelExp || 0), got = (s.exp || 0) - (v.levelExp || 0);
     $('levelFill').style.width = span > 0 ? pct(got / span * 100) : '100%';
-    $('levelChip').title = 'Kinh nghiệm ' + (s.exp || 0) + (v.nextLevelExp ? ' / ' + v.nextLevelExp : '');
+    $('levelChip').title = 'Exp: ' + (s.exp || 0) + ' / ' + (v.nextLevelExp || 0) + ' tới cấp ' + ((v.level || 1) + 1);
     // thẻ bé
     var pm = $('pcMode'); pm.textContent = MODE_VI[v.mode] || MODE_VI.normal; pm.dataset.mode = v.mode || 'normal';
     $('pcMood').style.width = pct(s.mood); $('pcEnergy').style.width = pct(s.energy);

@@ -7,6 +7,17 @@
   var LOCK = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.6"/><path d="M5.3 7V5.2a2.7 2.7 0 0 1 5.4 0V7"/></svg>';
   var TICK = '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6.5"/></svg>';
   var MAX_OUTFITS = 6;
+  var G = function (d) { return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+  var GLYPH = {
+    hat: G('<path d="M5 16c0-5 3-9 7-9s7 4 7 9"/><path d="M3 17h18"/>'),
+    hairclip: G('<path d="M7 8l10 8M17 8L7 16"/>'),
+    glasses: G('<circle cx="7" cy="14" r="3.3"/><circle cx="17" cy="14" r="3.3"/><path d="M10.3 14h3.4M3.7 13l1-4M20.3 13l-1-4"/>'),
+    neck: G('<path d="M6 6c0 6 3 9 6 9s6-3 6-9"/><path d="M12 15v5M10 18l2 2 2-2"/>'),
+    body: G('<path d="M8 4l-5 4 2 4 3-1v9h8v-9l3 1 2-4-5-4c-.5 1.5-1.7 2.5-3 2.5S8.500 5.500 8 4z"/>'),
+    outer: G('<path d="M9 4L4 7v13h5V9M15 4l5 3v13h-5V9"/><path d="M9 4l3 4 3-4M12 8v12"/>'),
+    hand: G('<path d="M8 12V6a1.500 1.500 0 0 1 3 0v5M11 11V4.500a1.500 1.500 0 0 1 3 0V11M14 11V6a1.500 1.500 0 0 1 3 0v8c0 4-2 6-5 6s-4-2-5-4l-2-4a1.400 1.400 0 0 1 2.300-1.500L8 14"/>'),
+    back: G('<path d="M7 9a5 5 0 0 1 10 0v10H7z"/><path d="M9.500 14h5M10 4V3h4v1"/>')
+  };
 
   var S = {
     room: null, root: null, el: {},
@@ -72,8 +83,8 @@
     S.el.stageBox.classList.toggle('wd-trying', !!t);
     S.el.tryTag.hidden = !t;
     S.el.tryName.textContent = it ? it.name : '';
-    S.el.wearBtn.disabled = !t;
-    S.el.unTryBtn.disabled = !t;
+    S.el.acts.hidden = !t;
+    S.el.hint.hidden = !!t;
   }
 
   /* ---------- Hàng khe ---------- */
@@ -90,14 +101,14 @@
         var im = h('img'); im.alt = ''; im.src = S.room.iconUrl(it.icon); im.draggable = false;
         b.appendChild(im);
         b.classList.add('wd-r-' + it.rarity);
-        b.title = s.name + ': ' + it.name + ' (bấm để cởi)';
+        b.title = 'Cởi ' + it.name;
         b.setAttribute('aria-label', 'Cởi ' + it.name);
         b.addEventListener('click', function () { apply(S.room.api.wear(s.id, null)); });
       } else {
         b.disabled = true;
-        b.title = s.name + ': trống';
+        b.title = s.name + ' (trống)';
         b.setAttribute('aria-label', s.name + ' trống');
-        b.appendChild(h('span', 'wd-slot-ph', s.name.charAt(0)));
+        var g = h('span', 'wd-slot-ph'); g.innerHTML = GLYPH[s.id] || ''; b.appendChild(g);
       }
       box.appendChild(b);
     });
@@ -120,7 +131,13 @@
 
   /* ---------- Lưới ---------- */
   function visibleItems() {
-    return items().filter(function (it) { return S.filter === 'all' || it.slot === S.filter; });
+    var order = { legend: 0, epic: 1, rare: 2, common: 3 };
+    return items().filter(function (it) { return S.filter === 'all' || it.slot === S.filter; }).sort(function (x, y) {
+      var ox = owned(x.id) > 0, oy = owned(y.id) > 0;
+      if (ox !== oy) return ox ? -1 : 1;
+      if (ox && x.rarity !== y.rarity) return (order[x.rarity] || 9) - (order[y.rarity] || 9);
+      return String(x.name).localeCompare(String(y.name), 'vi');
+    });
   }
   function renderCount() {
     var all = items(), n = all.filter(function (it) { return owned(it.id) > 0; }).length;
@@ -138,7 +155,7 @@
     b.appendChild(im);
     var rname = S.room.rarityName(it.rarity);
     if (has) {
-      b.appendChild(h('span', 'wd-rar', rname));
+      b.appendChild(h('span', 'wd-nm', it.name));
       if (n > 1) b.appendChild(h('span', 'wd-qty', '×' + n));
       if (isWorn) { var t = h('span', 'wd-tick'); t.innerHTML = TICK; b.appendChild(t); }
       b.title = it.name + ' · ' + rname + (isWorn ? ' · đang mặc' : '') + (it.desc ? '\n' + it.desc : '');
@@ -262,7 +279,9 @@
     stageBox.appendChild(stage); stageBox.appendChild(tag);
     left.appendChild(stageBox);
 
-    var acts = h('div', 'wd-acts');
+    var acts = h('div', 'wd-acts'); S.el.acts = acts; acts.hidden = true;
+    S.el.hint = h('div', 'wd-hint', 'Bấm một món để mặc thử');
+    left.appendChild(S.el.hint);
     S.el.wearBtn = btn('btn btn-primary', 'Mặc', function () {
       var t = S.tryItem; if (!t) return;
       S.tryItem = null; renderTryBar();
@@ -295,7 +314,7 @@
     var head = h('div', 'wd-head');
     S.el.chips = h('div', 'wd-chips');
     S.el.count = h('span', 'wd-count');
-    head.appendChild(S.el.chips); head.appendChild(S.el.count);
+    head.appendChild(S.el.count); head.appendChild(S.el.chips);
     right.appendChild(head);
 
     var grid = h('div', 'wd-grid'); S.el.grid = grid;
