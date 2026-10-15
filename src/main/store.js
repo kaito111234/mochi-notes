@@ -9,7 +9,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   sound: true,
   glass: true,
   startup: false,
-  allHidden: false
+  allHidden: false,
+  noteTransparent: false
 });
 const COLORS = ['yellow', 'green', 'pink', 'purple', 'blue', 'gray', 'charcoal'];
 const SAVE_DELAY = 300;

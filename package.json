@@ -8,7 +8,8 @@
     "dist:win": "electron-builder --win zip --x64",
     "test": "node scripts/test-all.js",
     "test:e2e": "bash test/e2e/run.sh",
-    "test:unit": "node test/unit/run.js"
+    "test:unit": "node test/unit/run.js",
+    "test:persona": "node --test src/main/persona/test/dialogue.test.js src/main/persona/test/lunar.test.js src/main/persona/test/persona.test.js"
   },
   "keywords": [],
   "author": "Joiha",

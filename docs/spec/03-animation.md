@@ -33,3 +33,6 @@ assets/pet/mochi/
 `idle`, `walk`, `sit`, `sleep`, `pat_head`, `pat_body`, `lifted` (bị nhấc), `fall`, `land`, `peek_left`, `peek_right` (nấp mép), `hold_note` (giơ tờ note — nhắc lịch), `ring` (báo thức, rung chuông), `happy`, `sad`, `shy`, `angry`, `eat`, `work`, `wave`, `startup`, `shutdown`, `say` (cử chỉ khi nói).
 
 Phòng persona viết bảng yêu cầu vẽ cho đúng danh sách này (`docs/art/ART-BRIEF.md`). Phòng core cung cấp công cụ `tools/anim/` để kiểm tra gói (đếm khung, kích thước, thiếu gì) và một gói hình tạm sinh tự động để test.
+
+## Bảng hành động Đợt 3
+Bảng hành động đầy đủ, tham số action (`seatY`, `tip`, `gripX`, `edgeY/edgeX`, `wallX`, `release`, `speed`…) và hitbox của gói `mochi` nằm ở `art/ACTIONS.md` (art sở hữu, là nguồn chuẩn). Gói `mochi` 400×400, scale 0.6, đủ 23 action hợp đồng + 14 action 2B; core đọc `pack.note.anchor`/`pack.json.actions` theo bảng đó.

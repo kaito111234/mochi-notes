@@ -75,3 +75,4 @@ Mode tâm trạng (dùng cho hình & thoại) do phòng game tính và phát qua
 - File chính hỏng → cất bản hỏng thành `mochi-data.corrupt-YYYYMMDD-HHMMSS.json` (giữ tối đa 5), nạp bản `backups/` hợp lệ mới nhất rồi đặt lại file chính. `store.recoveredFrom` (đường dẫn bản đã dùng; null nếu không có) và `store.corruptCopy` để `main.js` báo người dùng bằng thông báo Windows.
 - Ngăn mà `normalize` ném lỗi → cất nguyên bản vào `mochi-data.section-<tên>-YYYYMMDD-HHMMSS.json` rồi mới dùng mặc định.
 - `settings`: khoá lạ (ngoài `DEFAULT_SETTINGS`) được giữ nguyên khi ghi lại.
+- `settings.noteTransparent` (boolean, mặc định false): cửa sổ note trong suốt (notes, Đợt 3).
