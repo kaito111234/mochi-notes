@@ -157,3 +157,45 @@ _Cập nhật 2026-10-15. Nhánh `room/notes` = main + 4 commit sửa lỗi._
 - F. Test qa `test/unit/store.test.js`: ca 160, 163 so object theo hình Đợt 1 — cần thêm `reminders[]`, `remindMuted[]`, `reminder.id` (hợp đồng Đợt 2). Ca 165/166 đòi `.bak` nhưng store giờ giữ `mochi-data.corrupt-*.json` → sửa test. Ca 168 (khoá lạ settings bị bỏ) mâu thuẫn BUG-031 (giữ khoá lạ) → điều hành chốt một hướng.
 - G. Phòng core: thêm `ctx.pet.occupiedRect()` (thân + bong bóng) và `pet:moved`; BUG-014 (tờ "Dặn dò" bé cầm hiện "NaN:NaN") vẫn còn; nếu `pet.pump` cần nhịp riêng thì core tự giữ timer (vòng nhắc notes chỉ tick 1s khi `pet.isBusy()`).
 - H. Phòng paper: chip nhắc đọc `reminder.past` → hiện "15:00 hôm nay · đã qua"; `src/note/insight.js:73` "bé nhắc nha?" → "tớ nhắc nha?"; bảng phím tắt ghi Ctrl+D = "Xoá note" nhưng note.js mở menu — kiểm lại.
+
+---
+## Trạng thái Đợt 3 (lượt 5 — theo lệnh điều hành Đợt 3)
+_Cập nhật 2026-10-15. Bao gồm cả lượt 4 ở trên. Nhánh `room/notes` = main @70ebdd3 + 8 commit._
+
+**Lỗi QA phòng notes — đề nghị qa chạy lại và đóng**
+| Mã | Kết quả | Ghi chú |
+|---|---|---|
+| BUG-002 | ĐÃ SỬA | 500g, 3/4, 1/2, 50-60k, 2-3 lần, ngày vô lý 30/2, 13/13, 32/1 → không nhắc |
+| BUG-003 | ĐÃ SỬA | "thứ 6 tuần sau 10h30" = 23/10 10:30 (cả parse và understand) |
+| BUG-004 | ĐÃ SỬA | 0h, 12h đêm, nửa đêm = 00:00 hôm sau; 2h đêm = 02:00 (understand "0h" sửa lượt này) |
+| BUG-005 | ĐÃ SỬA | "1h30 nữa" = +1:30 |
+| BUG-006 | ĐÃ SỬA (2B) | Thùng rác 30 ngày, `trash.test.js` |
+| BUG-009 | ĐÃ SỬA | nửa tiếng nữa, 1 tiếng rưỡi nữa, sau/trong 5 phút |
+| BUG-010 | ĐÃ SỬA | không dấu: hop 3h chieu nay, goi khach 2 phut nua, thu 6 10h30, 8 gio toi |
+| BUG-011 | ĐÃ SỬA | tối ưu, sáng tạo, chiều dài, năm nay, 16:9; thêm: "đêm" lẻ (3 ngày 2 đêm, ca đêm, thức đêm) |
+| BUG-012 | ĐÃ SỬA | giờ đã qua hôm nay → nhắc `past:true` (không kêu), reply báo "đã qua" |
+| BUG-013, 015 | ĐÃ SỬA (phần notes) | chuông/popup né `occupiedRect()` (tương thích room/core: `{rect}` của `pet:moved`) → bounds cửa sổ bé → vùng mặc định; không lặp câu bé đang nói |
+| BUG-020 | ĐÃ SỬA | hiện tất cả theo lô 2/40ms, không chặn main |
+| BUG-024 | ĐÃ SỬA (phần notes) | vòng nhắc ngủ tới mốc kế, trần 15s |
+| BUG-025 | ĐÃ SỬA | `clampLead` |
+| BUG-027 | ĐÃ SỬA | "Đang hiện / Đã cất", "Cất đi / Hiện lên" + tooltip |
+| BUG-028 | ĐÃ SỬA | Giao diện danh sách gọi "bạn"/"bé Mochi"; chỉ lời bé (note mẫu, `reply`, chuông/popup) xưng "tớ/cậu" |
+| BUG-029 | ĐÃ SỬA (phần notes) | bảng phím tắt đủ; nút popup "Chưa thoát / Thoát luôn" |
+| BUG-030 (tiêu đề) | ĐÃ SỬA | cửa sổ note "Mochi Notes" |
+| BUG-031 | ĐÃ SỬA (note/reminder) | giữ trường lạ |
+
+**Việc thêm Đợt 3**
+- Danh sách: nền xem trước + dải màu theo mẫu giấy (`api.paper.get(id).meta.paper`, catalog `assets/paper/catalog.js`, cache 10s; mẫu `plain-*` như cũ); tiêu đề = dòng đầu, đoạn trích các dòng sau nối " · " (đọc từ html). Ảnh `d3-list-paper.png`.
+- Nhập/xuất giữ `data-ck="0|1"` trên DIV/LI.
+- Cửa sổ note trong suốt: khoá settings `noteTransparent` (mặc định tắt), công tắc trong Cài đặt; bật/tắt thì mở lại các note đang mở. Renderer nhận `?transparent=1` (API2.md mục "Cửa sổ trong suốt"). Chưa thử kéo/đổi cỡ trên Windows — để mặc định TẮT. Ảnh `d3-transparent.png` (xvfb không compositor nên nền đen).
+- Hiệu năng understand 5.000 ký tự ~16ms (gốc 17ms).
+
+**Test**: `npm test` xanh (chạy 3 lần). Mọi bộ của phòng xanh ở 2 múi giờ. `node test/unit/run.js`: mọi ca parse/entities xanh; còn đỏ 5 ca store (đề xuất F).
+
+**Việc tiếp theo**: "khuya" lẻ ("thức khuya") vẫn = 23:00; thử cửa sổ trong suốt trên Windows; khi room/core gộp, chụp lại ảnh né bé bằng `occupiedRect` thật; danh sách nghe `paper:meta` để cập nhật mẫu ngay (hiện cache 10s).
+**Vướng mắc**: không.
+
+**Đề xuất cho phòng điều hành (Đợt 3)**
+- I. `scripts/test-all.js` thêm `node test/unit/run.js` (test:unit) vào `npm test` sau khi qa cập nhật 5 ca store theo đề xuất F (parse đã xanh hết).
+- J. `store.js` `DEFAULT_SETTINGS` + `01-data.md`: thêm `noteTransparent: false` (hiện `ipcNotes.applySettings` tự nhận khoá này).
+- K. Gửi phòng paper: khi `new URLSearchParams(location.search).get('transparent') === '1'` thì `html, body` nền transparent, tự vẽ nền giấy + bóng CSS trong khung có lề; "bé nhắc nha?" ở `src/note/insight.js` giữ được (giao diện gọi "bé"); chip đọc `reminder.past`.
