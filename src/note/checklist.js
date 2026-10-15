@@ -40,15 +40,21 @@
     while (n && n.parentNode !== ed) n = n.parentNode;
     return n || null;
   }
-  function caretLine() {
+  function caretLine(allowRange) {
     const s = getSelection();
-    if (!s.rangeCount || !s.isCollapsed || !ed.contains(s.anchorNode)) return null;
-    return lineOf(s.anchorNode);
+    if (!s.rangeCount || (!allowRange && !s.isCollapsed)) return null;
+    const sr = s.getRangeAt(0);
+    if (!ed.contains(sr.startContainer)) return null;
+    return lineOf(sr.startContainer);
   }
   function textBeforeCaret(line) {
-    const s = getSelection(), r = document.createRange();
-    r.setStart(line, 0); r.setEnd(s.anchorNode, s.anchorOffset);
+    const sr = getSelection().getRangeAt(0), r = document.createRange();
+    r.setStart(line, 0); r.setEnd(sr.startContainer, sr.startOffset);
     return r;
+  }
+  function atLineStart(line) {
+    const f = textBeforeCaret(line).cloneContents();
+    return f.textContent === '' && !f.querySelector('img');
   }
   function setCaret(node, off) {
     const r = document.createRange(); r.setStart(node, off); r.collapse(true);
@@ -164,6 +170,16 @@
         if (BLANK(d.textContent) && !d.querySelector('br,img')) fillBr(d);
       });
     }
+    if (!ckLines().length) {
+      const kids = Array.from(ed.children).filter(k => k.tagName === 'DIV');
+      if (!kids.length) { setMode(true); }
+      else {
+        const cl = caretLine(true);
+        const t = cl && cl.nodeType === 1 && cl.tagName === 'DIV' ? cl : kids[0];
+        t.setAttribute('data-ck', '0');
+        if (BLANK(t.textContent) && !t.querySelector('br,img')) fillBr(t);
+      }
+    }
     N.afterEdit(); N.histCommit(); updateCount(); updateMenuLabel();
   }
   function setMode(on) {
@@ -179,7 +195,7 @@
     if (empty) {
       ed.innerHTML = '<div data-ck="0"><br></div>';
       N.afterEdit();
-      try { if (document.activeElement === ed) setCaret(ed.firstChild, 0); } catch (_) {}
+      try { ed.focus(); setCaret(ed.firstChild, 0); } catch (_) {}
     }
     updateCount();
   }
@@ -189,6 +205,14 @@
     if (locked() || !isCk(d)) return;
     const idx = ckLines().indexOf(d);
     const done = d.getAttribute('data-ck') !== '1';
+    // đưa con trỏ vào dòng vừa tick để Ctrl+Z/Ctrl+Y hoàn tác được ngay
+    if (document.activeElement !== N.editor) {
+      try {
+        N.editor.focus({ preventScroll: true });
+        const r = document.createRange(); r.selectNodeContents(d); r.collapse(false);
+        const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      } catch (_) {}
+    }
     N.histCommit();
     d.setAttribute('data-ck', done ? '1' : '0');
     N.afterEdit(); N.histCommit(); updateCount();
@@ -213,7 +237,7 @@
     if (e.button !== 0 || locked()) return;
     const d = ckAtPoint(e.clientX, e.clientY);
     if (!d) return;
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     toggleLine(d);
   }
 
@@ -264,20 +288,20 @@
   function onKeyDown(e) {
     if (e.isComposing || e.keyCode === 229 || locked()) return;
     if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      const line = caretLine();
+      const line = caretLine(true);
       if (!isCk(line)) { pendingEnter = null; return; }
-      if (blankNode(line)) {
+      if (getSelection().isCollapsed && blankNode(line)) {
         e.preventDefault();
         N.histCommit();
         line.removeAttribute('data-ck');
         fillBr(line);
         N.afterEdit(); N.histCommit(); updateCount(); return;
       }
-      pendingEnter = { state: line.getAttribute('data-ck'), atStart: textBeforeCaret(line).toString() === '' };
+      pendingEnter = { state: line.getAttribute('data-ck'), atStart: getSelection().isCollapsed && atLineStart(line) };
     } else if (e.key === 'Backspace' && !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
       const line = caretLine();
       if (!isCk(line)) return;
-      if (textBeforeCaret(line).toString() !== '') return;
+      if (!atLineStart(line)) return;
       e.preventDefault();
       N.histCommit();
       line.removeAttribute('data-ck');
@@ -333,7 +357,7 @@
   }
 
   /* ---------- kéo đổi thứ tự ---------- */
-  let handle = null, drop = null, hoverLine = null, drag = null;
+  let handle = null, drop = null, lift = null, hoverLine = null, drag = null;
   function makeHandle() {
     const NS = 'http://www.w3.org/2000/svg';
     handle = document.createElement('div');
@@ -348,14 +372,15 @@
     });
     handle.appendChild(svg);
     drop = document.createElement('div'); drop.className = 'ck-drop'; drop.hidden = true;
-    body.appendChild(handle); body.appendChild(drop);
+    lift = document.createElement('div'); lift.className = 'ck-lift'; lift.hidden = true;
+    body.appendChild(handle); body.appendChild(drop); body.appendChild(lift);
     handle.addEventListener('pointerdown', onHandleDown);
     handle.addEventListener('pointermove', onHandleMove);
     handle.addEventListener('pointerup', onHandleUp);
     handle.addEventListener('pointercancel', () => endDrag(true));
     handle.addEventListener('lostpointercapture', () => { if (drag) endDrag(true); });
   }
-  function hideHandle() { hoverLine = null; if (handle) handle.hidden = true; }
+  function hideHandle() { hoverLine = null; hoverEv = null; if (handle) handle.hidden = true; }
   function placeHandle(d) {
     if (!handle || locked() || !d || !d.isConnected) { hideHandle(); return; }
     hoverLine = d;
@@ -364,11 +389,20 @@
     handle.style.top = Math.round(r.top - br.top + b.top + (b.h - 18) / 2) + 'px';
     handle.hidden = false;
   }
+  let hoverEv = null, hoverRaf = 0, placeRaf = 0;
   function onHover(e) {
     if (drag || !handle) return;
     if (e.target === handle || handle.contains(e.target)) return;
+    hoverEv = e.clientY;
+    if (!hoverRaf) hoverRaf = requestAnimationFrame(() => { hoverRaf = 0; if (hoverEv !== null) hoverAt(hoverEv); });
+  }
+  function schedulePlace() {
+    if (placeRaf) return;
+    placeRaf = requestAnimationFrame(() => { placeRaf = 0; if (hoverLine && !drag) placeHandle(hoverLine); });
+  }
+  function hoverAt(y) {
+    if (drag || !handle) return;
     if (locked()) { hideHandle(); return; }
-    const y = e.clientY;
     for (const d of ckLines()) {
       const r = d.getBoundingClientRect();
       if (y >= r.top && y < r.bottom) { if (d !== hoverLine || handle.hidden) placeHandle(d); return; }
@@ -390,7 +424,10 @@
     drag = { line, id: e.pointerId, moved: false, ref: undefined };
     try { handle.setPointerCapture(e.pointerId); } catch (_) {}
     document.body.classList.add('ck-dragging');
-    line.classList.add('ck-lifted');
+    const br = body.getBoundingClientRect(), lr = line.getBoundingClientRect();
+    lift.style.top = (lr.top - br.top) + 'px'; lift.style.height = lr.height + 'px';
+    lift.style.left = Math.max(0, lr.left - br.left - 2) + 'px'; lift.style.width = (lr.width + 4) + 'px';
+    lift.hidden = false;
   }
   function onHandleMove(e) {
     if (!drag) return;
@@ -412,8 +449,7 @@
     if (!drag) return;
     const d = drag; drag = null;
     document.body.classList.remove('ck-dragging');
-    d.line.classList.remove('ck-lifted');
-    if (!d.line.getAttribute('class')) d.line.removeAttribute('class');
+    lift.hidden = true;
     drop.hidden = true;
     try { handle.releasePointerCapture(d.id); } catch (_) {}
     if (cancel || !d.moved || d.ref === undefined || locked()) { hideHandle(); return; }
@@ -453,7 +489,7 @@
 
     new MutationObserver(() => {
       updateCount();
-      if (hoverLine) placeHandle(hoverLine);
+      if (hoverLine) schedulePlace();
     }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-ck'] });
 
     try { if (Array.isArray(N.textHooks)) N.textHooks.push(textHook); } catch (_) {}

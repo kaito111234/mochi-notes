@@ -55,4 +55,5 @@ body.ck-dragging, body.ck-dragging * { cursor: grabbing !important; }
   border-radius: 1px; background: var(--ck-accent, #3d9b6e); pointer-events: none;
 }
 .ck-drop[hidden] { display: none; }
-#editor > div[data-ck].ck-lifted { opacity: .35; }
+.ck-lift { position: absolute; z-index: 3; pointer-events: none; border-radius: 4px; background: rgba(var(--fg-rgb), .1); }
+.ck-lift[hidden] { display: none; }

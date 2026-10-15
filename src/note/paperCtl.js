@@ -38,10 +38,18 @@
     return o;
   }
 
+  var lastKey = null;
   function applyNow(paperId) {
     var p = P();
     if (!p || typeof p.apply !== 'function' || !document.body) return;
-    try { p.apply(document.body, paperId, opts(paperId)); } catch (_) { /* không làm hỏng note */ }
+    try {
+      var o = opts(paperId);
+      var glass = document.body.classList && document.body.classList.contains('glass') ? 1 : 0;
+      var key = [paperId, o.font, o.tilt, o.deco, glass].join('|');
+      if (key === lastKey) return;
+      p.apply(document.body, paperId, o);
+      lastKey = key;
+    } catch (_) { /* không làm hỏng note */ }
   }
 
   function state() {
@@ -126,7 +134,9 @@
         meta = m || meta;
         refresh();
         if (patch.paper) setColorFor(defOf(patch.paper));
-      }).catch(function () {});
+      }).catch(function () {
+        try { refresh(); toast('Không lưu được mẫu giấy'); } catch (_) { /* bỏ qua */ }
+      });
     },
     setDefault: function () {
       var st = S();
