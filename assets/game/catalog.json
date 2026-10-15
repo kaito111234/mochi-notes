@@ -647,5 +647,52 @@
       "mood": 9,
       "energy": 6
     }
+  ],
+  "sets": [
+    {
+      "id": "pajama",
+      "name": "Bộ Ngủ Ngon",
+      "reward": 100
+    },
+    {
+      "id": "camping",
+      "name": "Cắm Trại Cuối Tuần",
+      "reward": 100
+    },
+    {
+      "id": "sport",
+      "name": "Bé Vận Động",
+      "reward": 150
+    },
+    {
+      "id": "cat",
+      "name": "Hội Mèo Con",
+      "reward": 200
+    },
+    {
+      "id": "winter",
+      "name": "Mùa Đông Ấm Áp",
+      "reward": 250
+    },
+    {
+      "id": "party",
+      "name": "Tiệc Lấp Lánh",
+      "reward": 300
+    },
+    {
+      "id": "school",
+      "name": "Bé Đến Trường",
+      "reward": 350
+    },
+    {
+      "id": "cosplay",
+      "name": "Hóa Trang Vui Vẻ",
+      "reward": 450
+    },
+    {
+      "id": "daily",
+      "name": "Ngày Thường Xinh Xắn",
+      "reward": 500
+    }
   ]
 }

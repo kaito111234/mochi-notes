@@ -8,6 +8,7 @@ const economy = require('./logic/economy');
 const stats = require('./logic/stats');
 const gacha = require('./logic/gacha');
 const quests = require('./logic/quests');
+const checkin = require('./logic/checkin');
 const { dayKey } = require('./logic/time');
 const catalogLib = require('./catalog');
 
@@ -19,6 +20,8 @@ const DEMO_COINS = 2000;
 const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const cut = (s, n) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
 
+const MAX_FOOD = 99;
+const CAPTURE_SOURCES = new Set(['pet', 'drop']);
 const STARTER = ['clip_x', 'neck_tie_blue'];
 
 function createGame(ctx, opts) {
@@ -50,6 +53,19 @@ function createGame(ctx, opts) {
   const itemOf = id => catalog.items.find(i => i.id === id) || null;
   const owned = id => !!(box.inventory.items[id] && box.inventory.items[id].count > 0);
 
+  // ---- Album theo bộ ----
+  const setList = () => (Array.isArray(catalog.sets) ? catalog.sets : []);
+  function albumView() {
+    return setList().map(st => {
+      const ids = catalog.items.filter(i => i.set === st.id).map(i => i.id);
+      const have = ids.filter(owned).length;
+      return {
+        setId: st.id, name: st.name, items: ids, owned: have, total: ids.length,
+        complete: ids.length > 0 && have === ids.length, claimed: !!box.album.claimed[st.id], reward: st.reward
+      };
+    });
+  }
+
   // ---- View (mục 8) ----
   function view() {
     const t = now();
@@ -60,6 +76,8 @@ function createGame(ctx, opts) {
     for (const id of Object.keys(box.inventory.items)) items[id] = { count: box.inventory.items[id].count };
     const foodFactor = {};
     for (const f of catalog.foods) foodFactor[f.id] = stats.foodFactor(box, f.id, t);
+    const bag = {};
+    for (const id of Object.keys(box.inventory.food || {})) if (box.inventory.food[id] > 0) bag[id] = box.inventory.food[id];
     const today = box.log.find(l => l.day === box.today.day) || { done: 0, coins: 0 };
     return {
       enabled: enabled(),
@@ -83,7 +101,10 @@ function createGame(ctx, opts) {
       today: { done: today.done, coins: today.coins },
       rates: { base: { ...gacha.RATES }, effective: gacha.effectiveRates() },
       cost: { ...gacha.COST }, shardPrice: { ...gacha.SHARD_PRICE },
-      foodFactor
+      foodFactor,
+      checkin: checkin.view(box, t),
+      bag,
+      album: albumView()
     };
   }
 
@@ -124,7 +145,7 @@ function createGame(ctx, opts) {
     for (const r of rs) { sum.candy += r.candy || 0; sum.exp += r.exp || 0; sum.affection += r.affection || 0; }
     save();
     const lv = economy.level(box.stats.exp);
-    if (sum.candy > 0 || sum.exp > 0) emit('game:reward', sum);
+    if (sum.candy > 0) emit('game:reward', { ...sum, count: sum.candy });
     if (lv > lastLevel) emit('game:levelup', { level: lv });
     lastLevel = lv;
     publishMode(false);
@@ -137,28 +158,53 @@ function createGame(ctx, opts) {
     try { fn(isObj(payload) ? payload : {}); } catch (e) { logErr('bus ' + name, e); }
   };
   const validId = v => typeof v === 'string' && v.length > 0 && v.length < 200;
+  // Ghi nhanh qua bé: đếm một lần cho mỗi note (note:created + pet:captured có thể cùng báo một lần)
+  const captured = [];
+  function countCapture(p) {
+    const id = (isObj(p.note) && p.note.id) || p.noteId || p.id;
+    if (typeof id === 'string' && id) {
+      if (captured.includes(id)) return;
+      captured.push(id);
+      if (captured.length > 50) captured.shift();
+    }
+    const t = now();
+    box.flags.captureSeen = true;
+    box.counters.captures++;
+    quests.progress(box, 'capture', 1, t);
+  }
   const handlers = {
     'reminder:done': p => {
       if (!enabled() || !validId(p.noteId)) return;
       const t = now();
       const note = ctx.findNote ? ctx.findNote(p.noteId) : null;
-      const r = economy.onDone(box, { noteId: p.noteId, onTime: p.onTime, note, now: t });
-      if (r) quests.progress(box, 'done', 1, t);
+      const r = economy.onDone(box, { noteId: p.noteId, reminderId: p.reminderId, onTime: p.onTime, note, now: t });
+      if (r) {
+        quests.progress(box, 'done', 1, t);
+        if (p.onTime !== false) quests.progress(box, 'ontime', 1, t);
+      }
       settle([r]);
     },
     'note:checkItem': p => {
       if (!enabled() || !validId(p.noteId) || !Number.isInteger(p.index) || p.index < 0 || p.done !== true) return;
       const t = now();
       const note = ctx.findNote ? ctx.findNote(p.noteId) : null;
-      settle([
-        economy.onCheckItem(box, { noteId: p.noteId, index: p.index, done: true, note, now: t }),
-        economy.firstUse(box, 'checklist', t)
-      ]);
+      const r = economy.onCheckItem(box, { noteId: p.noteId, index: p.index, done: true, note, now: t });
+      if (r) quests.progress(box, 'check', 1, t);
+      settle([r, economy.firstUse(box, 'checklist', t)]);
     },
-    'note:created': () => { if (enabled()) settle([economy.firstUse(box, 'note', now())]); },
+    'note:created': p => {
+      if (!enabled()) return;
+      const t = now();
+      const src = typeof p.source === 'string' ? p.source : (isObj(p.note) && typeof p.note.source === 'string' ? p.note.source : '');
+      if (CAPTURE_SOURCES.has(src)) countCapture(p);
+      settle([economy.firstUse(box, 'note', t)]);
+    },
+    'pet:capture': p => { if (enabled()) { countCapture(p); settle([]); } },
+    'pet:captured': p => { if (enabled()) { countCapture(p); settle([]); } },
     'note:trashed': () => {
       if (!enabled()) return;
       box.counters.trashed++;
+      box.counters.tidy++;
       quests.progress(box, 'tidy', 1, now());
       settle([]);
     },
@@ -170,9 +216,9 @@ function createGame(ctx, opts) {
     'pet:interact': p => {
       if (!enabled() || typeof p.kind !== 'string') return;
       const t = now();
-      stats.onInteract(box, p.kind, t);
+      const changed = stats.onInteract(box, p.kind, t);
       const rs = [];
-      if (p.kind === 'pat-head') {
+      if (p.kind === 'pat-head' && changed) {
         quests.progress(box, 'pat', 1, t);
         rs.push(economy.firstUse(box, 'pat', t));
       }
@@ -214,6 +260,18 @@ function createGame(ctx, opts) {
       : { text: cut(fallback, LINE_MAX), face };
     emit('persona:line', { text: line.text, face: line.face, anim: line.anim, priority: 30, ttlMs: 6000 });
     return line;
+  }
+
+  // Cho ăn thật sự (xu/túi đã trừ): chỉ số, thưởng lần đầu, nhiệm vụ, game:fed, câu thoại
+  function eat(food) {
+    const t = now();
+    const r = stats.feed(box, food, t);
+    const reward = economy.firstUse(box, 'feed', t);
+    quests.progress(box, 'feed', 1, t);
+    emit('game:fed', { foodId: food.id, name: food.name });
+    const line = speak('feed', food.name, `Ngon quá, cảm ơn cậu đã cho tớ ${food.name}!`, 'happy');
+    settle([reward]);
+    return { ok: true, factor: r.factor, line: line.text, view: view() };
   }
 
   const actions = {
@@ -316,13 +374,53 @@ function createGame(ctx, opts) {
       if (!enabled()) return fail('Game hóa đang tắt');
       const food = typeof foodId === 'string' ? catalog.foods.find(f => f.id === foodId) : null;
       if (!food) return fail('Không có món này');
-      const t = now();
       if (!economy.spend(box, food.price)) return fail('Chưa đủ xu');
-      const r = stats.feed(box, food, t);
-      const reward = economy.firstUse(box, 'feed', t);
-      const line = speak('feed', food.name, `Ngon quá, cảm ơn cậu đã cho tớ ${food.name}!`, 'happy');
-      settle([reward]);
-      return { ok: true, factor: r.factor, line: line.text, view: view() };
+      return eat(food);
+    },
+    // checkin/buy/feedBag/claimSet: lý do lỗi là MÃ ('off'|'bad'|'coins'|'empty'|'full'|'done'|'incomplete'), UI tự dịch.
+    checkin() {
+      const fail = reason => ({ ok: false, reason, reward: { candy: 0 }, view: view() });
+      if (!enabled()) return fail('off');
+      const t = now();
+      const c = checkin.claim(box, t);
+      if (!c.ok) return fail(c.reason);
+      settle([economy.grant(box, { candy: c.reward.candy, reason: 'checkin' }, t)]);
+      return { ok: true, reward: c.reward, view: view() };
+    },
+    buy(foodId, n) {
+      const fail = reason => ({ ok: false, reason, view: view() });
+      if (!enabled()) return fail('off');
+      const food = typeof foodId === 'string' ? catalog.foods.find(f => f.id === foodId) : null;
+      if (!food || !Number.isInteger(n) || n < 1 || n > 10) return fail('bad');
+      const cur = box.inventory.food[food.id] || 0;
+      if (cur + n > MAX_FOOD) return fail('full');
+      if (!economy.spend(box, food.price * n)) return fail('coins');
+      box.inventory.food[food.id] = cur + n;
+      settle([]);
+      return { ok: true, view: view() };
+    },
+    feedBag(foodId) {
+      const fail = reason => ({ ok: false, reason, factor: 1, view: view() });
+      if (!enabled()) return fail('off');
+      const food = typeof foodId === 'string' ? catalog.foods.find(f => f.id === foodId) : null;
+      if (!food) return fail('bad');
+      const cur = box.inventory.food[food.id] || 0;
+      if (cur <= 0) return fail('empty');
+      if (cur === 1) delete box.inventory.food[food.id]; else box.inventory.food[food.id] = cur - 1;
+      return eat(food);
+    },
+    claimSet(setId) {
+      const fail = reason => ({ ok: false, reason, reward: { candy: 0 }, view: view() });
+      if (!enabled()) return fail('off');
+      const st = typeof setId === 'string' ? setList().find(x => x.id === setId) : null;
+      if (!st) return fail('bad');
+      if (box.album.claimed[st.id]) return fail('done');
+      const row = albumView().find(x => x.setId === st.id);
+      if (!row || !row.complete) return fail('incomplete');
+      const t = now();
+      box.album.claimed[st.id] = t;
+      settle([economy.grant(box, { candy: st.reward, reason: 'set:' + st.id }, t)]);
+      return { ok: true, reward: { candy: st.reward }, view: view() };
     },
     claim(questId) {
       if (!enabled()) return { ok: false, reason: 'Game hóa đang tắt', view: view() };
@@ -345,15 +443,18 @@ function createGame(ctx, opts) {
     'game:state': actions.state, 'game:catalog': actions.catalog, 'game:setEnabled': actions.setEnabled,
     'game:wear': actions.wear, 'game:saveOutfit': actions.saveOutfit, 'game:applyOutfit': actions.applyOutfit,
     'game:deleteOutfit': actions.deleteOutfit, 'game:pull': actions.pull, 'game:exchange': actions.exchange,
-    'game:feed': actions.feed, 'game:claim': actions.claim, 'game:close': actions.close
+    'game:feed': actions.feed, 'game:claim': actions.claim, 'game:close': actions.close,
+    'game:checkin': actions.checkin, 'game:buy': actions.buy, 'game:feedBag': actions.feedBag, 'game:claimSet': actions.claimSet
   };
   const ipc = {};
   for (const ch of Object.keys(channels)) {
     ipc[ch] = (...args) => {
       try { return channels[ch](...args); } catch (e) {
         logErr(ch, e);
+        const NEW = ['game:checkin', 'game:buy', 'game:feedBag', 'game:claimSet'];
+        if (NEW.includes(ch)) return { ok: false, reason: 'bad', view: view() };
         return ch === 'game:pull' || ch === 'game:feed' || ch === 'game:exchange' || ch === 'game:claim'
-          ? { ok: false, reason: 'Có lỗi nhỏ, cậu thử lại nhé', results: [], view: view() } : view();
+          ? { ok: false, reason: 'Có lỗi nhỏ, bạn thử lại nhé', results: [], view: view() } : view();
       }
     };
   }
@@ -391,7 +492,8 @@ function init(ctx) {
   ctx.game = {
     open: tab => { try { winMod().open(ctx, typeof tab === 'string' ? tab : ''); } catch (e) { console.error('[game] mở cửa sổ:', e); } },
     view: () => game.view(),
-    enabled: () => game.enabled()
+    enabled: () => game.enabled(),
+    setEnabled: on => game.actions.setEnabled(!!on)
   };
   try {
     const { ipcMain } = require('electron');

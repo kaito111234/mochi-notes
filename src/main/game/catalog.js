@@ -44,7 +44,16 @@ function validate(catalog) {
     foodSeen.add(f.id);
     foods.push(f);
   }
-  return Object.assign({}, catalog, { slots, rarities, items, foods });
+  const setSeen = new Set();
+  const sets = [];
+  for (const st of Array.isArray(catalog.sets) ? catalog.sets : []) {
+    if (!isObj(st) || typeof st.id !== 'string' || !ID_RE.test(st.id) || setSeen.has(st.id) || typeof st.name !== 'string') {
+      warn(`bỏ bộ ${st && st.id}`); continue;
+    }
+    setSeen.add(st.id);
+    sets.push({ id: st.id, name: st.name, reward: Number.isFinite(st.reward) && st.reward > 0 ? Math.floor(st.reward) : 100 });
+  }
+  return Object.assign({}, catalog, { slots, rarities, items, foods, sets });
 }
 
 function loadCatalog(filePath) {

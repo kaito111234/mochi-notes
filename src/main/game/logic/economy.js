@@ -1,6 +1,7 @@
 'use strict';
 // Kinh tế game: xu/exp, chống cày, chuỗi ngày, level. Thuần, nhận `now`.
 const { dayKey, isYesterday } = require('./time');
+const checklist = require('./checklist');
 
 const RULES = {
   done: { candy: 10, exp: 10 },
@@ -81,12 +82,18 @@ function capCoins(box, want) {
   return got;
 }
 
-function onDone(box, { noteId, onTime, note, now } = {}) {
+function onDone(box, { noteId, reminderId, onTime, note, now } = {}) {
   if (off(box)) return null;
   const day = rollDay(box, now);
   if (!noteOldEnough(note, now)) return null;
-  const due = note && note.reminder && note.reminder.due != null ? note.reminder.due : '';
-  const key = `done:${noteId}:${due}`;
+  const rid = typeof reminderId === 'string' && reminderId.length > 0 && reminderId.length <= 40 ? reminderId : null;
+  let rem = note && note.reminder;
+  if (rid && note && Array.isArray(note.reminders)) {
+    const f = note.reminders.find(r => r && r.id === rid);
+    if (f) rem = f;
+  }
+  const due = rem && rem.due != null ? rem.due : '';
+  const key = rid ? `done:${noteId}:${rid}:${due}` : `done:${noteId}:${due}`;
   if (box.rewarded[key]) return null;
   box.rewarded[key] = now;
 
@@ -110,7 +117,7 @@ function onCheckItem(box, { noteId, index, done, note, now } = {}) {
   if (off(box) || done !== true) return null;
   const day = rollDay(box, now);
   if (!noteOldEnough(note, now)) return null;
-  const key = `chk:${noteId}:${index}`;
+  const key = checklist.rewardKey(noteId, index, note);   // theo nội dung dòng; thiếu chữ -> khoá cũ theo chỉ số
   if (box.rewarded[key]) return null;
   box.rewarded[key] = now;
   const candy = capCoins(box, RULES.checkItem.candy);

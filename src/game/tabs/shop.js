@@ -4,6 +4,9 @@
   if (!R) return;
   var el = null, room = null, lastView = null, lineTimer = null, busy = false;
   var refs = {};
+  var qty = 1;
+  var REASONS = { off: 'Game hóa đang tắt', coins: 'Chưa đủ xu', full: 'Túi đầy rồi', empty: 'Túi hết món này rồi', bad: 'Có lỗi, thử lại nhé', done: 'Xong rồi nhé' };
+  function reasonText(r) { return REASONS[r] || 'Chưa làm được'; }
 
   function h(tag, cls, text) {
     var e = document.createElement(tag);
@@ -56,6 +59,9 @@
     var foods = (room.catalog && room.catalog.foods) || [];
     var factors = view.foodFactor || {};
     var coins = st.candy || 0;
+    renderBag(view);
+    var segs = refs.qtySeg.children;
+    for (var qi = 0; qi < segs.length; qi++) segs[qi].setAttribute('aria-pressed', String(Number(segs[qi].dataset.n) === qty));
     refs.grid.textContent = '';
     foods.forEach(function (f) {
       var factor = factors[f.id] != null ? factors[f.id] : 1;
@@ -78,23 +84,63 @@
       card.appendChild(h('div', 'sh-gain', '+' + m + ' Tâm trạng · +' + en + ' Năng lượng'));
       var tag = h('div', 'sh-tag' + (factor < 1 ? ' on' : ''));
       if (factor < 1) {
-        tag.textContent = 'Bé hơi ngán (×' + String(Math.round(factor * 100) / 100).replace('.', ',') + ')';
+        tag.textContent = 'Mochi hơi ngán (×' + String(Math.round(factor * 100) / 100).replace('.', ',') + ')';
         tag.title = 'Ăn món khác hoặc đợi vài giờ nhé';
         card.title = 'Ăn món khác hoặc đợi vài giờ nhé';
       } else {
         tag.innerHTML = '&nbsp;';
       }
       card.appendChild(tag);
+      var acts = h('div', 'sh-acts');
+      var bag = h('button', 'btn sh-buy sh-buy-bag', 'Mua ×' + qty);
+      bag.type = 'button';
+      bag.title = 'Mua ' + qty + ' ' + f.name + ' vào túi (' + f.price * qty + ' xu)';
       var btn = h('button', 'btn btn-primary sh-buy', 'Mua & cho ăn');
       btn.type = 'button';
-      var short = coins < f.price;
-      if (!view.enabled) { btn.disabled = true; btn.title = 'Game hóa đang tắt'; }
-      else if (short) { btn.disabled = true; btn.title = 'Chưa đủ xu'; }
-      if (btn.disabled) card.classList.add('dim');
+      if (view.enabled === false) { bag.disabled = btn.disabled = true; bag.title = btn.title = REASONS.off; }
+      else {
+        if (coins < f.price * qty) { bag.disabled = true; bag.title = REASONS.coins; }
+        if (coins < f.price) { btn.disabled = true; btn.title = REASONS.coins; }
+      }
+      if (bag.disabled && btn.disabled) card.classList.add('dim');
+      bag.addEventListener('click', function () { buyBag(f, bag); });
       btn.addEventListener('click', function () { buy(f, card, btn); });
-      card.appendChild(btn);
+      acts.appendChild(bag);
+      acts.appendChild(btn);
+      card.appendChild(acts);
       refs.grid.appendChild(card);
     });
+  }
+
+  function renderBag(view) {
+    var bag = view.bag || {};
+    var foods = (room.catalog && room.catalog.foods) || [];
+    var enabled = view.enabled !== false;
+    var n = 0;
+    refs.bag.textContent = '';
+    foods.forEach(function (f) {
+      var c = bag[f.id] || 0;
+      if (c <= 0) return;
+      n += c;
+      var cell = h('div', 'sh-bag-cell card');
+      cell.dataset.bag = f.id;
+      var ic = h('div', 'sh-bag-ic');
+      var img = document.createElement('img');
+      img.src = room.iconUrl(f.icon); img.alt = ''; img.draggable = false;
+      ic.appendChild(img);
+      ic.appendChild(h('span', 'sh-bag-n', '×' + c));
+      cell.appendChild(ic);
+      cell.appendChild(h('div', 'sh-bag-name', f.name));
+      var b = h('button', 'btn btn-sm sh-bag-feed', 'Cho ăn');
+      b.type = 'button';
+      if (!enabled) { b.disabled = true; b.title = REASONS.off; }
+      b.addEventListener('click', function () { feedBag(f, cell, b); });
+      cell.appendChild(b);
+      refs.bag.appendChild(cell);
+    });
+    refs.bag.hidden = n === 0;
+    refs.bagEmpty.hidden = n !== 0;
+    refs.bagCount.textContent = n ? n + ' món' : '';
   }
 
   function say(text) {
@@ -136,6 +182,47 @@
     } catch (e) { /* hiệu ứng không bắt buộc */ }
   }
 
+  function buyBag(f, btn) {
+    if (busy) return;
+    busy = true;
+    btn.disabled = true;
+    Promise.resolve(room.api.buy(f.id, qty)).then(function (res) {
+      res = res || {};
+      if (res.view) room.setView(res.view);
+      if (res.ok) {
+        room.toast('Đã cất ' + (qty > 1 ? qty + ' ' : '') + f.name + ' vào túi', 'ok');
+      } else {
+        room.toast(reasonText(res.reason), 'warn');
+        if (!res.view && lastView) render(lastView);
+      }
+    }).catch(function () {
+      room.toast('Có lỗi, thử lại nhé', 'warn');
+      if (lastView) render(lastView);
+    }).then(function () { busy = false; });
+  }
+
+  function feedBag(f, cell, btn) {
+    if (busy) return;
+    busy = true;
+    btn.disabled = true;
+    Promise.resolve(room.api.feedBag(f.id)).then(function (res) {
+      res = res || {};
+      if (res.view) room.setView(res.view);
+      if (res.ok) {
+        room.toast('Mochi đã ăn ' + f.name, 'ok');
+        say(res.line || 'Ngon quá, cảm ơn cậu nha!');
+        var c = refs.bag.querySelector('[data-bag="' + f.id + '"]') || refs.grid.querySelector('[data-food="' + f.id + '"]');
+        if (c) fly(c, f);
+      } else {
+        room.toast(reasonText(res.reason), 'warn');
+        if (!res.view && lastView) render(lastView);
+      }
+    }).catch(function () {
+      room.toast('Có lỗi, thử lại nhé', 'warn');
+      if (lastView) render(lastView);
+    }).then(function () { busy = false; });
+  }
+
   function buy(f, card, btn) {
     if (busy) return;
     busy = true;
@@ -144,12 +231,12 @@
       res = res || {};
       if (res.view) room.setView(res.view);
       if (res.ok) {
-        room.toast('Bé đã ăn ' + f.name, 'ok');
+        room.toast('Mochi đã ăn ' + f.name, 'ok');
         say(res.line || 'Ngon quá, cảm ơn cậu nha!');
         var c = refs.grid.querySelector('[data-food="' + f.id + '"]') || card;
         fly(c, f);
       } else {
-        room.toast(res.reason || 'Không mua được', 'warn');
+        room.toast(reasonText(res.reason), 'warn');
         if (!res.view && lastView) render(lastView);
       }
     }).catch(function () {
@@ -165,7 +252,29 @@
       el = root; room = r;
       el.classList.add('sh-root');
       el.appendChild(buildStats());
-      var title = h('div', 'sh-section', 'Đồ ăn cho bé');
+      var bh = h('div', 'sh-sec-head');
+      bh.appendChild(h('div', 'sh-section', 'Túi đồ ăn'));
+      refs.bagCount = h('div', 'sh-sec-sub');
+      bh.appendChild(refs.bagCount);
+      el.appendChild(bh);
+      refs.bag = h('div', 'sh-bag');
+      el.appendChild(refs.bag);
+      refs.bagEmpty = h('div', 'sh-bag-empty', 'Túi đang trống. Mua vài món ở dưới để dành cho Mochi nhé.');
+      el.appendChild(refs.bagEmpty);
+      var title = h('div', 'sh-sec-head');
+      title.appendChild(h('div', 'sh-section', 'Đồ ăn cho bé'));
+      var qs = h('div', 'sh-qty');
+      qs.appendChild(h('span', 'sh-qty-lab', 'Mua vào túi'));
+      refs.qtySeg = h('div', 'sh-seg');
+      [1, 5].forEach(function (n) {
+        var b = h('button', 'chip sh-seg-b', '×' + n);
+        b.type = 'button'; b.dataset.n = String(n);
+        b.setAttribute('aria-pressed', String(n === qty));
+        b.addEventListener('click', function () { qty = n; if (lastView) render(lastView); });
+        refs.qtySeg.appendChild(b);
+      });
+      qs.appendChild(refs.qtySeg);
+      title.appendChild(qs);
       el.appendChild(title);
       refs.grid = h('div', 'sh-grid');
       el.appendChild(refs.grid);
