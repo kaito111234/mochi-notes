@@ -185,3 +185,17 @@ body.locked .fb[data-cmd], body.locked #btnHl { opacity: .35; pointer-events: no
 /* panel nhắc gọn cho cửa sổ nhỏ */
 .panel .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .panel .fld { margin-bottom: 6px; }
+
+/* ---- tích hợp phòng paper (mẫu giấy, checklist, bộ chọn, gợi ý) ---- */
+.paper-layer { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.topbar, .lower { position: relative; z-index: 1; }
+.paper-head:empty { display: none; }
+.ck-count {
+  display: inline-flex; align-items: center; height: 18px; padding: 0 7px; margin-left: 2px; border-radius: 9px;
+  font-size: 11px; line-height: 1; background: rgba(var(--fg-rgb), .12); -webkit-app-region: no-drag; user-select: none;
+}
+.insight-row {
+  flex: none; display: flex; align-items: center; gap: 6px; margin: 2px 8px 0; padding: 3px 8px; min-height: 24px;
+  font-size: 12px; border-radius: 8px; background: rgba(var(--fg-rgb), .08);
+}
+.pop.picker-panel { position: absolute; left: 6px; right: 6px; top: 34px; bottom: 6px; overflow-y: auto; padding: 8px; }

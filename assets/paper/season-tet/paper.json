@@ -1,0 +1,53 @@
+{
+  "id": "season-tet",
+  "name": "Tết đỏ hoa mai",
+  "group": "season",
+  "order": 10,
+  "noteColor": "pink",
+  "dark": false,
+  "bg": {
+    "color": "#fff0e0",
+    "head": "#ffd9c4",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Tết",
+    "font": "baloo2",
+    "color": "#a3141c",
+    "size": 22,
+    "align": "left",
+    "style": "ribbon"
+  },
+  "ink": "#6b1218",
+  "font": "baloo2",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/flower-mai.svg",
+      "pos": "tr",
+      "w": 44,
+      "dx": 52,
+      "dy": 4,
+      "rot": 10
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/flower-dao.svg",
+      "pos": "br",
+      "w": 44,
+      "dx": 6,
+      "dy": 6,
+      "rot": -10
+    }
+  ],
+  "checklist": false
+}

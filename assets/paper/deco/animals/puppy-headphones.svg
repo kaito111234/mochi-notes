@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<g stroke="#2b2420" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M10 20 C2 22 2 40 8 46 C14 44 16 34 15 24 Z" fill="#b9854f"/>
+<path d="M54 20 C62 22 62 40 56 46 C50 44 48 34 49 24 Z" fill="#b9854f"/>
+<path d="M8 36 C6 20 18 12 32 12 C46 12 58 20 56 36 C55 50 46 58 32 58 C18 58 9 50 8 36 Z" fill="#f4dcb8"/>
+<path d="M32 12 C40 12 46 15 49 20 C44 24 38 22 36 30 C34 26 30 24 26 22 C24 16 26 12 32 12 Z" fill="#c99a62" stroke="none"/>
+<path d="M11 30 C9 4 55 4 53 30" fill="none" stroke="#2b2420" stroke-width="3.2"/>
+<rect x="5" y="25" width="9" height="14" rx="4" fill="#ff7a8a"/><rect x="50" y="25" width="9" height="14" rx="4" fill="#ff7a8a"/>
+<circle cx="23" cy="36" r="2.6" fill="#2b2420" stroke="none"/><circle cx="41" cy="36" r="2.6" fill="#2b2420" stroke="none"/>
+<ellipse cx="32" cy="46" rx="7" ry="5" fill="#fffaf0" stroke-width="2"/>
+<path d="M29.5 43.5 H34.5 C34.5 46 32 47 32 47 C32 47 29.5 46 29.5 43.5 Z" fill="#2b2420" stroke-width="1.4"/>
+<path d="M32 47 V49 M32 49 C30 51 28 50 28 49 M32 49 C34 51 36 50 36 49" fill="none" stroke-width="1.6"/>
+<ellipse cx="17" cy="45" rx="3" ry="2.2" fill="#ff9fb0" stroke="none" opacity=".85"/><ellipse cx="47" cy="45" rx="3" ry="2.2" fill="#ff9fb0" stroke="none" opacity=".85"/>
+</g>
+</svg>

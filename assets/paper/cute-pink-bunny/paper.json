@@ -1,0 +1,61 @@
+{
+  "id": "cute-pink-bunny",
+  "name": "Hồng chấm bi & thỏ",
+  "group": "cute",
+  "order": 20,
+  "noteColor": "pink",
+  "dark": false,
+  "bg": {
+    "color": "#ffe9f1",
+    "head": "#ffd3e3",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "dots",
+    "color": "rgba(214,110,150,.38)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Memo",
+    "font": "pangolin",
+    "color": "#9b3a62",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#5a2a3d",
+  "font": "pangolin",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "washi",
+      "color": "#f4a9c0",
+      "pattern": "stripe",
+      "pos": "top",
+      "w": 96,
+      "rot": -3
+    },
+    {
+      "kind": "img",
+      "src": "deco/animals/bunny.svg",
+      "pos": "tr",
+      "w": 52,
+      "dx": 8,
+      "dy": 10,
+      "rot": 5
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/heart.svg",
+      "pos": "tr",
+      "w": 20,
+      "dx": 66,
+      "dy": 32,
+      "rot": -10
+    }
+  ],
+  "checklist": false
+}

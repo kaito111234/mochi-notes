@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mochi Notes - thư viện mẫu giấy (dev)</title>
+<link rel="stylesheet" href="../../../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../note.css">
+<link rel="stylesheet" href="../paper.css">
+<link rel="stylesheet" href="gallery.css">
+</head>
+<body class="gallery">
+<h1>Thư viện mẫu giấy <small id="gInfo"></small></h1>
+<div class="gbar">
+  <label><input type="checkbox" id="optTilt"> Nghiêng</label>
+  <label><input type="checkbox" id="optDeco" checked> Trang trí</label>
+  <label><input type="checkbox" id="optGlass"> Nền kính</label>
+  <label>Zoom <select id="optZoom"><option>1</option><option>1.3</option><option>0.8</option></select></label>
+  <label>Phông <select id="optFont"><option value="">Theo mẫu</option></select></label>
+</div>
+<h2>Thumb</h2>
+<div class="gthumbs" id="gThumbs"></div>
+<h2>Note giả 220×220</h2>
+<div class="ggrid" id="gGrid"></div>
+<script src="../../../assets/paper/catalog.js"></script>
+<script src="../paper.js"></script>
+<script src="gallery.js"></script>
+</body>
+</html>
