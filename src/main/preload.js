@@ -47,7 +47,11 @@ const api = {
 api.alarms = {};
 // ===== HẾT PHÒNG notes =====
 // ===== BẮT ĐẦU PHÒNG core (kênh 'pet:*') =====
-api.pet = {};
+api.pet = {
+  onCmd: cb => on('pet:cmd', cb),                                  // cb(cmd) — xem docs/rooms/core/ARCH.md
+  send: (type, data) => ipcRenderer.send('pet:msg', String(type), data === undefined ? {} : data),
+  ignore: v => ipcRenderer.send('pet:ignore', !!v)                 // true = click xuyên qua
+};
 // ===== HẾT PHÒNG core =====
 // ===== BẮT ĐẦU PHÒNG game (kênh 'game:*') =====
 api.game = {};
