@@ -18,7 +18,42 @@ File được sửa: xem `docs/spec/00-ownership.md` (dòng notes).
 - Không làm hỏng luồng note 0.1.
 
 ## Trạng thái
-_(phòng cập nhật cuối mỗi lượt)_ — chưa bắt đầu.
+_Cập nhật 2026-10-15 (lượt 1 của phòng)._
+
+**Đã xong (Đợt 1, cả 6 việc)** — hợp đồng nội bộ: `docs/rooms/notes/API.md`.
+1. Báo thức: `src/main/alarms/alarmService.js` + `alarmLogic.js`, cửa sổ chuông `src/alarms/ring.*`. Một lần / hằng ngày / ngày thường / chọn thứ / hằng tháng; nhãn; 3 âm tổng hợp + file riêng (chép vào `userData/alarm-sounds`); hoãn N phút; `nextAt` theo giờ địa phương (`src/shared/recur.js`); bù khi máy ngủ dậy (≤ 30 phút kêu, quá → "đã lỡ" + thông báo). Phát `alarm:ring/stopped/snoozed`; gọi `ctx.pet.stage.request` nếu có, không thì `ctx.pet.enqueue` (0.1 bỏ qua an toàn). Cửa sổ chuông của phòng LUÔN hiện; bé tắt → thêm thông báo Windows.
+2. Giao diện: tab "Note | Báo thức | Dặn dò" trong cửa sổ danh sách (`src/list/alarms.js`, `memos.js`), tạo nhanh bằng câu tiếng Việt, mục "Đã lỡ"; Cài đặt có nhóm "Báo thức" và "Dữ liệu".
+3. Dặn dò: `memoService.js` + `memoLogic.js`, popup `src/alarms/memo.*`. Khi mở máy, sáng (từ 06:00), trưa (từ 11:00), tối (từ 17:00) — lỡ khung thì hiện bù trong ngày; trước khi tắt máy (chặn `before-quit` một lần, tự thoát sau 60s; `session-end`/`shutdown` chỉ hiện thông báo vì không chặn được). Phát `memo:due`.
+4. Nhắc lặp note: `reminder.repeat` (`scheduler.js`, `noteRepeat.js`); hiểu "mỗi sáng 8h", "thứ 2, 4, 6 lúc 9h", "ngày thường 9h", "ngày 5 hàng tháng", "mỗi 2 tiếng"… Chỉ tự tạo nhắc lặp khi có giờ rõ ràng. Bấm Xong → sang lần kế; tắt máy nhiều ngày → báo đúng 1 lần.
+5. Note: tìm (Ctrl+F, không phân biệt dấu), undo/redo riêng (Ctrl+Z/Y/Shift+Z), kéo-thả/dán ảnh thu nhỏ, cỡ chữ (Ctrl +/−/0, Ctrl+lăn), khoá chỉ đọc (Ctrl+Shift+K — Ctrl+Shift+L đã là danh sách chấm của 0.1), chọn lặp trong panel nhắc, xuất .txt/.md. Nhập/xuất JSON/.txt/.md và khôi phục từ `userData/backups` (`dataTransfer.js`, `transferLogic.js`; trước khi khôi phục tự lưu `mochi-data-before-restore-*.json`, giữ 10 bản).
+6. Test: 5 bộ, tổng 177 ca, xanh ở TZ Asia/Ho_Chi_Minh và America/New_York.
+
+**Quyết định đã ghi**: báo thức vẫn kêu khi tắt "Âm thanh nhắc" (báo thức là chủ động); báo thức một lần sau khi kêu thì tự tắt (như đồng hồ Windows); chuông tự im sau 5 phút (cửa sổ còn); `repeat`, cỡ chữ, khoá note lưu ở `box.noteMeta` vì `store.js` bỏ khoá lạ của note; nhập note có hạn đã qua → đánh dấu xong (không nhắc dai đồ cũ); `Repeat.freq` thêm `'hourly'` và `anchor` (chỉ trong phòng).
+
+**Ảnh nghiệm thu** (`docs/rooms/notes/`): `alarm-1min-acceptance.png` (báo thức thật đặt +1 phút kêu lúc 00:46 cùng note 0.1 vẫn nhắc), `alarm-ring.png`, `memo-popup.png`, `list-alarms.png`, `list-alarm-form.png`, `list-memos.png`, `list-data.png`, `list-restore.png`, `note-window.png`.
+
+**Cách chạy test**
+```
+for t in src/shared/__tests__/recur.test.js src/main/alarms/__tests__/alarm.test.js src/main/alarms/__tests__/memo.test.js src/main/notes/__tests__/scheduler.test.js src/main/notes/__tests__/transfer.test.js; do TZ=Asia/Ho_Chi_Minh node $t || echo FAIL $t; done
+```
+Biến chạy thử: `MOCHI_DEV_ALARM=<phút>` (tạo báo thức thật sau N phút), `MOCHI_DEV_RING=1` (chuông thử sau 3s), `MOCHI_DEV_MEMO=1`, `MOCHI_DEV_TAB=alarms|alarms-new|memos|memos-edit|data|restore` (cùng `MOCHI_DEV_LIST=1`), `MOCHI_DEV_TRANSFER=1 MOCHI_DEV_DIR=<thư mục>`.
+
+**Chưa kiểm được / đang dở**
+- Chưa thử trên Windows thật: âm thanh, thông báo Windows, `before-quit` khi tắt máy, kéo-thả file thật từ Explorer, hộp thoại nhập/xuất (đã thử bằng chế độ dev không hộp thoại).
+- Cửa sổ chuông và bong bóng của bé cùng ở góc dưới phải nên chồng nhau (ảnh nghiệm thu) — chờ phòng core có `stage` để phối hợp.
+- Thông báo Windows chỉ bấm để mở, chưa có nút Tắt/Hoãn ngay trên toast (cần `toastXml` + kích hoạt giao thức).
+
+**Việc tiếp theo cụ thể**
+1. Khi core có `ctx.pet.stage`: thử lại báo thức/dặn dò với bé, đặt cửa sổ chuông tránh chỗ bé (hoặc ẩn chuông khi bé đang cầm chuông nhưng vẫn giữ nút Tắt/Hoãn).
+2. Toast Windows có nút Tắt/Hoãn (`toastXml`).
+3. Nối `ctx.persona.pick('alarm'|'memo', vars)` cho câu thoại khi phòng persona có.
+4. Chạy thử bản đóng gói trên Windows.
+
+**Vướng mắc**: không.
 
 ## Đề xuất cho phòng điều hành
-_(trống)_
+1. `src/main/store.js`: `normalizeReminder` giữ `repeat` (dùng `normRepeat` trong `src/main/alarms/box.js`). Khi đó bản sao lưu cũng có lặp; `noteRepeat.js` vẫn tương thích (nhân bản vào `noteMeta` thành thừa nhưng vô hại).
+2. `docs/spec/01-data.md`: ghi thêm `Repeat.freq: 'hourly'`, `Repeat.anchor?: number`, `Alarm.createdAt`, `Alarm.snoozedUntil?`, `box.missed/sounds/noteMeta` (xem `box.js`).
+3. `src/main/tray.js` + `listWindow.js`: thêm mục khay "Báo thức…" / "Dặn dò…" → `ctx.list.open(tab)`; renderer list đã có hook chuyển tab (hiện qua `alarm:devHint`, có thể thêm kênh `list:tab`).
+4. `package.json` `build.files`: loại `**/__tests__/**`. Phòng qa: thêm `npm test` chạy 5 bộ test ở trên.
+5. Phòng core: `ctx.pet.enqueue` 0.1 bỏ qua kiểu `alarm`/`memo` — đúng ý; khi làm `stage` xin chừa góc dưới phải cho cửa sổ chuông (360×236) và popup dặn dò (cao hơn ~250px), hoặc báo kênh vị trí để phòng notes né.
