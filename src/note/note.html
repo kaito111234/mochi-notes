@@ -16,6 +16,9 @@
     <span class="pin" id="pin" hidden title="Luôn nổi trên cùng" aria-label="Luôn nổi trên cùng">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
     </span>
+    <span class="pin" id="lockInd" hidden title="Note đang khoá (chỉ đọc)" aria-label="Note đang khoá">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    </span>
     <span class="spacer"></span>
     <button class="ib" id="btnMenu" type="button" data-pop-toggle title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path class="dots" d="M5 12h.01M12 12h.01M19 12h.01"/></svg>
@@ -26,7 +29,16 @@
   </header>
 
   <div class="lower">
+    <div class="findbar" id="findBar" hidden role="search" aria-label="Tìm trong note">
+      <input type="text" id="findInput" placeholder="Tìm trong note" aria-label="Tìm trong note" autocomplete="off" spellcheck="false">
+      <span class="fcount" id="findCount" aria-live="polite"></span>
+      <button class="fb" type="button" id="findPrev" title="Kết quả trước (Shift+Enter)" aria-label="Kết quả trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button class="fb" type="button" id="findNext" title="Kết quả sau (Enter)" aria-label="Kết quả sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      <button class="fb" type="button" id="findClose" title="Đóng (Esc)" aria-label="Đóng tìm kiếm"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
     <main class="body"><div id="editor" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Nội dung note" data-placeholder="Ghi chú…"></div></main>
+
+    <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
 
     <div class="chiprow" id="chipRow" hidden>
       <button class="chip" id="chip" type="button" data-pop-toggle>
@@ -54,6 +66,7 @@
         <button class="fb" type="button" data-cmd="insertUnorderedList" title="Danh sách chấm (Ctrl+Shift+L)" aria-label="Danh sách chấm" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path class="dots" d="M4 6h.01M4 12h.01M4 18h.01"/></svg></button>
         <button class="fb" type="button" id="btnHl" data-pop-toggle title="Tô sáng (Ctrl+Shift+H)" aria-label="Tô sáng" aria-haspopup="true" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg><i class="hlbar" id="hlBar"></i></button>
         <button class="fb" type="button" id="btnRem" data-pop-toggle title="Nhắc lịch (Ctrl+Shift+R)" aria-label="Nhắc lịch" aria-haspopup="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></button>
+        <button class="fb" type="button" id="btnLock" title="Khoá note (Ctrl+Shift+K)" aria-label="Khoá note" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
       </div>
     </div>
   </div>
@@ -71,6 +84,10 @@
       </div>
       <button class="mi" type="button" role="menuitemcheckbox" aria-checked="false" data-act="top"><span>Luôn nổi trên cùng</span><svg class="chk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7"/></svg></button>
       <button class="mi" type="button" role="menuitem" data-act="remind"><span>Nhắc lịch…</span></button>
+      <button class="mi" type="button" role="menuitem" data-act="find"><span>Tìm trong note</span><kbd>Ctrl+F</kbd></button>
+      <button class="mi" type="button" role="menuitemcheckbox" aria-checked="false" data-act="lock"><span>Khoá note</span><svg class="chk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7"/></svg></button>
+      <button class="mi" type="button" role="menuitem" data-act="exptxt"><span>Xuất .txt</span></button>
+      <button class="mi" type="button" role="menuitem" data-act="expmd"><span>Xuất .md</span></button>
       <button class="mi" type="button" role="menuitem" data-act="list"><span>Danh sách note</span></button>
       <button class="mi" type="button" role="menuitem" data-act="hideall"><span>Ẩn tất cả note</span></button>
       <div class="sep"></div>
@@ -89,6 +106,7 @@
   <div class="pop panel" id="remPanel" hidden role="dialog" aria-label="Nhắc lịch">
     <div class="ptitle">Nhắc lịch</div>
     <label class="fld"><span>Thời gian</span><input type="datetime-local" id="remDue"></label>
+    <div class="two">
     <label class="fld"><span>Báo trước</span>
       <select id="remLead">
         <option value="0">Đúng giờ</option>
@@ -100,6 +118,16 @@
         <option value="86400000">1 ngày</option>
       </select>
     </label>
+    <label class="fld"><span>Lặp lại</span>
+      <select id="remRepeat">
+        <option value="none">Không</option>
+        <option value="daily">Hằng ngày</option>
+        <option value="weekdays">Ngày thường (T2–T6)</option>
+        <option value="weekly" id="optWeekly">Hằng tuần</option>
+        <option value="monthly" id="optMonthly">Hằng tháng</option>
+      </select>
+    </label>
+    </div>
     <div class="auto" id="remAuto" hidden>Tự hiểu từ nội dung</div>
     <div class="err" id="remErr" role="alert" hidden></div>
     <div class="row">
@@ -110,6 +138,7 @@
   </div>
 </div>
 <script src="../shared/parse.js"></script>
+<script src="../shared/recur.js"></script>
 <script src="note.js"></script>
 </body>
 </html>

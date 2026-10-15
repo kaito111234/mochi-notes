@@ -2,21 +2,42 @@
 // Logic thuần (không import electron) cho reminder.
 const P = require('../../shared/parse.js');
 
+// recur.js do nhân viên khác viết; nạp lười + an toàn để note 0.1 vẫn chạy nếu thiếu.
+let _recur;
+function recur() {
+  if (_recur === undefined) { try { _recur = require('../../shared/recur.js'); } catch (_) { _recur = null; } }
+  return _recur;
+}
+const pad2 = n => String(n).padStart(2, '0');
+const hmOf = t => { const d = new Date(t); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+const isRepeat = r => !!r && typeof r === 'object' && typeof r.freq === 'string';
+
 const MIN = 6e4;
 const NAG_AFTER = 10 * MIN;   // quá hạn > 10 phút mới nhắc dai
 const NAG_EVERY = 15 * MIN;
 
+/** Bỏ thẻ <...> bằng một lượt quét (tương đương /<[^>]*>/g nhưng tuyến tính). */
+function stripTags(s) {
+  let out = '', i = 0;
+  for (;;) {
+    const a = s.indexOf('<', i);
+    if (a < 0) return out + s.slice(i);
+    const b = s.indexOf('>', a + 1);
+    if (b < 0) return out + s.slice(i);   // không còn '>' thì không còn thẻ nào
+    out += s.slice(i, a);
+    i = b + 1;
+  }
+}
+
 function htmlToText(html) {
-  return String(html || '')
+  return stripTags(String(html || '')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(div|p|li|h[1-6]|ul|ol)>/gi, '\n')
-    .replace(/<[^>]*>/g, '')
+    .replace(/<\/(div|p|li|h[1-6]|ul|ol)>/gi, '\n'))
     .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
-
 /** Dòng đầu tiên không rỗng, tối đa 80 ký tự. */
 function noteTitle(text) {
   const lines = String(text || '').split(/\r?\n/);
@@ -27,18 +48,84 @@ function noteTitle(text) {
   return '';
 }
 
-function mkReminder(due, lead, intent, auto, now) {
-  return {
+function mkReminder(due, lead, intent, auto, now, repeat) {
+  const r = {
     due, lead, intent, auto,
     preFired: lead > 0 && now >= due - lead,
     fired: false,
     done: false
   };
+  if (repeat) r.repeat = repeat;
+  return r;
+}
+
+/** Giờ 'HH:MM' của lịch lặp: lấy từ anchor (bền qua hoãn/khởi động lại), không có thì từ due. */
+function timeOfReminder(r) {
+  return hmOf(r.repeat && Number.isFinite(r.repeat.anchor) ? r.repeat.anchor : r.due);
+}
+function sameRule(a, b) {
+  if (!a || !b) return false;
+  const f = x => JSON.stringify([x.freq, x.interval || 1, x.byDay || null, x.byMonthDay || null]);
+  return f(a) === f(b);
+}
+/** Gắn anchor nếu thiếu (hourly: now; còn lại: lần đầu) để giữ được giờ & mốc interval. */
+function withAnchor(repeat, anchor) {
+  const o = Object.assign({}, repeat);
+  if (!Number.isFinite(o.anchor)) o.anchor = anchor;
+  return o;
+}
+
+/** Lần kế tiếp của lịch lặp sau afterMs, hoặc null. */
+function nextOf(repeat, time, afterMs) {
+  const R = recur();
+  if (!R || !isRepeat(repeat)) return null;
+  try { const t = R.nextOccurrence({ repeat, time }, afterMs); return Number.isFinite(t) ? t : null; } catch (_) { return null; }
+}
+
+/** Tính lần lặp kế tiếp > max(now, due); reset fired/preFired/done. Trả true nếu cuộn được. */
+function rollRepeat(note, now = Date.now()) {
+  const r = note && note.reminder;
+  if (!r || !isRepeat(r.repeat)) return false;
+  const next = nextOf(r.repeat, timeOfReminder(r), Math.max(now, r.due));
+  if (next == null) return false;
+  r.due = next;
+  r.fired = false;
+  r.done = false;
+  r.preFired = r.lead > 0 && now >= next - r.lead;
+  return true;
+}
+
+/** Nhắc lặp từ chữ: {repeat, time} hoặc null. */
+function repeatFromText(text, now) {
+  const R = recur();
+  if (!R) return null;
+  let p = null;
+  try { p = R.parseRecur(text); } catch (_) { p = null; }
+  if (!p || !isRepeat(p.repeat)) return null;
+  const rule = withAnchor(p.repeat, p.repeat.freq === 'hourly' ? now : undefined);
+  let time = p.time;
+  if (!time && rule.freq !== 'hourly') {
+    // Chỉ tự tạo nhắc lặp khi chữ có GIỜ tường minh; không thì hành vi như 0.1.
+    const a = P.analyze(text, now);
+    if (!(a.timed && a.due)) return null;
+    time = hmOf(a.due);
+  }
+  const due = nextOf(rule, time, now);
+  if (due == null) return null;
+  return { repeat: withAnchor(rule, due), due };
 }
 
 /** Tính lại reminder khi nội dung đổi. prev có thể null. Trả về reminder mới (hoặc prev nếu giữ nguyên). */
 function computeReminder(prev, text, now = Date.now()) {
   if (prev && !prev.auto) return prev;           // người dùng đã đặt tay: không đụng
+  const rp = repeatFromText(text, now);
+  if (rp) {
+    // Giữ nguyên nếu đang là đúng lịch lặp này (mỗi lần gõ chữ không được reset fired/done).
+    if (prev && prev.auto && sameRule(prev.repeat, rp.repeat) &&
+        nextOf(prev.repeat, timeOfReminder(prev), prev.due - 1) === prev.due) return prev;
+    const it = P.intentOf(text);
+    return mkReminder(rp.due, P.leadFor(it, rp.due, true, now), it.k, true, now, rp.repeat);
+  }
   const a = P.analyze(text, now);
   if (a.due && a.due > now) {
     if (prev && prev.auto && prev.due === a.due) return prev;
@@ -59,19 +146,54 @@ function applyText(note, now = Date.now()) {
 function setReminder(note, r, now = Date.now()) {
   if (!r || !Number.isFinite(r.due)) { note.reminder = null; return null; }
   const lead = Number.isFinite(r.lead) && r.lead > 0 ? r.lead : 0;
-  note.reminder = mkReminder(r.due, lead, P.intentOf(note.text).k, false, now);
+  // r.repeat: undefined = giữ lịch lặp hiện có; null = bỏ; object = đặt mới.
+  let repeat = r.repeat === undefined ? (note.reminder && note.reminder.repeat) : r.repeat;
+  if (r.repeat === undefined && isRepeat(repeat) && repeat.freq !== 'hourly' &&
+      !(repeat.freq === 'weekly' && repeat.byDay) && !(repeat.freq === 'monthly' && repeat.byMonthDay)) {
+    repeat = Object.assign({}, repeat, { anchor: r.due });   // đổi giờ -> lần sau theo giờ mới
+  }
+  note.reminder = mkReminder(r.due, lead, P.intentOf(note.text).k, false, now,
+    isRepeat(repeat) ? withAnchor(repeat, r.due) : null);
+  if (!note.reminder.repeat) delete note.reminder.repeat;
   return note.reminder;
+}
+
+/** Đặt/huỷ lặp cho note (repeat null = huỷ). Trả true nếu có thay đổi hợp lệ. */
+function setRepeat(note, repeat, now = Date.now()) {
+  const r = note.reminder;
+  if (!repeat) {
+    if (!r || !r.repeat) return false;
+    delete r.repeat; r.auto = false;
+    return true;
+  }
+  if (!isRepeat(repeat)) return false;
+  if (!r) {
+    const rule = withAnchor(repeat, now);
+    const due = nextOf(rule, '08:00', now);
+    if (due == null) return false;
+    const it = P.intentOf(note.text);
+    note.reminder = mkReminder(due, P.leadFor(it, due, true, now), it.k, false, now,
+      repeat.freq === 'hourly' ? rule : withAnchor(repeat, due));
+    return true;
+  }
+  r.repeat = withAnchor(repeat, r.due);
+  r.auto = false;
+  if (r.done) { if (!rollRepeat(note, now)) delete r.repeat; }
+  return true;
 }
 
 function snooze(note, minutes, now = Date.now()) {
   const r = note.reminder;
   if (!r) return false;
   const m = Number.isFinite(minutes) && minutes > 0 ? minutes : 10;
+  const prevDue = r.due;
   r.due = now + m * MIN;
   r.fired = false;
   r.preFired = true;
   r.done = false;
   r.auto = false; // để lần sửa chữ sau không ghi đè giờ đã hoãn
+  // note lặp: giữ r.repeat (giờ gốc nằm ở repeat.anchor nên lần sau vẫn đúng giờ)
+  if (r.repeat && !Number.isFinite(r.repeat.anchor)) r.repeat.anchor = prevDue;
   return true;
 }
 
@@ -97,6 +219,29 @@ function tick(notes, now, state) {
     const r = n.reminder;
     if (!r || r.done) continue;
     let ch = false;
+    // Nhắc lặp: nếu đã tới lần kế sau r.due (dù đã báo hay chưa, vd máy tắt qua nhiều chu kỳ)
+    // thì nhảy tới mốc MỚI NHẤT <= now và chỉ phát đúng 1 'due' cho mốc đó.
+    if (r.repeat) {
+      const tm = timeOfReminder(r);
+      let nx = nextOf(r.repeat, tm, r.due);
+      if (nx != null && now >= nx) {
+        const rp = r.repeat;
+        if (rp.freq === 'hourly' && Number.isFinite(rp.anchor) && rp.interval !== 0) {
+          const step = (rp.interval > 0 ? rp.interval : 1) * 3600000;
+          const cand = rp.anchor + Math.floor((now - rp.anchor) / step) * step;
+          if (cand >= nx && cand <= now) nx = cand;
+        } else {
+          for (let i = 0; i < 5000; i++) {
+            const nn = nextOf(rp, tm, nx);
+            if (nn == null || nn > now) break;
+            nx = nn;
+          }
+        }
+        r.due = nx; r.fired = false; r.done = false;
+        r.preFired = !(r.lead > 0 && now < nx - r.lead);
+        ch = true;
+      }
+    }
     if (!r.preFired && r.lead > 0 && now >= r.due - r.lead && now < r.due) {
       r.preFired = true; ch = true;
       events.push({ type: 'pre', noteId: n.id });
@@ -117,4 +262,4 @@ function tick(notes, now, state) {
   return { events, changed: changedIds.length > 0, changedIds };
 }
 
-module.exports = { htmlToText, noteTitle, computeReminder, applyText, setReminder, snooze, markDone, overdueNotes, tick, NAG_AFTER, NAG_EVERY };
+module.exports = { htmlToText, noteTitle, computeReminder, applyText, setReminder, snooze, markDone, overdueNotes, tick, rollRepeat, setRepeat, NAG_AFTER, NAG_EVERY };

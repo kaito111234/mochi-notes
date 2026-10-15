@@ -8,7 +8,7 @@ function init(ctx) {
 
   function tickOnce() {
     const now = Date.now();
-    schedState.busy = ctx.pet.isBusy();
+    schedState.busy = typeof ctx.pet.isBusy === 'function' ? !!ctx.pet.isBusy() : false;
     const r = S.tick(ctx.store.data.notes, now, schedState);
     if (r.changed) {
       ctx.store.save();
@@ -17,9 +17,14 @@ function init(ctx) {
     if (r.events.length) {
       for (const ev of r.events) {
         if (ev.type === 'pre' || ev.type === 'due') ctx.bus.emit('reminder:' + ev.type, { noteId: ev.noteId });
-        ctx.pet.enqueue({ type: ev.type, noteId: ev.noteId });
+        const st = ctx.pet.stage;
+        if (st && typeof st.request === 'function') {
+          const payload = { noteId: ev.noteId };
+          if (ev.overdueCount != null) payload.overdueCount = ev.overdueCount;
+          st.request({ kind: ev.type, priority: { due: 90, pre: 70, nag: 40 }[ev.type], payload });
+        } else ctx.pet.enqueue({ type: ev.type, noteId: ev.noteId, overdueCount: ev.overdueCount });
       }
-    } else ctx.pet.pump();
+    } else if (typeof ctx.pet.pump === 'function') ctx.pet.pump();
   }
   function start() { if (!timer) timer = setInterval(tickOnce, 1000); }
   function stop() { clearInterval(timer); timer = null; }

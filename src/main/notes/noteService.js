@@ -140,7 +140,7 @@ function init(ctx) {
   function setNoteReminder(id, r) {
     const n = ctx.findNote(id);
     if (!n) return null;
-    S.setReminder(n, r && typeof r === 'object' ? { due: Number(r.due), lead: Number(r.lead) } : null, Date.now());
+    S.setReminder(n, r && typeof r === 'object' ? { due: Number(r.due), lead: Number(r.lead), repeat: r.repeat } : null, Date.now());
     n.updatedAt = Date.now();
     store().save(); noteChanged(n);
     return n;
@@ -153,6 +153,13 @@ function init(ctx) {
     // đúng hạn = chưa quá hạn tới mức bị nhắc dai
     const onTime = !!r && !(r.fired && now - r.due > S.NAG_AFTER);
     if (S.markDone(n)) {
+      if (r.repeat && !wasDone) {
+        // note lặp: báo xong lần này rồi chuyển sang lần kế (không ở trạng thái done vĩnh viễn)
+        bus.emit('reminder:done', { noteId: id, onTime });
+        S.rollRepeat(n, now);
+        n.updatedAt = now; store().save(); noteChanged(n);
+        return n;
+      }
       n.updatedAt = now; store().save(); noteChanged(n);
       if (!wasDone) bus.emit('reminder:done', { noteId: id, onTime });
     }

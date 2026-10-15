@@ -44,7 +44,51 @@ const api = {
 
 // Mỗi phòng CHỈ sửa trong khối của mình (giữa 2 dòng đánh dấu). Kênh IPC đặt tiền tố theo phòng.
 // ===== BẮT ĐẦU PHÒNG notes (kênh 'alarm:*', 'memo:*', 'notes2:*') =====
-api.alarms = {};
+// Hợp đồng chi tiết: docs/rooms/notes/API.md
+const send = (c, ...a) => ipcRenderer.send(c, ...a);
+api.alarms = {
+  list: () => inv('alarm:list'),                         // -> {alarms, missed, settings, sounds}
+  create: a => inv('alarm:create', a || {}),             // Alarm một phần -> Alarm
+  update: (id, patch) => inv('alarm:update', id, patch || {}), // -> Alarm | null
+  remove: id => inv('alarm:delete', id),                 // -> boolean
+  toggle: (id, on) => inv('alarm:toggle', id, !!on),     // -> Alarm | null
+  test: id => inv('alarm:test', id),                     // kêu thử ngay -> boolean
+  stop: id => inv('alarm:stop', id),                     // tắt chuông đang kêu
+  snooze: (id, minutes) => inv('alarm:snooze', id, minutes), // hoãn
+  pickSound: () => inv('alarm:pickSound'),               // -> {soundFile, name} | null
+  soundData: soundFile => inv('alarm:soundData', soundFile), // -> {mime, base64} | null
+  clearMissed: () => inv('alarm:clearMissed'),
+  setSettings: patch => inv('alarm:settings', patch || {}),  // -> settings
+  devHint: () => inv('alarm:devHint'),                   // -> {tab?:string} (chỉ dùng khi chạy thử)
+  onChanged: cb => on('alarm:changed', cb),              // cb({alarms, missed, settings, sounds})
+  onRing: cb => on('alarm:ring', cb),                    // (cửa sổ chuông) cb(RingInfo)
+  onRingEnd: cb => on('alarm:ringEnd', cb),              // (cửa sổ chuông) cb({alarmId})
+  ringReady: () => send('alarm:ringReady')
+};
+api.memos = {
+  list: () => inv('memo:list'),                          // -> {memos, settings}
+  create: m => inv('memo:create', m || {}),              // -> Memo
+  update: (id, patch) => inv('memo:update', id, patch || {}), // -> Memo | null
+  remove: id => inv('memo:delete', id),                  // -> boolean
+  test: id => inv('memo:test', id),                      // hiện thử ngay
+  ack: ids => inv('memo:ack', ids || []),                // người dùng bấm "Nhớ rồi"
+  quitNow: () => inv('memo:quitNow'),                    // từ popup "trước khi tắt máy": thoát hẳn
+  onChanged: cb => on('memo:changed', cb),               // cb({memos, settings})
+  onShow: cb => on('memo:show', cb),                     // (popup) cb({items:[{memoId,text,when}], quitting:boolean})
+  popupReady: () => send('memo:popupReady')
+};
+api.notes2 = {
+  getMeta: id => inv('notes2:getMeta', id),              // -> {repeat, zoom, locked}
+  setView: (id, patch) => inv('notes2:setView', id, patch || {}), // {zoom?, locked?} -> meta
+  setRepeat: (id, repeat) => inv('notes2:setRepeat', id, repeat), // Repeat | null -> Note
+  onMeta: cb => on('notes2:meta', cb),                   // (cửa sổ note) cb({id, repeat, zoom, locked})
+  exportAll: format => inv('notes2:export', format),     // 'json'|'txt'|'md' -> {ok, path?, count?}
+  exportNote: (id, format) => inv('notes2:exportNote', id, format), // 'txt'|'md' -> {ok, path?}
+  importFile: () => inv('notes2:import'),                // -> {ok, count, errors?}
+  listBackups: () => inv('notes2:backups'),              // -> [{file, day, size, noteCount}]
+  readBackup: file => inv('notes2:readBackup', file),    // -> {notes:[{id,title,updatedAt,exists,same}]} | null
+  restoreBackup: (file, ids) => inv('notes2:restore', file, ids || null) // -> {ok, restored}
+};
 // ===== HẾT PHÒNG notes =====
 // ===== BẮT ĐẦU PHÒNG core (kênh 'pet:*') =====
 api.pet = {};
