@@ -1,5 +1,5 @@
 'use strict';
-// Timer 1 giây gọi scheduler.tick; đẩy sự kiện cho bé qua ctx.pet.enqueue và phát bus.
+// Vòng nhắc: ngủ tới mốc kế (tối đa 60 s) rồi gọi scheduler.tick (BUG-024: không hỏi mỗi giây); đẩy sự kiện cho bé qua ctx.pet.enqueue và phát bus.
 const S = require('./scheduler.js');
 
 function init(ctx) {
@@ -28,10 +28,42 @@ function init(ctx) {
       }
     } else if (typeof ctx.pet.pump === 'function') ctx.pet.pump();
   }
-  function start() { if (!timer) timer = setInterval(tickOnce, 1000); }
-  function stop() { clearInterval(timer); timer = null; }
+  const MAX_SLEEP = 15000;   // trần an toàn: bù ngủ máy / đổi giờ / thay đổi không qua bus (trễ tối đa 15 s)
+  const BUSY_POLL = 1000;    // bé đang bận: giữ nhịp 1 s để hàng đợi sân khấu chạy tiếp
+  const MIN_SLEEP = 20;
+  let running = false;
 
-  Object.assign(ctx.notes, { startReminderLoop: start, stopReminderLoop: stop });
+  /** Thời gian ngủ (ms) tới lần tick kế. */
+  function sleepFor(now) {
+    try { if (typeof ctx.pet.isBusy === 'function' && ctx.pet.isBusy()) return BUSY_POLL; } catch (_) { /* bỏ qua */ }
+    let at = Infinity;
+    try { at = S.nextWake(ctx.store.data.notes, now, schedState); } catch (_) { at = now; }
+    return Math.min(MAX_SLEEP, Math.max(MIN_SLEEP, at - now));
+  }
+  function arm() {
+    clearTimeout(timer); timer = null;
+    if (!running) return;
+    timer = setTimeout(loop, sleepFor(Date.now()));
+    if (timer && timer.unref) timer.unref();
+  }
+  function loop() {
+    timer = null;
+    try { tickOnce(); } catch (e) { console.error('[notes] reminder loop', e); }
+    arm();
+  }
+  /** Có thay đổi nhắc / máy dậy / đổi giờ: tính lại mốc kế (và tick ngay nếu tới giờ). */
+  function wake() { if (running) { clearTimeout(timer); timer = setTimeout(loop, 0); } }
+  function start() {
+    if (running) return;
+    running = true;
+    for (const ev of ['note:created', 'note:updated', 'note:restored', 'note:deleted', 'note:trashed', 'settings:changed']) ctx.bus.on(ev, rearm);
+    try { const { powerMonitor } = require('electron'); if (powerMonitor && powerMonitor.on) { powerMonitor.on('resume', wake); powerMonitor.on('unlock-screen', wake); } } catch (_) { /* không có electron */ }
+    arm();
+  }
+  function rearm() { if (running) arm(); }
+  function stop() { running = false; clearTimeout(timer); timer = null; }
+
+  Object.assign(ctx.notes, { startReminderLoop: start, stopReminderLoop: stop, wakeReminderLoop: wake });
 }
 
 module.exports = { init };

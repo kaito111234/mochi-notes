@@ -213,11 +213,11 @@ function init(ctx) {
     const a = screen.getPrimaryDisplay().workArea;
     const fit = ctx.notes.fitBounds;
     const guide =
-      '<div><b>Chào bạn, mình là Mochi Notes!</b></div><div><br></div>' +
+      '<div><b>Chào cậu, tớ là Mochi nè!</b></div><div><br></div>' +
       '<div>Phím tắt dùng được mọi lúc:</div>' +
       '<ul><li>Ctrl+Alt+N: tạo note mới</li><li>Ctrl+Alt+H: ẩn/hiện tất cả note</li>' +
-      '<li>Ctrl+Alt+L: mở danh sách note</li><li>Ctrl+Alt+M: gọi bé Mochi ra</li></ul>' +
-      '<div><br></div><div>Cứ gõ giờ tự nhiên như "họp 3h chiều nay", bé Mochi sẽ tự hiện ra nhắc bạn.</div>';
+      '<li>Ctrl+Alt+L: mở danh sách note</li><li>Ctrl+Alt+M: gọi tớ ra</li></ul>' +
+      '<div><br></div><div>Cứ gõ giờ tự nhiên như "họp 3h chiều nay", tớ sẽ tự hiện ra nhắc cậu nha.</div>';
     const n1 = makeNote({ html: guide, color: 'yellow', autoReminder: false, bounds: fit({ x: a.x + a.width - 340, y: a.y + 60, width: 300, height: 340 }) });
     const n2 = makeNote({ html: '<div>Uống nước nè, 1 phút nữa</div>', color: 'pink', bounds: fit({ x: a.x + a.width - 660, y: a.y + 60, width: 300, height: 200 }) });
     store().data.notes.push(n1, n2);

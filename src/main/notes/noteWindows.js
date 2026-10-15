@@ -90,9 +90,30 @@ function init(ctx) {
     if (alive(w)) { w.__silent = true; w.close(); }
   }
 
+  // BUG-020: tạo cửa sổ dần (lô nhỏ, nghỉ giữa các lô) để main không bị chặn; mỗi cửa sổ tự hiện khi ready-to-show.
+  const OPEN_BATCH = 2;
+  const OPEN_GAP = 40;
+  let openGen = 0;
   function openAllVisible(inactive) {
-    for (const n of ctx.store.data.notes) if (n.visible) openNote(n.id, { focus: !inactive });
+    const gen = ++openGen;   // lệnh mới huỷ hàng đợi cũ
+    const ids = ctx.store.data.notes.filter(n => n.visible).map(n => n.id);
+    let i = 0;
+    const step = () => {
+      if (gen !== openGen || ctx.quitting) return;
+      let made = 0;
+      while (i < ids.length && made < OPEN_BATCH) {
+        const id = ids[i++];
+        const n = ctx.findNote(id);
+        if (!n || !n.visible || ctx.settings().allHidden) continue;   // ẩn tất cả/xoá giữa chừng
+        const had = alive(noteWins.get(id));
+        openNote(id, { focus: !inactive });
+        if (!had) made++;
+      }
+      if (i < ids.length) { const t = setTimeout(step, OPEN_GAP); if (t && t.unref) t.unref(); }
+    };
+    step();
   }
+  ctx.notes.cancelOpenAll = () => { openGen++; };
 
   Object.assign(ctx.notes, { fitBounds, newNoteBounds, openNote, closeNoteWin, openAllVisible });
 }

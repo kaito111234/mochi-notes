@@ -133,6 +133,15 @@ function buildReply(title, entries, now) {
   return clip(head + body, 120);
 }
 
+/** BUG-012: có giờ nhưng đã qua (hôm nay) -> báo rõ, không im lặng. entries: [{title, due}]. */
+function buildPastReply(title, entries, now) {
+  const list = (entries || []).filter(e => e && isNum(e.due));
+  const t = String(title || '').trim();
+  if (!list.length) return buildReply(t, [], now);
+  const times = list.slice(0, 3).map(e => hm(e.due)).join(', ');
+  return clip('Tớ ghi rồi nha, nhưng ' + times + ' hôm nay đã qua rồi nên tớ không nhắc đâu nhé', 120);
+}
+
 // ---------------------------------------------------------------- checklist / tách note
 const BULLET_RE = /^\s*(?:[-*•+]|\d+[.)]|\[[ xX]\]|[☐☑✓✔])\s*/;
 const CHECK_RE = /^\s*(?:[-*•+]\s*)?\[[ xX]\]\s*/;
@@ -237,6 +246,6 @@ function reminderParams(item) {
 module.exports = {
   escapeHtml, textToHtml, phoneDigits, safeUrl, safeEmail, idTail,
   hasReminderFor, itemByKey, missingItems, filterSuggestions, buildView,
-  hm, whenText, lowerFirst, buildReply,
+  hm, whenText, lowerFirst, buildReply, buildPastReply,
   stripMarker, checklistText, checklistHtml, splitPlan, alarmParams, reminderParams
 };
