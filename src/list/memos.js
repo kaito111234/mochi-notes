@@ -38,7 +38,7 @@
     empty.hidden = memos.length > 0;
     if (!memos.length) {
       if (failed) empty.append(el('h3', null, NOT_READY), el('p', null, 'Dặn dò chưa kết nối được, thử lại sau ít giây.'));
-      else if (ready) empty.append(el('h3', null, 'Chưa có dặn dò nào'), el('p', null, 'Bé sẽ nhắc bạn đúng lúc, ví dụ "Uống thuốc" vào buổi sáng.'));
+      else if (ready) empty.append(el('h3', null, 'Chưa có dặn dò nào'), el('p', null, 'Tớ sẽ nhắc cậu đúng lúc, ví dụ "Uống thuốc" vào buổi sáng.'));
     }
   }
 

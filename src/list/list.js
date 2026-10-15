@@ -114,20 +114,29 @@
 
   function renderUpcoming() {
     const box = $('upcoming'), rows = $('upRows');
-    const list = notes.map(n => ({ n, r: openRems(n)[0] })).filter(x => x.r)
-      .sort((a, b) => a.r.due - b.r.due).slice(0, 3);
+    const list = [];
+    notes.forEach(n => openRems(n).forEach(r => list.push({ n, r })));
+    list.sort((a, b) => a.r.due - b.r.due);
     rows.textContent = '';
     box.hidden = !list.length || filter === 'trash';
-    list.forEach(({ n, r }) => {
+    list.slice(0, 8).forEach(({ n, r }) => {
       const st = remStatus(r);
       const b = el('button', 'up-row');
       b.type = 'button';
       b.dataset.id = n.id;
-      b.appendChild(el('span', 'up-title', (r.title && remList(n).length > 1 ? r.title : splitText(n.text).title) || 'Note trống'));
+      const t = el('span', 'up-title');
+      t.appendChild(document.createTextNode(remTitle(n, r) || 'Note trống'));
+      if (r.repeat) {
+        const rp = el('span', 'up-rep', '↻');
+        rp.title = 'Nhắc lặp lại'; rp.setAttribute('aria-label', 'Nhắc lặp lại');
+        t.appendChild(rp);
+      }
+      b.appendChild(t);
       b.appendChild(el('span', 'up-status' + (st.late ? ' late' : ''), st.text));
       b.appendChild(el('span', 'up-when', st.when));
       rows.appendChild(b);
     });
+    if (list.length > 8) rows.appendChild(el('p', 'up-more', '+' + (list.length - 8) + ' nhắc nữa'));
   }
 
   const expanded = new Set();
@@ -166,7 +175,7 @@
           w.appendChild(b);
         });
         box.appendChild(w);
-      } else if (sg === 'none') box.appendChild(el('p', 'rem-none', 'Bé chưa có gợi ý nào cho note này.'));
+      } else if (sg === 'none') box.appendChild(el('p', 'rem-none', 'Tớ chưa có gợi ý nào cho note này.'));
       else {
         const b = el('button', 'btn sm', sg === 'loading' ? 'Đang xem…' : 'Gợi ý');
         b.type = 'button'; b.dataset.act = 'suggest'; if (sg === 'loading') b.disabled = true;
@@ -188,7 +197,7 @@
     const top = el('div', 'card-top');
     top.appendChild(el('span', 'card-title' + (title ? '' : ' untitled'), title || 'Note trống'));
     const ico = icon(n.visible ? 'pin' : 'box', 'state-ico');
-    const tip = n.visible ? 'Đang dán' : 'Đang cất';
+    const tip = n.visible ? 'Đang hiện trên màn hình' : 'Đã cất vào danh sách (vẫn còn và vẫn nhắc lịch)';
     ico.insertAdjacentHTML('afterbegin', '<title>' + tip + '</title>');
     top.appendChild(ico);
     body.appendChild(top);
@@ -211,10 +220,10 @@
     card.appendChild(body);
 
     const acts = el('div', 'actions');
-    const toggle = el('button', 'act', n.visible ? 'Cất' : 'Dán');
+    const toggle = el('button', 'act', n.visible ? 'Cất đi' : 'Hiện lên');
     toggle.type = 'button';
     toggle.dataset.act = n.visible ? 'hide' : 'show';
-    toggle.title = n.visible ? 'Cất note (vẫn nhắc lịch)' : 'Dán note lên màn hình';
+    toggle.title = n.visible ? 'Cất note vào danh sách. Note vẫn còn và vẫn nhắc lịch' : 'Hiện note lên màn hình';
     toggle.prepend(icon(n.visible ? 'box' : 'pin'));
     const del = el('button', 'act del', 'Xoá');
     del.type = 'button';
@@ -319,7 +328,7 @@
     if (list.length) return;
     const q = $('q').value.trim();
     if (!notes.length) {
-      empty.append(icon('note'), el('h3', null, 'Chưa có note nào'), el('p', null, 'Bấm dấu + để dán note đầu tiên. Bé Mochi sẽ giúp bạn nhớ giờ.'));
+      empty.append(icon('note'), el('h3', null, 'Chưa có note nào'), el('p', null, 'Bấm dấu + để dán note đầu tiên. Tớ sẽ giúp cậu nhớ giờ.'));
       const b = el('button', 'btn primary', 'Tạo note mới');
       b.type = 'button'; b.dataset.act = 'new';
       empty.appendChild(b);
@@ -402,6 +411,7 @@
       else if (t === 'alarms-new') { setTab('alarms'); setTimeout(() => $('alAdd').click(), 300); }
       else if (t === 'memos-edit') { setTab('memos'); setTimeout(() => { const b = document.querySelector('.mm-row [data-act="edit"]'); if (b) b.click(); }, 800); }
       else if (t === 'restore') { setPanel(true); setTimeout(() => document.querySelector('[data-data="restore"]').click(), 300); }
+      else if (t === 'shortcuts') { setPanel(true); setTimeout(() => { const g = document.querySelector('.keys'), pb = document.querySelector('.panel-body'); if (g && pb) pb.scrollTop = pb.scrollHeight; }, 300); }
       else if (t === 'data') { setPanel(true); const g = $('hData'), pb = document.querySelector('.panel-body'); if (g && pb) pb.scrollTop = g.offsetTop - 8; }
     }).catch(() => {});
   } catch (e) { /* chưa có handler */ }
@@ -510,7 +520,7 @@
     const its = (v && v.items || []).filter(i => i && i.due);
     if (!its.length) return '';
     const parts = its.slice(0, 3).map(i => (i.time ? i.time + ' ' : '') + (i.title || ''));
-    return 'Bé hiểu: ' + its.length + ' việc · ' + parts.join(' · ') + (its.length > 3 ? '…' : '');
+    return 'Tớ hiểu: ' + its.length + ' việc · ' + parts.join(' · ') + (its.length > 3 ? '…' : '');
   }
   qc.addEventListener('input', () => {
     clearTimeout(qcTimer);

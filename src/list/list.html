@@ -40,8 +40,8 @@
       <div class="chips" id="chips" role="group" aria-label="Bộ lọc">
         <button class="chip" type="button" data-f="all" aria-pressed="true">Tất cả <span class="n">0</span></button>
         <button class="chip" type="button" data-f="remind" aria-pressed="false">Có nhắc lịch <span class="n">0</span></button>
-        <button class="chip" type="button" data-f="shown" aria-pressed="false">Đang dán <span class="n">0</span></button>
-        <button class="chip" type="button" data-f="hidden" aria-pressed="false">Đang cất <span class="n">0</span></button>
+        <button class="chip" type="button" data-f="shown" aria-pressed="false" title="Note đang hiện trên màn hình">Đang hiện <span class="n">0</span></button>
+        <button class="chip" type="button" data-f="hidden" aria-pressed="false" title="Note đã cất vào danh sách: vẫn còn và vẫn nhắc lịch">Đã cất <span class="n">0</span></button>
       </div>
       <div class="scroll" id="scroll">
         <section class="upcoming" id="upcoming" hidden aria-label="Sắp tới">
@@ -107,7 +107,7 @@
                 <button type="button" role="radio" data-v="chime" aria-checked="true">Chuông ngân</button>
                 <button type="button" role="radio" data-v="bell" aria-checked="false">Chuông</button>
                 <button type="button" role="radio" data-v="soft" aria-checked="false">Nhẹ nhàng</button>
-                <button type="button" role="radio" data-v="custom" aria-checked="false">File của bạn</button>
+                <button type="button" role="radio" data-v="custom" aria-checked="false">File của cậu</button>
               </div>
               <div class="snd-custom" id="alSndCustom" hidden>
                 <select id="alSndFile" aria-label="File âm thanh đã có"></select>
@@ -128,7 +128,7 @@
 
     <section class="list-view tab-view" id="memoView" role="tabpanel" aria-labelledby="tabMemos" hidden>
       <form class="memo-add" id="mmAdd" autocomplete="off">
-        <input id="mmText" type="text" maxlength="500" placeholder="Dặn bé điều gì đó..." aria-label="Nội dung dặn dò">
+        <input id="mmText" type="text" maxlength="500" placeholder="Dặn tớ điều gì đó..." aria-label="Nội dung dặn dò">
         <div class="memo-add-row">
           <select id="mmWhen" aria-label="Thời điểm"></select>
           <label class="chk"><input type="checkbox" id="mmOnce"><span>Chỉ một lần</span></label>
@@ -208,8 +208,13 @@
           <div><dt><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>H</kbd></dt><dd>Tô sáng</dd></div>
           <div><dt><kbd>Ctrl</kbd><kbd>D</kbd></dt><dd>Xoá note</dd></div>
           <div><dt><kbd>Ctrl</kbd><kbd>W</kbd></dt><dd>Cất note</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>F</kbd></dt><dd>Tìm trong note (F3: kết quả kế)</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd> <kbd>Ctrl</kbd><kbd>Y</kbd></dt><dd>Hoàn tác, làm lại</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd></dt><dd>Khoá chỉ đọc</dd></div>
+          <div><dt><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>R</kbd></dt><dd>Đặt nhắc lịch</dd></div>
+          <div><dt><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Cỡ chữ: to, nhỏ, mặc định</dd></div>
         </dl>
-        <p class="tip">Mẹo: gõ giờ tự nhiên trong note, ví dụ "họp 3h chiều nay", "nộp báo cáo thứ 6", "gọi khách 20 phút nữa" là bé tự nhắc.</p>
+        <p class="tip">Mẹo: gõ giờ tự nhiên trong note, ví dụ "họp 3h chiều nay", "nộp báo cáo thứ 6", "gọi khách 20 phút nữa" là tớ tự nhắc.</p>
       </div>
       <div class="sheet" id="bkSheet" role="dialog" aria-modal="true" aria-label="Khôi phục từ bản sao lưu" aria-hidden="true" inert>
         <div class="sheet-in">
