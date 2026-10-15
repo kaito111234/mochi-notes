@@ -1,0 +1,70 @@
+{
+  "id": "mochi",
+  "name": "Mochi",
+  "author": "Phòng art Mochi Notes (rig vector)",
+  "license": "Nội bộ Joiha",
+  "size": [
+    400,
+    400
+  ],
+  "scale": 0.6,
+  "anchor": [
+    200,
+    392
+  ],
+  "hitbox": {
+    "head": [
+      126,
+      70,
+      148,
+      160
+    ],
+    "body": [
+      146,
+      230,
+      108,
+      162
+    ]
+  },
+  "hand": [
+    200,
+    262
+  ],
+  "actions": {
+    "walk": {
+      "speed": 2.2
+    }
+  },
+  "note": {
+    "anchor": "center",
+    "center": [
+      200,
+      262
+    ],
+    "size": [
+      84,
+      84
+    ],
+    "_ghichu": "hand = TÂM tờ note giữa hai bàn tay (hold_note); size là cỡ tờ note vừa hai tay theo px canvas"
+  },
+  "faces": {
+    "normal": "faces/normal.png",
+    "happy": "faces/happy.png",
+    "laugh": "faces/laugh.png",
+    "excited": "faces/excited.png",
+    "surprised": "faces/surprised.png",
+    "scared": "faces/scared.png",
+    "sad": "faces/sad.png",
+    "cry": "faces/cry.png",
+    "angry": "faces/angry.png",
+    "shy": "faces/shy.png",
+    "flustered": "faces/flustered.png",
+    "cold": "faces/cold.png",
+    "tired": "faces/tired.png",
+    "sleepy": "faces/sleepy.png",
+    "bored": "faces/bored.png",
+    "protest": "faces/protest.png",
+    "uncomfortable": "faces/uncomfortable.png",
+    "love": "faces/love.png"
+  }
+}
