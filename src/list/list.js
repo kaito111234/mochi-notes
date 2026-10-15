@@ -42,6 +42,10 @@
   let filter = 'all';
   let confirmId = null;
   let panelOpen = false;
+  let trash = [];
+  let trashConfirm = null; // id | 'all'
+  let trashTimer = 0;
+  const hasTrash = () => !!(api.notes2 && typeof api.notes2.trashList === 'function');
 
   const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 
@@ -93,10 +97,18 @@
   }
 
   function renderChips() {
-    document.querySelectorAll('.chip').forEach(c => {
+    const chips = $('chips');
+    let tc = chips.querySelector('[data-f="trash"]');
+    if (hasTrash() && !tc) {
+      tc = el('button', 'chip');
+      tc.type = 'button'; tc.dataset.f = 'trash'; tc.setAttribute('aria-pressed', 'false');
+      tc.append('Thùng rác ', el('span', 'n', '0'));
+      chips.appendChild(tc);
+    }
+    chips.querySelectorAll('.chip').forEach(c => {
       const f = c.dataset.f;
       c.setAttribute('aria-pressed', String(f === filter));
-      c.querySelector('.n').textContent = notes.filter(FILTERS[f]).length;
+      c.querySelector('.n').textContent = f === 'trash' ? trash.length : notes.filter(FILTERS[f]).length;
     });
   }
 
@@ -105,7 +117,7 @@
     const list = notes.map(n => ({ n, r: openRems(n)[0] })).filter(x => x.r)
       .sort((a, b) => a.r.due - b.r.due).slice(0, 3);
     rows.textContent = '';
-    box.hidden = !list.length;
+    box.hidden = !list.length || filter === 'trash';
     list.forEach(({ n, r }) => {
       const st = remStatus(r);
       const b = el('button', 'up-row');
@@ -221,8 +233,8 @@
       const c = el('div', 'confirm');
       c.setAttribute('role', 'alertdialog');
       c.setAttribute('aria-label', 'Xác nhận xoá');
-      c.appendChild(el('span', 'confirm-q', 'Xoá?'));
-      const yes = el('button', 'btn sm danger', 'Xoá');
+      c.appendChild(el('span', 'confirm-q', hasTrash() ? 'Chuyển vào thùng rác?' : 'Xoá?'));
+      const yes = el('button', 'btn sm danger', hasTrash() ? 'Bỏ vào thùng' : 'Xoá');
       yes.type = 'button'; yes.dataset.act = 'delete';
       const no = el('button', 'btn sm', 'Huỷ');
       no.type = 'button'; no.dataset.act = 'cancel';
@@ -232,7 +244,64 @@
     return card;
   }
 
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function buildTrashCard(t) {
+    const { title, excerpt } = splitText(t.text || t.title);
+    const card = el('article', 'card trash-card');
+    card.dataset.id = t.id;
+    card.style.setProperty('--stripe', 'var(--c-' + (COLORS.includes(t.color) ? t.color : 'yellow') + ')');
+    const body = el('div', 'card-body');
+    const top = el('div', 'card-top');
+    top.appendChild(el('span', 'card-title' + ((title || t.title) ? '' : ' untitled'), t.title || title || 'Note trống'));
+    body.appendChild(top);
+    if (excerpt) body.appendChild(el('p', 'excerpt', excerpt));
+    const d = new Date(t.trashedAt || Date.now());
+    const days = Math.max(0, Math.ceil(((t.expiresAt || 0) - Date.now()) / 864e5));
+    const info = 'Xoá lúc ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' ' + pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) +
+      (t.expiresAt ? ' · tự xoá hẳn sau ' + days + ' ngày' : '');
+    const foot = el('div', 'card-foot');
+    foot.appendChild(el('span', 'foot-time', info));
+    body.appendChild(foot);
+    card.appendChild(body);
+    const acts = el('div', 'tr-actions');
+    const rs = el('button', 'btn sm', 'Khôi phục'); rs.type = 'button'; rs.dataset.act = 'trestore';
+    const confirming = trashConfirm === t.id;
+    const pg = el('button', 'btn sm danger', confirming ? 'Chắc chắn xoá hẳn?' : 'Xoá hẳn');
+    pg.type = 'button'; pg.dataset.act = 'tpurge';
+    acts.append(rs, pg);
+    card.appendChild(acts);
+    return card;
+  }
+  function armTrashConfirm(v) {
+    trashConfirm = v;
+    clearTimeout(trashTimer);
+    trashTimer = setTimeout(() => { trashConfirm = null; if (filter === 'trash') renderCards(); }, 3000);
+  }
+  function renderTrash() {
+    const cards = $('cards'), empty = $('empty');
+    const q = norm($('q').value).trim();
+    const list = trash.filter(t => !q || norm(t.text || t.title).includes(q));
+    cards.textContent = '';
+    empty.textContent = '';
+    if (trash.length) {
+      const head = el('div', 'trash-head');
+      head.appendChild(el('span', 'trash-note', trash.length + ' note trong thùng · tự xoá hẳn sau 30 ngày'));
+      const all = el('button', 'btn sm danger', trashConfirm === 'all' ? 'Chắc chắn dọn sạch?' : 'Dọn sạch');
+      all.title = 'Xoá hẳn mọi note trong thùng rác';
+      all.type = 'button'; all.dataset.tact = 'empty';
+      head.appendChild(all);
+      cards.appendChild(head);
+    }
+    list.forEach(t => cards.appendChild(buildTrashCard(t)));
+    empty.hidden = list.length > 0;
+    if (!list.length) {
+      empty.append(icon('trash'), el('h3', null, trash.length ? 'Không tìm thấy' : 'Thùng rác trống.'),
+        el('p', null, trash.length ? 'Không có note nào khớp trong thùng rác.' : 'Note đã xoá nằm ở đây 30 ngày.'));
+    }
+  }
+
   function renderCards() {
+    if (filter === 'trash') { renderTrash(); return; }
     const cards = $('cards'), empty = $('empty');
     const list = visibleNotes();
     const focusedId = document.activeElement && document.activeElement.closest && document.activeElement.closest('.card');
@@ -303,13 +372,19 @@
     if (hooks[name]) { try { hooks[name](); } catch (e) { /* bỏ qua */ } }
   }
   let toastTimer = 0;
-  function toast(msg, bad) {
+  function toast(msg, bad, action) {
     const t = $('toast');
     t.textContent = msg;
     t.classList.toggle('bad', !!bad);
+    if (action) {
+      const b = el('button', 'toast-act', action.label);
+      b.type = 'button';
+      b.addEventListener('click', () => { t.hidden = true; clearTimeout(toastTimer); action.run(); });
+      t.append(' ', b);
+    }
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+    toastTimer = setTimeout(() => { t.hidden = true; }, action ? 5000 : 3200);
   }
   window.MochiList = { toast, el, setTab, setPanel, onTab: (n, fn) => { hooks[n] = fn; }, isPanelOpen: () => panelOpen, getTab: () => curTab };
   hooks.note = () => { render(); };
@@ -323,6 +398,7 @@
     api.alarms.devHint().then(h => {
       const t = h && h.tab;
       if (t === 'alarms' || t === 'memos') setTab(t);
+      else if (t === 'trash') { filter = 'trash'; render(); }
       else if (t === 'alarms-new') { setTab('alarms'); setTimeout(() => $('alAdd').click(), 300); }
       else if (t === 'memos-edit') { setTab('memos'); setTimeout(() => { const b = document.querySelector('.mm-row [data-act="edit"]'); if (b) b.click(); }, 800); }
       else if (t === 'restore') { setPanel(true); setTimeout(() => document.querySelector('[data-data="restore"]').click(), 300); }
@@ -344,7 +420,7 @@
     const c = e.target.closest('.chip');
     if (!c) return;
     filter = c.dataset.f;
-    confirmId = null;
+    confirmId = null; trashConfirm = null;
     render();
   });
 
@@ -389,12 +465,41 @@
           suggs.delete(id); renderCards();
         }).catch(() => toast('Chưa làm được', true));
         break;
-      case 'delete': confirmId = null; api.deleteNote(id); break;
+      case 'delete': {
+        confirmId = null;
+        const title = splitText((notes.find(n => n.id === id) || {}).text).title;
+        Promise.resolve(api.deleteNote(id)).then(() => {
+          if (hasTrash()) toast('Đã chuyển vào thùng rác', false, { label: 'Hoàn tác', run: () => guard(api.notes2.trashRestore(id), 'Đã khôi phục' + (title ? ' "' + title.slice(0, 30) + '"' : '')) });
+        }).catch(() => toast('Chưa làm được', true));
+        break;
+      }
+    }
+  });
+
+  $('cards').addEventListener('click', e => {
+    if (filter !== 'trash') return;
+    const btn = e.target.closest('[data-act],[data-tact]');
+    if (!btn) return;
+    if (btn.dataset.tact === 'empty') {
+      if (trashConfirm !== 'all') { armTrashConfirm('all'); renderCards(); return; }
+      trashConfirm = null;
+      guard(api.notes2.trashEmpty(), 'Đã dọn sạch thùng rác').then(refreshTrash);
+      return;
+    }
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const id = card.dataset.id;
+    if (btn.dataset.act === 'trestore') {
+      guard(api.notes2.trashRestore(id), 'Đã khôi phục note').then(refreshTrash);
+    } else if (btn.dataset.act === 'tpurge') {
+      if (trashConfirm !== id) { armTrashConfirm(id); renderCards(); return; }
+      trashConfirm = null;
+      guard(api.notes2.trashPurge(id), 'Đã xoá hẳn').then(refreshTrash);
     }
   });
 
   function guard(p, okMsg) {
-    Promise.resolve(p).then(() => { if (okMsg) toast(okMsg); }).catch(() => toast('Chưa làm được', true));
+    return Promise.resolve(p).then(() => { if (okMsg) toast(okMsg); }).catch(() => toast('Chưa làm được', true));
   }
 
   // ---------- ghi nhanh ----------
@@ -459,6 +564,21 @@
     if (confirmId && !notes.some(n => n.id === confirmId)) confirmId = null;
     render();
   });
+  function setTrash(l) {
+    trash = Array.isArray(l) ? l : [];
+    if (filter === 'trash' && !hasTrash()) filter = 'all';
+    render();
+  }
+  function refreshTrash() {
+    if (!hasTrash()) return;
+    Promise.resolve(api.notes2.trashList()).then(setTrash).catch(() => {});
+  }
+  try {
+    if (hasTrash()) {
+      if (typeof api.notes2.onTrashChanged === 'function') api.notes2.onTrashChanged(setTrash);
+      refreshTrash();
+    }
+  } catch (e) { /* preload cũ */ }
   api.onSettingsChanged(s => { settings = s || {}; renderSettings(); });
 
   Promise.all([api.listNotes(), api.getSettings()]).then(([l, s]) => {

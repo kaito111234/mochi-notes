@@ -95,7 +95,13 @@ api.notes2 = {
   importFile: () => inv('notes2:import'),                // -> {ok, count, errors?}
   listBackups: () => inv('notes2:backups'),              // -> [{file, day, size, noteCount}]
   readBackup: file => inv('notes2:readBackup', file),    // -> {notes:[{id,title,updatedAt,exists,same}]} | null
-  restoreBackup: (file, ids) => inv('notes2:restore', file, ids || null) // -> {ok, restored}
+  restoreBackup: (file, ids) => inv('notes2:restore', file, ids || null), // -> {ok, restored}
+  trashList: () => inv('notes2:trashList'),              // -> [{id,title,text,color,trashedAt,expiresAt}] mới nhất trước
+  trashRestore: id => inv('notes2:trashRestore', id),    // -> Note | null
+  trashPurge: id => inv('notes2:trashPurge', id),        // xoá hẳn một note -> boolean
+  trashEmpty: () => inv('notes2:trashEmpty'),            // dọn sạch thùng -> số note đã xoá
+  onTrashChanged: cb => on('notes2:trashChanged', cb),   // cb(trashList)
+  expired: () => inv('notes2:expired')                   // -> [{noteId, reason:'done'|'overdue'|'checklist', title}]
 };
 // ===== HẾT PHÒNG notes =====
 // ===== BẮT ĐẦU PHÒNG core (kênh 'pet:*') =====

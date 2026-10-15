@@ -119,3 +119,15 @@ API đã có trong preload (khối notes), chi tiết `docs/rooms/notes/API2.md`
 ## ĐỢT 2B — chủ dự án bổ sung
 1. **Thùng rác note** (xoá mềm): `ctx.notes.trash(id)`, `ctx.notes.restore(id)`, tự xoá hẳn sau 30 ngày; tab/khu "Thùng rác" trong danh sách. Xoá thường cũng vào thùng rác.
 2. **Note hết hạn**: `ctx.notes.expiredCandidates()` → note đang dán mà (a) mọi nhắc đã Xong, hoặc (b) quá hạn > 24 giờ chưa xong, hoặc (c) checklist đã tick hết. Phát `note:expired {noteId, reason}` (tối đa 1 lần/note/ngày) để bé tới hỏi dọn.
+
+### Trạng thái Đợt 2B
+_Cập nhật 2026-10-15 (lượt 3). Đợt 2 đã xong từ lượt 2 (xem "Trạng thái Đợt 2"); lượt này gộp main và làm 2B._
+**Đã xong**
+1. Thùng rác: `ctx.notes.trash/restore/purge/emptyTrash/trashList/isTrashed`; ngăn dữ liệu `trash` `{items:[{note, trashedAt}]}` (≤500), tự xoá hẳn sau 30 ngày (lúc khởi động + mỗi 6 giờ). `deleteNote` (kênh `note:delete`) giờ là xoá mềm; xoá hẳn: `deleteNotePermanently`. Bus: `note:deleted {id}` rồi `note:trashed {noteId}`; khôi phục: `note:created` rồi `note:restored`. Cỡ chữ/khoá/lặp (`noteMeta`) giữ lại khi vào thùng. Danh sách: chip "Thùng rác (N)" (Khôi phục / Xoá hẳn / Dọn sạch, xác nhận 2 bước), xoá note có toast "Hoàn tác".
+2. Note hết hạn: `ctx.notes.expiredCandidates()` → `[{noteId, reason, title}]` (`overdue` > 24h chưa xong ưu tiên > `done` mọi nhắc xong (không lặp) > `checklist` tick hết; bỏ qua note sửa trong 10 phút). Phát `note:expired {noteId, reason}` 60s sau khởi động rồi mỗi 5 phút, tối đa 1 lần/note/ngày (`noteMeta[id].expiredDay`). Không bao giờ tự xoá.
+3. Preload `mochi.notes2.trashList/trashRestore/trashPurge/trashEmpty/onTrashChanged/expired`.
+**Test**: thêm `trash.test.js` (24), `expiry.test.js` (31) — mọi bộ của phòng xanh ở 2 múi giờ. Chạy thử: `MOCHI_DEV_TRASH=1 MOCHI_DEV_LIST=1 MOCHI_DEV_TAB=trash`. Ảnh: `docs/rooms/notes/d2b-trash.png`.
+**Việc tiếp theo**: core nghe `note:expired` → hỏi dọn → `ctx.notes.trash(noteId)`; thêm cài đặt "tự dọn note đã xong" (mặc định tắt) khi core làm luồng dọn; ảnh nghiệm thu bé dọn note (cần core).
+**Đề xuất cho điều hành (2B)**: `scripts/test-all.js` thêm `src/main/notes/__tests__/trash.test.js`, `expiry.test.js` (cùng danh sách mục A ở trên); `01-data.md` ghi ngăn `trash` (chủ: notes) và `noteMeta[id].expiredDay`.
+**Gửi phòng paper (2B)**: nút xoá trong cửa sổ note gọi `mochi.deleteNote(id)` như cũ — nay là chuyển vào thùng rác, nên đổi chữ xác nhận thành "Chuyển vào thùng rác?" (khôi phục được 30 ngày trong danh sách).
+

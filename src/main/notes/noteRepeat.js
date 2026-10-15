@@ -38,6 +38,7 @@ function init(ctx) {
   ctx.bus.on('note:updated', onChange);
   ctx.bus.on('note:created', onChange);
   ctx.bus.on('note:deleted', p => {
+    if (p && ctx.notes.isTrashed && ctx.notes.isTrashed(p.id)) return;   // giữ meta khi vào thùng rác
     if (p && p.id && box().noteMeta[p.id]) {
       delete box().noteMeta[p.id].repeat;
       if (!Object.keys(box().noteMeta[p.id]).length) delete box().noteMeta[p.id];

@@ -81,6 +81,8 @@ function init(ctx) {
 
   // Đợt 2: hiểu note / gợi ý / ghi nhanh (main.js không nạp riêng nên nạp ở đây)
   require('./insightService.js').init(ctx);
+  // Đợt 2B: thùng rác + note hết hạn
+  require('./trashService.js').init(ctx);
 }
 
 module.exports = { init };
