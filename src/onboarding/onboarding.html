@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+<title>Hướng dẫn Mochi Notes</title>
+<link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+<main id="card" class="card" role="dialog" aria-labelledby="title" aria-describedby="body">
+  <header class="top">
+    <span class="step" id="stepNo" aria-live="polite">1 / 6</span>
+    <button id="skip" class="skip" type="button">Bỏ qua</button>
+  </header>
+  <div id="hero" class="hero" aria-hidden="true"></div>
+  <h1 id="title" class="title"></h1>
+  <p id="body" class="text"></p>
+  <div id="chips" class="chips"></div>
+  <footer class="foot">
+    <div id="dots" class="dots" aria-hidden="true"></div>
+    <div class="nav">
+      <button id="back" class="btn ghost" type="button">Quay lại</button>
+      <button id="next" class="btn main" type="button">Tiếp</button>
+    </div>
+  </footer>
+</main>
+<script src="onboarding.js"></script>
+</body>
+</html>

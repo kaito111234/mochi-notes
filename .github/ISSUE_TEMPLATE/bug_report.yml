@@ -1,0 +1,54 @@
+name: Báo lỗi / Bug report
+description: Báo một lỗi của Mochi Notes / Report a bug in Mochi Notes
+title: "[Lỗi] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã báo lỗi! Vui lòng mô tả càng rõ càng tốt. / Thanks for reporting! Please be as specific as you can.
+  - type: textarea
+    id: what
+    attributes:
+      label: Chuyện gì đã xảy ra? / What happened?
+      description: Mô tả lỗi và điều bạn mong đợi. / Describe the bug and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Các bước làm lại lỗi / Steps to reproduce
+      placeholder: |
+        1. Tạo note "họp 9h sáng mai"
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Phiên bản Mochi Notes / Version
+      placeholder: "0.10.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Cách cài / Install type
+      options:
+        - Bộ cài Setup (x64)
+        - Bộ cài Setup (ARM64)
+        - Portable
+        - Zip
+        - Chạy từ mã nguồn (npm start)
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Phiên bản Windows / Windows version
+      placeholder: "Windows 11 23H2"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Nhật ký lỗi, ảnh chụp màn hình / Logs, screenshots
+      description: Kéo thả ảnh vào đây. Không dán thông tin riêng tư. / Drag images here. Do not paste private data.

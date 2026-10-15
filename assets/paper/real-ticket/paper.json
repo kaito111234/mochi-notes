@@ -1,0 +1,42 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#ffe0cc",
+    "head": "same",
+    "gradient": [
+      "#ffe5d2",
+      "#ffd3df"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "ADMIT ONE",
+    "font": "bevietnam",
+    "color": "#d9534f",
+    "size": 14,
+    "align": "left",
+    "style": "ribbon"
+  },
+  "ink": "#4a2630",
+  "font": "baloo2",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-ticket",
+  "name": "Vé xem phim",
+  "order": 80,
+  "noteColor": "pink",
+  "kind": "ticket",
+  "pin": {
+    "type": "paperclip",
+    "color": "silver"
+  }
+}

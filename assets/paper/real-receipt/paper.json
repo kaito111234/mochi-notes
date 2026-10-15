@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fbfbf7",
+    "head": "same",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#30302c",
+  "font": "system",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-receipt",
+  "name": "Hoá đơn",
+  "order": 50,
+  "noteColor": "gray",
+  "kind": "receipt",
+  "pin": {
+    "type": "bulldog",
+    "color": "silver"
+  }
+}

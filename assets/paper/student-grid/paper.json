@@ -1,0 +1,44 @@
+{
+  "id": "student-grid",
+  "name": "Ô vuông xanh & kẹp giấy",
+  "group": "student",
+  "order": 30,
+  "noteColor": "blue",
+  "dark": false,
+  "bg": {
+    "color": "#f6fbff",
+    "head": "#e0effa",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "grid",
+    "color": "rgba(80,150,220,.26)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Bài tập",
+    "font": "mali",
+    "color": "#2d6aa8",
+    "size": 20,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#1d2f4a",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/clip.svg",
+      "pos": "tr",
+      "w": 22,
+      "dx": 56,
+      "dy": -6,
+      "rot": 8
+    }
+  ],
+  "checklist": false
+}

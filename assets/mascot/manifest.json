@@ -1,0 +1,24 @@
+{
+ "w": 238,
+ "h": 228,
+ "states": {
+  "normal": "normal.png",
+  "happy": "happy.png",
+  "laugh": "laugh.png",
+  "excited": "excited.png",
+  "surprised": "surprised.png",
+  "scared": "scared.png",
+  "sad": "sad.png",
+  "cry": "cry.png",
+  "angry": "angry.png",
+  "uncomfortable": "uncomfortable.png",
+  "shy": "shy.png",
+  "cold": "cold.png",
+  "tired": "tired.png",
+  "sleepy": "sleepy.png",
+  "love": "love.png",
+  "flustered": "flustered.png",
+  "protest": "protest.png",
+  "bored": "bored.png"
+ }
+}

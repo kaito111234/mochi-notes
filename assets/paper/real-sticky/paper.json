@@ -1,0 +1,35 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fff3a3",
+    "head": "same",
+    "gradient": [
+      "#fff6b8",
+      "#ffec8a"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2b2a1f",
+  "font": "itim",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-sticky",
+  "name": "Giấy nhớ cổ điển",
+  "order": 160,
+  "noteColor": "yellow",
+  "kind": "sticky",
+  "pin": {
+    "type": "none",
+    "color": "red"
+  }
+}

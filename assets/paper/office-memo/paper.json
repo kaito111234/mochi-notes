@@ -1,0 +1,44 @@
+{
+  "id": "office-memo",
+  "name": "Memo công sở",
+  "group": "office",
+  "order": 10,
+  "noteColor": "blue",
+  "dark": false,
+  "bg": {
+    "color": "#f9fbfd",
+    "head": "#e4ecf4",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(80,110,150,.22)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "MEMO",
+    "font": "bevietnam",
+    "color": "#b3392f",
+    "size": 18,
+    "align": "left",
+    "style": "stamp"
+  },
+  "ink": "#1f2937",
+  "font": "bevietnam",
+  "edge": null,
+  "corner": "fold",
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/coffee.svg",
+      "pos": "tr",
+      "w": 42,
+      "dx": 54,
+      "dy": 2,
+      "rot": 4
+    }
+  ],
+  "checklist": false
+}

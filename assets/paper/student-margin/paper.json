@@ -1,0 +1,37 @@
+{
+  "id": "student-margin",
+  "name": "Kẻ ngang lề đỏ & ghim",
+  "group": "student",
+  "order": 20,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#fffdf4",
+    "head": "#f5efd9",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "margin-ruled",
+    "color": "rgba(90,130,190,.3)",
+    "step": 26,
+    "margin": "#e88a8a"
+  },
+  "header": null,
+  "ink": "#2a2f45",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/pin-red.svg",
+      "pos": "top",
+      "w": 32,
+      "dx": 0,
+      "dy": -2,
+      "rot": 0
+    }
+  ],
+  "checklist": false
+}

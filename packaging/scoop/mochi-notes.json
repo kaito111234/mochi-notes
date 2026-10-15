@@ -1,0 +1,32 @@
+{
+  "version": "0.9.4",
+  "description": "Sticky note + trợ lý ảo bé Mochi nhắc lịch / Sticky notes with a little pet assistant",
+  "homepage": "https://github.com/kaito111234/mochi-notes",
+  "license": {
+    "identifier": "MIT",
+    "url": "https://github.com/kaito111234/mochi-notes/blob/main/LICENSE"
+  },
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/kaito111234/mochi-notes/releases/download/v0.9.4/MochiNotes-0.9.4-x64.zip",
+      "hash": "REPLACE_WITH_SHA256_FROM_SHA256SUMS_TXT"
+    }
+  },
+  "bin": [],
+  "shortcuts": [
+    [
+      "Mochi Notes.exe",
+      "Mochi Notes"
+    ]
+  ],
+  "checkver": {
+    "github": "https://github.com/kaito111234/mochi-notes"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/kaito111234/mochi-notes/releases/download/v$version/MochiNotes-$version-x64.zip"
+      }
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "name": "mochi-notes",
+  "version": "0.10.0",
+  "description": "Sticky note + trợ lý ảo bé Mochi nhắc lịch",
+  "main": "src/main/main.js",
+  "author": "Joiha",
+  "license": "MIT",
+  "productName": "Mochi Notes",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "dist:win": "npm run dist",
+    "dist:full": "electron-builder --win --publish never",
+    "test": "node tools/test-nlu.js && node tools/test-core.js && node tools/test-alert-policy.js && node tools/check-pack.js"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.3.6",
+    "electron": "33.2.1",
+    "electron-builder": "26.15.3"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
+  },
+  "build": {
+    "appId": "vn.joiha.mochinotes",
+    "productName": "Mochi Notes",
+    "copyright": "Copyright © Joiha",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json",
+      "!**/*.test.js",
+      "!**/*.md",
+      "!**/*.map",
+      "!tools/**",
+      "!docs/**",
+      "!test/**",
+      "!art/**",
+      "!scripts/**",
+      "!packaging/**",
+      "!.github/**"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "kaito111234",
+        "repo": "mochi-notes",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": true,
+      "artifactName": "MochiNotes-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mochi Notes",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "uninstallDisplayName": "Mochi Notes",
+      "artifactName": "MochiNotes-Setup-${version}-${arch}.exe",
+      "language": "1066"
+    },
+    "portable": {
+      "artifactName": "MochiNotes-Portable-${version}.exe"
+    }
+  },
+  "homepage": "https://github.com/kaito111234/mochi-notes#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaito111234/mochi-notes.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kaito111234/mochi-notes/issues"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fffef7",
+    "head": "same",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(90,120,170,.22)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2a2f45",
+  "font": "pangolin",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-torn",
+  "name": "Mẩu giấy xé",
+  "order": 100,
+  "noteColor": "yellow",
+  "kind": "torn",
+  "pin": {
+    "type": "thumbtack",
+    "color": "blue"
+  }
+}

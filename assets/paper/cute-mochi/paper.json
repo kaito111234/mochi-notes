@@ -1,0 +1,65 @@
+{
+  "id": "cute-mochi",
+  "name": "Mochi pastel",
+  "group": "cute",
+  "order": 50,
+  "noteColor": "purple",
+  "dark": false,
+  "bg": {
+    "color": "#fbe4f3",
+    "head": "#f1dcf9",
+    "gradient": [
+      "#ffe3ec",
+      "#e8e3ff"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Mochi",
+    "font": "baloo2",
+    "color": "#7a3f9a",
+    "size": 24,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#4a2a5a",
+  "font": "baloo2",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/mochi-ball.svg",
+      "pos": "tr",
+      "w": 48,
+      "dx": 10,
+      "dy": 4,
+      "rot": 6
+    },
+    {
+      "kind": "img",
+      "src": "deco/animals/cat-peek.svg",
+      "pos": "bottom",
+      "w": 64,
+      "dx": 0,
+      "dy": 0,
+      "rot": 0
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/heart.svg",
+      "pos": "tr",
+      "w": 20,
+      "dx": 66,
+      "dy": 30,
+      "rot": -12
+    }
+  ],
+  "checklist": false
+}

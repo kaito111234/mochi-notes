@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>Ra lệnh cho bé Mochi</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+  form { position: absolute; inset: 6px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; border-radius: 26px;
+    background: #fffaf2; box-shadow: 0 4px 14px rgba(40, 30, 60, .28), 0 0 0 2px #ffb3cf; }
+  .paw { font-size: 20px; flex: none; }
+  input { flex: 1; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; font: inherit; font-size: 15px; color: #3a2a4d; }
+  input::placeholder { color: #a58fae; }
+  kbd { font: 11px/1 inherit; color: #a58fae; flex: none; }
+</style>
+</head>
+<body>
+<form id="f" autocomplete="off">
+  <span class="paw" aria-hidden="true">🐾</span>
+  <input id="t" maxlength="300" placeholder="Bé ơi… (vd: dọn dẹp, tập trung 25 phút, giúp)" aria-label="Lệnh cho bé Mochi" spellcheck="false">
+  <kbd>Enter</kbd>
+</form>
+<script src="cmdbox.js"></script>
+</body>
+</html>

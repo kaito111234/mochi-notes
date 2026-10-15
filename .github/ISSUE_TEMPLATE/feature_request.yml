@@ -1,0 +1,28 @@
+name: Đề xuất tính năng / Feature request
+description: Gợi ý một ý tưởng mới cho Mochi Notes / Suggest an idea for Mochi Notes
+title: "[Ý tưởng] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề bạn gặp / The problem
+      description: Bạn đang gặp khó khăn gì? / What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Bạn muốn điều gì? / Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alt
+    attributes:
+      label: Cách khác đã cân nhắc / Alternatives considered
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Đóng góp
+      options:
+        - label: Mình có thể tự làm và gửi pull request / I can send a pull request

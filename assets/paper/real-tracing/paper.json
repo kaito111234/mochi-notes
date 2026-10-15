@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#f4f6f8",
+    "head": "same",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "grid",
+    "color": "rgba(60,90,120,.16)",
+    "step": 22,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#26323c",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-tracing",
+  "name": "Giấy can trong",
+  "order": 120,
+  "noteColor": "gray",
+  "kind": "tracing",
+  "pin": {
+    "type": "cleartape",
+    "color": "clear"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "minimal-kraft",
+  "name": "Giấy kraft",
+  "group": "minimal",
+  "order": 20,
+  "noteColor": "yellow",
+  "dark": false,
+  "bg": {
+    "color": "#d9b98c",
+    "head": "#cfa874",
+    "gradient": null,
+    "texture": "kraft"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#3b2412",
+  "font": "bevietnam",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/leaf.svg",
+      "pos": "tr",
+      "w": 36,
+      "dx": 12,
+      "dy": 8,
+      "rot": 15
+    }
+  ],
+  "checklist": false
+}

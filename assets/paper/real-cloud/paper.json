@@ -1,0 +1,35 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#eaf4ff",
+    "head": "same",
+    "gradient": [
+      "#f2f8ff",
+      "#dcecff"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#31507a",
+  "font": "baloo2",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-cloud",
+  "name": "Mây bồng bềnh",
+  "order": 110,
+  "noteColor": "blue",
+  "kind": "cloud",
+  "pin": {
+    "type": "starpin",
+    "color": "yellow"
+  }
+}

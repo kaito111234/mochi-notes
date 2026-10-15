@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fffdf4",
+    "head": "same",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(70,110,190,.30)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2a2f45",
+  "font": "itim",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-index",
+  "name": "Thẻ ghi chú",
+  "order": 10,
+  "noteColor": "yellow",
+  "kind": "index",
+  "pin": {
+    "type": "pushpin",
+    "color": "red"
+  }
+}

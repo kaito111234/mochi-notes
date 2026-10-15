@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#c9a47c",
+    "head": "same",
+    "gradient": null,
+    "texture": "kraft"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#3b2a1a",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-kraft",
+  "name": "Thẻ kraft có dây",
+  "order": 30,
+  "noteColor": "gray",
+  "kind": "kraft",
+  "pin": {
+    "type": "nail",
+    "color": "silver"
+  }
+}

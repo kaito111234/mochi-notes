@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fffaf0",
+    "head": "same",
+    "gradient": null,
+    "texture": "linen"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(120,100,80,.2)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2f3550",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-letter",
+  "name": "Thư tay air mail",
+  "order": 140,
+  "noteColor": "blue",
+  "kind": "letter",
+  "pin": {
+    "type": "heartclip",
+    "color": "pink"
+  }
+}

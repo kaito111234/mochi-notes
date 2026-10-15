@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#f6e7cf",
+    "head": "same",
+    "gradient": null,
+    "texture": "linen"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#5a3b2a",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-envelope",
+  "name": "Phong bì thư",
+  "order": 60,
+  "noteColor": "yellow",
+  "kind": "envelope",
+  "pin": {
+    "type": "waxseal",
+    "color": "red"
+  }
+}

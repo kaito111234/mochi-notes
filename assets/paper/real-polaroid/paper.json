@@ -1,0 +1,36 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#ffffff",
+    "head": "same",
+    "gradient": [
+      "#ffe3ec",
+      "#e3ecff"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#3a3340",
+  "font": "itim",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-polaroid",
+  "name": "Ảnh polaroid",
+  "order": 40,
+  "noteColor": "purple",
+  "kind": "polaroid",
+  "pin": {
+    "type": "washi",
+    "color": "mint",
+    "pattern": "stripe"
+  }
+}

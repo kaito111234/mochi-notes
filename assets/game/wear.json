@@ -1,0 +1,19 @@
+{
+  "_ghichu": "Cách áo/áo khoác hiện trên người bé: tô lại vùng áo khoác (mặt nạ assets/pet/mochi/masks) theo dải màu dark→light giữ nếp vải, thêm hoạ tiết. shirt/tie: màu sơ mi và cà vạt (chỉ áp khi có món body).",
+  "items": {
+    "body_hoodie_cat":   { "light": "#ffc2d9", "dark": "#b84f7a", "pattern": "paws",     "pc": "#fff6fa", "shirt": "#fff0f6", "tie": "#ff8fb6" },
+    "body_pajama_dino":  { "light": "#a6ecc9", "dark": "#3b8a68", "pattern": "spots",    "pc": "#e6fff2", "shirt": "#f1fff8", "tie": "#ffd36e" },
+    "body_sport_tee":    { "light": "#f6f8fc", "dark": "#8e98ae", "pattern": "bands",    "pc": "#ff5a5f", "shirt": "#ffffff", "tie": "#ff5a5f" },
+    "body_uniform":      { "light": "#fdfdff", "dark": "#a3aec4", "pattern": "none",     "pc": "#2f5fbf", "shirt": "#ffffff", "tie": "#e0445a" },
+    "body_sweater":      { "light": "#f3c77f", "dark": "#9d6223", "pattern": "knit",     "pc": "#fff2d4", "shirt": "#fff8ea", "tie": "#c65b3a" },
+    "body_party_blouse": { "light": "#ffd3e3", "dark": "#c56f92", "pattern": "dots",     "pc": "#ffffff", "shirt": "#fff4f8", "tie": "#ff7aa8" },
+    "body_star_dress":   { "light": "#7564e0", "dark": "#1c1450", "pattern": "stars",    "pc": "#ffe48a", "shirt": "#efeaff", "tie": "#ffd36e" },
+    "outer_black_white": { "light": "#55555f", "dark": "#111117", "pattern": "hem",      "pc": "#ffffff" },
+    "outer_puffer":      { "light": "#9bd6ff", "dark": "#2a6fae", "pattern": "quilt",    "pc": "#2a6fae" },
+    "outer_raincoat":    { "light": "#ffe46b", "dark": "#c2900c", "pattern": "zip",      "pc": "#fff6c4" },
+    "outer_sport_jacket":{ "light": "#ff6f6f", "dark": "#97212d", "pattern": "vstripes", "pc": "#ffffff" },
+    "outer_blazer":      { "light": "#38599c", "dark": "#101c3a", "pattern": "plaid",    "pc": "#8fb1ff" },
+    "outer_witch_cape":  { "light": "#6a48a6", "dark": "#1b0f33", "pattern": "moons",    "pc": "#ffd36e" },
+    "outer_moon_cloak":  { "light": "#d6e0ff", "dark": "#6470b8", "pattern": "stars",    "pc": "#ffffff" }
+  }
+}

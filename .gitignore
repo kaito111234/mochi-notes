@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+*.log
+npm-debug.log*
+.env
+*.pfx
+*.p12
+.DS_Store
+Thumbs.db

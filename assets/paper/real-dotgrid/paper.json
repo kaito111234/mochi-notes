@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fbfaf5",
+    "head": "same",
+    "gradient": null,
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "dots",
+    "color": "rgba(60,60,80,.32)",
+    "step": 22,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2a2f45",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-dotgrid",
+  "name": "Thẻ chấm bi",
+  "order": 90,
+  "noteColor": "gray",
+  "kind": "card",
+  "pin": {
+    "type": "masking",
+    "color": "beige"
+  }
+}

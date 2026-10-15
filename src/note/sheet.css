@@ -1,0 +1,149 @@
+/* Mochi Notes — note là một tờ giấy thật ghim trên màn hình: cửa sổ trong suốt, giấy có bóng đổ, ghim lòi ra mép trên.
+   Kiểu giấy (data-kind trên body hoặc .ppt-in của hình xem trước) đổi hình dạng tờ giấy. */
+
+/* ---------- tờ giấy trong cửa sổ trong suốt ---------- */
+html, body.framed { background: transparent !important; }
+body.framed { --mt: 24px; }
+body.framed #sheet {
+  position: absolute; left: 12px; right: 14px; top: var(--mt); bottom: 20px;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.22)) drop-shadow(2px 6px 7px rgba(0,0,0,.26));
+  will-change: transform;
+}
+body.framed .note { height: 100%; border-radius: 2px; background: rgb(var(--bg-rgb)); overflow: hidden; }
+body.framed .lower { background: transparent; }
+body.framed:not(.has-paper) .topbar { background: rgb(var(--head-rgb)); }
+body.framed:not(.has-paper) .note { background: rgb(var(--bg-rgb)); }
+body.framed.resizing #sheet { filter: none; }
+
+#fasten { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
+#fasten .fz { position: absolute; }
+#fasten .fz > svg { display: block; width: 100%; height: 100%; stroke: none; }
+
+/* nút đổi cỡ ở góc dưới phải (nằm ngoài tờ giấy, chỗ trong suốt) */
+#grip {
+  position: fixed; right: 0; bottom: 0; width: 22px; height: 22px; cursor: nwse-resize; z-index: 30; opacity: 0; transition: opacity .15s;
+  background: radial-gradient(circle, rgba(60,60,70,.55) 1.3px, transparent 1.8px) 0 0 / 6px 6px;
+  -webkit-mask: linear-gradient(135deg, transparent 50%, #000 50%); mask: linear-gradient(135deg, transparent 50%, #000 50%);
+}
+body:hover #grip, body.resizing #grip { opacity: 1; }
+
+/* đang mở bảng chọn / menu: bỏ mặt nạ hình dạng để bảng không bị cắt */
+body.pop .note { -webkit-mask: none !important; mask: none !important; clip-path: none !important; }
+body.pop .note::before, body.pop .note::after { opacity: .15; }
+
+/* ---------- các kiểu giấy ---------- */
+[data-kind] .note { --kind-pad: 0px; }
+
+/* thẻ ghi chú: vạch đỏ dưới tiêu đề */
+[data-kind="index"] .note::before {
+  content: ""; position: absolute; left: 0; right: 0; top: calc(var(--topbar-h, 32px) + 4px); height: 2px; z-index: 0;
+  background: rgba(226, 92, 92, .7); pointer-events: none;
+}
+
+/* giấy sổ lò xo: hàng lỗ đục ở mép trên + răng giấy xé */
+[data-kind="notebook"] .note {
+  -webkit-mask: radial-gradient(circle 4.2px at 50% 10px, transparent 97%, #000 100%) 0 0 / 22px 100% repeat-x;
+          mask: radial-gradient(circle 4.2px at 50% 10px, transparent 97%, #000 100%) 0 0 / 22px 100% repeat-x;
+}
+[data-kind="notebook"] .note::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 20px; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle 5.4px at 50% 10px, rgba(0,0,0,.12) 80%, transparent 100%) 0 0 / 22px 20px repeat-x;
+}
+
+/* thẻ kraft: cắt hai góc trên, lỗ xỏ dây ở giữa có vòng gia cố */
+[data-kind="kraft"] .note {
+  clip-path: polygon(22px 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%, 0 22px);
+  -webkit-mask: radial-gradient(circle 5px at 50% 22px, transparent 96%, #000 100%);
+          mask: radial-gradient(circle 5px at 50% 22px, transparent 96%, #000 100%);
+}
+[data-kind="kraft"] .note::before {
+  content: ""; position: absolute; left: calc(50% - 10px); top: 12px; width: 20px; height: 20px; border-radius: 50%; z-index: 2; pointer-events: none;
+  box-shadow: inset 0 0 0 3.5px #efe3cf, inset 0 0 0 4.5px rgba(0,0,0,.18);
+}
+
+/* polaroid: khung trắng, đáy dày */
+[data-kind="polaroid"] .note { border: 10px solid #fdfdfb; border-bottom-width: 38px; border-radius: 1px; box-sizing: border-box; }
+[data-kind="polaroid"] .note::after {
+  content: ""; position: absolute; inset: 0; opacity: 1; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08), inset 0 0 18px rgba(0,0,0,.06);
+}
+
+/* hoá đơn: răng cưa trên dưới, chữ máy in */
+[data-kind="receipt"] .note {
+  -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 51% repeat-x,
+                conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 12px 51% repeat-x;
+          mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / 12px 51% repeat-x,
+                conic-gradient(from 135deg at top, #0000, #000 1deg 89deg, #0000 90deg) top / 12px 51% repeat-x;
+}
+[data-kind="receipt"] :is(#editor, .ppt-ed) { font-family: Consolas, "Cascadia Mono", monospace !important; font-size: calc(13.5px * var(--zoom, 1)); letter-spacing: .01em; }
+[data-kind="receipt"] .note::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: calc(var(--topbar-h, 32px) + 2px); border-top: 1.5px dashed rgba(0,0,0,.28); pointer-events: none;
+}
+
+/* phong bì: nắp tam giác ở trên, viền thư */
+[data-kind="envelope"] .paper-layer::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 58px; pointer-events: none;
+  background: linear-gradient(rgba(120,80,40,.10), rgba(120,80,40,.16));
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.12));
+}
+[data-kind="envelope"] .note { border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(90,60,30,.15); }
+
+/* tập memo: mép trên có đường xé lỗ kim */
+[data-kind="memo"] .note {
+  -webkit-mask: radial-gradient(circle 2.6px at 50% 0, transparent 96%, #000 100%) 0 0 / 9px 100% repeat-x;
+          mask: radial-gradient(circle 2.6px at 50% 0, transparent 96%, #000 100%) 0 0 / 9px 100% repeat-x;
+}
+[data-kind="memo"] .note::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; pointer-events: none;
+  background: linear-gradient(rgba(0,0,0,.07), transparent);
+}
+
+/* vé: khuyết hai bên + viền đứt */
+[data-kind="ticket"] .note {
+  border-radius: 6px;
+  -webkit-mask: radial-gradient(circle 11px at 0 58%, transparent 96%, #000 100%) left / 51% 100% no-repeat,
+                radial-gradient(circle 11px at 100% 58%, transparent 96%, #000 100%) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle 11px at 0 58%, transparent 96%, #000 100%) left / 51% 100% no-repeat,
+                radial-gradient(circle 11px at 100% 58%, transparent 96%, #000 100%) right / 51% 100% no-repeat;
+}
+[data-kind="ticket"] .note::before {
+  content: ""; position: absolute; inset: 6px; border: 1.5px dashed rgba(170,60,70,.35); border-radius: 4px; pointer-events: none;
+}
+
+/* thẻ bìa cứng */
+[data-kind="card"] .note { border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+
+/* mây */
+[data-kind="cloud"] .note { border-radius: 34px 40px 30px 44px / 30px 34px 40px 30px; }
+[data-kind="cloud"] .note::after { content: ""; position: absolute; inset: 0; opacity: 1; pointer-events: none; border-radius: inherit; box-shadow: inset 0 -10px 22px rgba(120,160,220,.18), inset 0 4px 10px rgba(255,255,255,.8); }
+[data-kind="cloud"] .topbar { padding: 0 12px; }
+
+/* giấy can: nhìn xuyên thấy màn hình phía sau */
+body[data-kind="tracing"] .note { background: rgba(240, 244, 248, .72) !important; }
+body[data-kind="tracing"] #sheet { filter: drop-shadow(0 1px 2px rgba(0,0,0,.16)); }
+[data-kind="tracing"] .paper-layer::after { box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); background: none; }
+
+/* thư air mail: viền sọc đỏ xanh */
+[data-kind="letter"] .note {
+  border: 7px solid transparent; border-radius: 2px;
+  border-image: repeating-linear-gradient(-45deg, #e05a5a 0 9px, #fffaf0 9px 13px, #4a7bd0 13px 22px, #fffaf0 22px 26px) 7;
+}
+
+/* bảng phấn: khung gỗ */
+[data-kind="chalk"] .note {
+  border: 9px solid #a8743f; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.35), inset 0 0 26px rgba(0,0,0,.35);
+  border-image: linear-gradient(135deg, #c48a52, #8a5a2b 40%, #b07a48 70%, #7a4c22) 9;
+}
+[data-kind="chalk"] :is(#editor, .ppt-ed) { text-shadow: 0 0 1px rgba(255,255,255,.45); }
+
+/* giấy nhớ cổ điển: góc dưới cong lên */
+[data-kind="sticky"] .note { border-radius: 0 0 26px 2px / 0 0 8px 2px; }
+
+/* ---------- hình xem trước (picker): giữ dáng tờ giấy, nền trong suốt để thấy hình dạng ---------- */
+.ppthumb .ppt-in[data-kind] { background: #e9e6df; }
+.ppthumb .ppt-in[data-kind] .ppt-note { position: absolute; inset: 14px; height: auto; filter: drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
+.ppthumb .ppt-in[data-kind] .lower { background: transparent; }
+.ppthumb .ppt-in[data-kind] .topbar { background: transparent; }
+.ppthumb .ppt-in[data-kind="tracing"] { background: repeating-linear-gradient(45deg, #d9dde6 0 10px, #eef0f5 10px 20px); }
+.ppthumb .ppt-in[data-kind="tracing"] .ppt-note { background: rgba(240,244,248,.72) !important; }

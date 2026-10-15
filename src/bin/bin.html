@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>Thùng rác Mochi</title>
+<link rel="stylesheet" href="bin.css">
+</head>
+<body>
+<div id="wrap">
+  <div id="ball" hidden></div>
+  <div id="can" title="Thùng rác: bấm để xem và nhặt lại note, kéo để dời chỗ">
+    <svg viewBox="0 0 100 112" aria-hidden="true">
+      <defs>
+        <linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#cfe9ff"/><stop offset="1" stop-color="#a9cdf2"/></linearGradient>
+        <linearGradient id="gl" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e6f3ff"/><stop offset="1" stop-color="#bcdcfa"/></linearGradient>
+      </defs>
+      <g id="body">
+        <path d="M14 34 H86 L79 104 Q78 110 72 110 H28 Q22 110 21 104 Z" fill="url(#g)" stroke="#3a4a6b" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="M33 46 L35 98 M50 46 V98 M67 46 L65 98" stroke="#3a4a6b" stroke-opacity=".22" stroke-width="3" stroke-linecap="round"/>
+        <g id="face">
+          <ellipse class="eye" cx="38" cy="66" rx="3.4" ry="4.4" fill="#3a2a4d"/>
+          <ellipse class="eye" cx="62" cy="66" rx="3.4" ry="4.4" fill="#3a2a4d"/>
+          <circle cx="39.2" cy="64.4" r="1.2" fill="#fff"/><circle cx="63.2" cy="64.4" r="1.2" fill="#fff"/>
+          <ellipse cx="31" cy="75" rx="5" ry="2.8" fill="#ffb3c4" opacity=".8"/>
+          <ellipse cx="69" cy="75" rx="5" ry="2.8" fill="#ffb3c4" opacity=".8"/>
+          <path id="mouth" d="M45 74 Q50 79 55 74" fill="none" stroke="#3a2a4d" stroke-width="2.2" stroke-linecap="round"/>
+        </g>
+      </g>
+      <g id="lid">
+        <rect x="8" y="24" width="84" height="12" rx="6" fill="url(#gl)" stroke="#3a4a6b" stroke-width="2.6"/>
+        <path d="M40 24 Q40 15 50 15 Q60 15 60 24" fill="none" stroke="#3a4a6b" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <span id="count" hidden>0</span>
+  </div>
+</div>
+<script src="bin.js"></script>
+</body>
+</html>

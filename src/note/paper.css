@@ -1,0 +1,114 @@
+/* Mochi Notes — mẫu giấy (engine paper.js). Mọi luật nằm sau .has-paper / .paper-layer / .paper-head / .ppthumb:
+   không có mẫu giấy => không ảnh hưởng giao diện 0.1. */
+
+/* ---- gốc ---- */
+.has-paper { color: var(--fg); }
+.has-paper.paper-dark { color-scheme: dark; }
+.has-paper:not(.glass) .topbar { background: transparent; box-shadow: none; }
+.has-paper:not(.glass) .lower { background: transparent; }
+.has-paper:not(.glass) .note { background: var(--paper-bg); }
+.has-paper.paper-edge:not(.glass) { background: transparent; }
+.has-paper .topbar { position: relative; z-index: 1; height: var(--topbar-h, 32px); }
+.has-paper .lower { z-index: 1; }
+.has-paper[data-edge] .note { -webkit-mask: var(--paper-mask); mask: var(--paper-mask); }
+.has-paper[data-corner="fold"] .note { clip-path: var(--paper-clip); }
+.has-paper .pop { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+
+/* ---- lớp trang trí + bóng giấy ---- */
+.paper-layer { display: none; position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.has-paper .paper-layer { display: block; }
+.paper-layer::after { /* viền sáng/tối mép + bóng cong góc dưới */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.55), inset -1px -1px 0 rgba(0,0,0,.07);
+  background:
+    radial-gradient(90px 70px at 100% 100%, rgba(0,0,0,.09), rgba(0,0,0,0) 72%),
+    radial-gradient(60px 50px at 0 100%, rgba(0,0,0,.07), rgba(0,0,0,0) 72%),
+    linear-gradient(to top, rgba(0,0,0,.05), rgba(0,0,0,0) 14px);
+}
+.has-paper.paper-dark .paper-layer::after { box-shadow: inset 1px 1px 0 rgba(255,255,255,.14), inset -1px -1px 0 rgba(0,0,0,.35); }
+.has-paper.glass .paper-layer::after { display: none; }
+.paper-layer > * { pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.paper-deco { display: block; height: auto; filter: drop-shadow(0 1px 1px rgba(0,0,0,.18)); }
+.paper-washi { box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.paper-fold { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; clip-path: polygon(0 0, 100% 0, 0 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,.85), rgba(0,0,0,.2)); }
+
+/* ---- tiêu đề in sẵn ---- */
+.paper-head { display: none; position: absolute; left: 38px; right: 74px; top: 0; bottom: 0; align-items: center; pointer-events: none; z-index: 0; }
+.has-paper.paper-hashead .paper-head { display: flex; }
+.paper-head .ph-t {
+  display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none;
+  font-family: var(--head-font, inherit); font-size: var(--head-size, 20px); line-height: 1.25; color: var(--head-color, inherit);
+}
+.paper-head .ph-underline { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; text-decoration-color: color-mix(in srgb, var(--head-color) 55%, transparent); }
+.paper-head .ph-stamp { border: 2px solid var(--head-color); border-radius: 5px; padding: 0 9px; letter-spacing: .06em; opacity: .85; font-size: calc(var(--head-size, 20px) * .85); }
+.paper-head .ph-ribbon { background: var(--head-color); color: var(--head-ink, #fff); padding: 1px 18px; clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 50%, 100% 100%, 0 100%, 8px 50%); }
+
+/* ---- dòng kẻ trên vùng soạn thảo ---- */
+.has-paper :is(#editor, .ppt-ed) {
+  --step: calc(var(--step-base, 26px) * var(--zoom, 1));
+  --pad-top: calc(var(--step) * .3);
+  --ldy: calc(3px * var(--zoom, 1));
+  --mx: calc(34px * var(--zoom, 1));
+  font-family: var(--paper-font);
+  background-attachment: local;
+}
+.has-paper { --step: calc(var(--step-base, 26px) * var(--zoom, 1)); }
+.has-paper[data-lines] :is(#editor, .ppt-ed) {
+  line-height: var(--step);
+  padding: var(--pad-top) 12px calc(var(--step) * .5) 12px;
+}
+.has-paper[data-margin] :is(#editor, .ppt-ed) {
+  padding-left: calc(var(--mx) + 10px);
+  --m-img: linear-gradient(90deg, transparent calc(var(--mx) - 1px), var(--margin-color) calc(var(--mx) - 1px), var(--margin-color) calc(var(--mx) + .5px), transparent calc(var(--mx) + .5px)),;
+  --m-size: 100% var(--step),;
+  --m-pos: 0 0,;
+  --m-rep: repeat-y,;
+}
+.has-paper[data-lines] #editor.empty::before { left: 12px; top: var(--pad-top); line-height: var(--step); }
+.has-paper[data-margin] #editor.empty::before { left: calc(var(--mx) + 10px); }
+
+.has-paper[data-lines="ruled"] :is(#editor, .ppt-ed) {
+  background-image: var(--m-img,) linear-gradient(to bottom, transparent calc(100% - 1px), var(--line) 0);
+  background-size: var(--m-size,) 100% var(--step);
+  background-position: var(--m-pos,) 0 calc(var(--pad-top) - var(--ldy));
+  background-repeat: var(--m-rep,) repeat-y;
+}
+.has-paper[data-lines="grid"] :is(#editor, .ppt-ed) {
+  background-image: var(--m-img,) linear-gradient(to bottom, transparent calc(100% - 1px), var(--line) 0), linear-gradient(to right, transparent calc(100% - 1px), var(--line) 0);
+  background-size: var(--m-size,) 100% var(--step), var(--step) var(--step);
+  background-position: var(--m-pos,) 0 calc(var(--pad-top) - var(--ldy)), 0 calc(var(--pad-top) - var(--ldy));
+  background-repeat: var(--m-rep,) repeat-y, repeat;
+}
+.has-paper[data-lines="oly"] :is(#editor, .ppt-ed) { /* ô ly: ô lớn có 4 dòng ly mảnh */
+  background-image: var(--m-img,) linear-gradient(to bottom, transparent calc(100% - 1px), var(--line) 0), linear-gradient(to bottom, transparent calc(100% - 1px), var(--line-soft) 0), linear-gradient(to right, transparent calc(100% - 1px), var(--line-soft) 0);
+  background-size: var(--m-size,) 100% var(--step), 100% calc(var(--step) / 4), var(--step) var(--step);
+  background-position: var(--m-pos,) 0 calc(var(--pad-top) - var(--ldy)), 0 calc(var(--pad-top) - var(--ldy)), 0 calc(var(--pad-top) - var(--ldy));
+  background-repeat: var(--m-rep,) repeat-y, repeat-y, repeat;
+}
+.has-paper[data-lines="dots"] :is(#editor, .ppt-ed) {
+  background-image: var(--m-img,) radial-gradient(circle at 50% 50%, var(--line) 1.1px, transparent 1.8px);
+  background-size: var(--m-size,) var(--step) var(--step);
+  background-position: var(--m-pos,) 0 calc(var(--pad-top) - var(--ldy) + var(--step) / 2);
+  background-repeat: var(--m-rep,) repeat;
+}
+
+/* ---- hình xem trước (picker/gallery) ---- */
+.ppthumb { position: relative; display: block; flex: none; width: 84px; height: 84px; overflow: hidden; border-radius: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,.18); pointer-events: auto; background: transparent; }
+.ppthumb .ppt-in { position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: none; color: var(--fg); font: 15px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; background: rgb(var(--bg-rgb, 255,247,209)); }
+.ppthumb .ppt-in.paper-edge { background: transparent; }
+.ppthumb .ppt-note { position: relative; display: flex; flex-direction: column; height: 100%; }
+.ppthumb .topbar { flex: none; display: flex; align-items: center; height: var(--topbar-h, 32px); background: rgba(var(--head-rgb, 255,242,171), 1); }
+.ppthumb .lower { flex: 1; min-height: 0; position: relative; background: rgb(var(--bg-rgb, 255,247,209)); }
+.ppthumb .paper-head { left: 12px; right: 12px; }
+.ppthumb .ppt-ed { flex: 1; overflow: hidden; padding: 8px 12px; font-size: 15px; line-height: 1.5; height: 100%; color: var(--fg); }
+.ppthumb .ppt-in.has-paper .ppt-ed { font-family: var(--paper-font); }
+.ppthumb .ppt-in.ppt-plain .topbar { background: rgb(var(--head-rgb)); }
+
+/* trang trí góc dưới mờ đi khi thanh định dạng hiện (đang gõ / khoá) để không đè nút */
+.paper-layer [data-pos] { transition: opacity .15s; }
+body.editing .paper-layer [data-pos="bl"], body.editing .paper-layer [data-pos="br"], body.editing .paper-layer [data-pos="bottom"],
+body.locked .paper-layer [data-pos="bl"], body.locked .paper-layer [data-pos="br"], body.locked .paper-layer [data-pos="bottom"] { opacity: .18; }
+/* nút thanh trên nổi rõ khi đè lên trang trí */
+.has-paper .topbar .ib:hover { background: linear-gradient(rgba(var(--fg-rgb), .12), rgba(var(--fg-rgb), .12)), rgb(var(--head-rgb)); }
+.has-paper .topbar .ib[aria-expanded="true"] { background: linear-gradient(rgba(var(--fg-rgb), .2), rgba(var(--fg-rgb), .2)), rgb(var(--head-rgb)); }

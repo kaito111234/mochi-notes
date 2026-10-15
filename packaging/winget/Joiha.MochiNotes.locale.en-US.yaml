@@ -1,0 +1,20 @@
+# Manifest locale (file 3/3)
+PackageIdentifier: Joiha.MochiNotes
+PackageVersion: 0.9.4
+PackageLocale: en-US
+Publisher: Joiha
+PublisherUrl: https://github.com/kaito111234
+PackageName: Mochi Notes
+PackageUrl: https://github.com/kaito111234/mochi-notes
+License: MIT
+LicenseUrl: https://github.com/kaito111234/mochi-notes/blob/main/LICENSE
+Copyright: Copyright (c) 2026 Joiha
+ShortDescription: Sticky notes with a little pet assistant (Mochi) that reminds you of your schedule.
+Description: Mochi Notes is a desktop sticky-note app with a cute pet assistant that reminds you of events. The MIT license covers the source code only; character artwork is not MIT-licensed (see ASSETS-NOTICE.md).
+Tags:
+  - sticky-notes
+  - reminder
+  - desktop-pet
+  - electron
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

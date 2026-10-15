@@ -1,0 +1,33 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fdfdfb",
+    "head": "same",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "margin-ruled",
+    "color": "rgba(70,120,200,.32)",
+    "step": 26,
+    "margin": "#f08a9a"
+  },
+  "header": null,
+  "ink": "#2a2f45",
+  "font": "pangolin",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-notebook",
+  "name": "Giấy sổ lò xo",
+  "order": 20,
+  "noteColor": "blue",
+  "kind": "notebook",
+  "pin": {
+    "type": "washi",
+    "color": "pink",
+    "pattern": "dots"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "group": "real",
+  "dark": true,
+  "bg": {
+    "color": "#2f4a3c",
+    "head": "same",
+    "gradient": [
+      "#35523f",
+      "#283f33"
+    ],
+    "texture": "grain"
+  },
+  "lines": {
+    "kind": "none",
+    "color": "rgba(0,0,0,0)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#f3f1e6",
+  "font": "pangolin",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-chalk",
+  "name": "Bảng phấn mini",
+  "order": 150,
+  "noteColor": "charcoal",
+  "kind": "chalk",
+  "pin": {
+    "type": "magnet",
+    "color": "yellow",
+    "shape": "round"
+  }
+}

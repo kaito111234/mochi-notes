@@ -1,0 +1,43 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; user-select: none; -webkit-user-select: none; font-family: "Segoe UI", system-ui, sans-serif; }
+#wrap { position: fixed; inset: 0; }
+#can { position: absolute; left: 50%; bottom: 4px; width: 92px; height: 103px; margin-left: -46px; cursor: pointer; transform-origin: 50% 100%; filter: drop-shadow(0 5px 6px rgba(30, 20, 60, .3)); }
+#can svg { width: 100%; height: 100%; display: block; overflow: visible; }
+#can:hover { filter: drop-shadow(0 5px 6px rgba(30, 20, 60, .3)) brightness(1.04); }
+#can.drag { cursor: grabbing; }
+#lid { transform-box: view-box; transform-origin: 12px 30px; transition: transform .28s cubic-bezier(.3, 1.7, .5, 1); }
+#can.open #lid, #can:hover #lid { transform: rotate(-24deg) translateY(-2px); }
+#can.bump { animation: bump .45s ease-out; }
+@keyframes bump { 30% { transform: scale(1.12, .88); } 60% { transform: scale(.95, 1.06); } 100% { transform: none; } }
+.eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
+#can.happy .eye { animation: blinkHappy .6s ease-in-out 2; }
+@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+@keyframes blinkHappy { 50% { transform: scaleY(.15); } }
+#count { position: absolute; right: -4px; top: 6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #ff8fb6; color: #3a1430; font-size: 12px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 2px 6px rgba(120, 30, 70, .35), 0 0 0 2px #fff; font-variant-numeric: tabular-nums; }
+#count[hidden] { display: none; }
+#ball {
+  position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 48% 52% 45% 55%; z-index: 0;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,255,255,.75) 0 12%, transparent 13%),
+    linear-gradient(35deg, transparent 45%, rgba(0,0,0,.12) 46% 49%, transparent 50%),
+    linear-gradient(125deg, transparent 35%, rgba(0,0,0,.1) 36% 39%, transparent 40%),
+    var(--paper, #FFF7D1);
+  box-shadow: inset -4px -5px 8px rgba(0,0,0,.18), 0 3px 6px rgba(40,20,60,.3);
+}
+#ball[hidden] { display: none; }
+#ball.drop { animation: drop var(--dur, .55s) cubic-bezier(.45, 0, .8, .6) forwards; }
+@keyframes drop {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  70% { transform: translate(var(--tx), var(--ty)) rotate(300deg); opacity: 1; }
+  100% { transform: translate(var(--tx), calc(var(--ty) + 26px)) rotate(380deg) scale(.7); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .eye { animation-duration: .01s !important; } }
+/* thùng chỉ trồi lên khi bé đi dọn, xong thì lặn xuống */
+#wrap.appear { animation: binUp .6s cubic-bezier(.3, 1.6, .5, 1) both; }
+#wrap.leave { animation: binDown .45s ease-in forwards; }
+#wrap::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 120px; height: 18px; margin-left: -60px; border-radius: 50%; opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(200, 190, 175, .75), rgba(200, 190, 175, 0)); }
+#wrap.appear::after, #wrap.leave::after { animation: puff .7s ease-out; }
+@keyframes binUp { 0% { transform: translateY(105%) scale(.7, .5); opacity: 0; } 40% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+@keyframes binDown { 0% { transform: none; } 30% { transform: translateY(-8px) scale(1.04, .96); } 100% { transform: translateY(105%) scale(.7, .5); opacity: 0; } }
+@keyframes puff { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5, 1.2); } }

@@ -1,0 +1,40 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#fff7e3",
+    "head": "same",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(200,120,80,.22)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "MEMO",
+    "font": "bevietnam",
+    "color": "#d0573f",
+    "size": 16,
+    "align": "left",
+    "style": "stamp"
+  },
+  "ink": "#3d2b22",
+  "font": "itim",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-memo",
+  "name": "Tập memo",
+  "order": 70,
+  "noteColor": "yellow",
+  "kind": "memo",
+  "pin": {
+    "type": "magnet",
+    "color": "red",
+    "shape": "strawberry"
+  }
+}

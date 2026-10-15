@@ -1,0 +1,27 @@
+{
+  "id": "minimal-line",
+  "name": "Xám kẻ mảnh",
+  "group": "minimal",
+  "order": 30,
+  "noteColor": "gray",
+  "dark": false,
+  "bg": {
+    "color": "#f5f5f4",
+    "head": "same",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(0,0,0,.1)",
+    "step": 26,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#2b2b2b",
+  "font": "bevietnam",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false
+}

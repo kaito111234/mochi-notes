@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Kiem tra cu phap updater
+        run: node --check src/main/updater.js
+      - name: Test
+        shell: bash
+        run: |
+          node tools/test-nlu.js
+          node tools/test-core.js
+          node tools/test-alert-policy.js
+          node tools/check-pack.js

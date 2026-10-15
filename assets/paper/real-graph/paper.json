@@ -1,0 +1,32 @@
+{
+  "group": "real",
+  "dark": false,
+  "bg": {
+    "color": "#f7fbf6",
+    "head": "same",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "grid",
+    "color": "rgba(60,140,100,.22)",
+    "step": 20,
+    "margin": null
+  },
+  "header": null,
+  "ink": "#203a2c",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [],
+  "checklist": false,
+  "id": "real-graph",
+  "name": "Giấy kẻ ô",
+  "order": 130,
+  "noteColor": "green",
+  "kind": "card",
+  "pin": {
+    "type": "twopins",
+    "color": "green"
+  }
+}

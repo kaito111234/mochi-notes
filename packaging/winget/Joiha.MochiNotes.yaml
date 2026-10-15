@@ -1,0 +1,8 @@
+# Manifest version (file 1/3). Doi ten ba file thanh:
+#   Joiha.MochiNotes.yaml, Joiha.MochiNotes.installer.yaml, Joiha.MochiNotes.locale.en-US.yaml
+# dat trong microsoft/winget-pkgs: manifests/j/Joiha/MochiNotes/<version>/  (xem docs/signing.md)
+PackageIdentifier: Joiha.MochiNotes
+PackageVersion: 0.9.4
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0

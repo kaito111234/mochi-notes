@@ -1,0 +1,82 @@
+name: Release
+
+# Push tag dang vX.Y.Z (khop version trong package.json) -> build + phat hanh len GitHub Releases.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write   # tao Release + upload file bang GITHUB_TOKEN
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tag phai khop version trong package.json
+        shell: bash
+        run: |
+          PKG="v$(node -p "require('./package.json').version")"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME khac version package.json ($PKG)"; exit 1
+          fi
+
+      - name: Test
+        shell: bash
+        run: |
+          node tools/test-nlu.js
+          node tools/test-core.js
+          node tools/test-alert-policy.js
+          node tools/check-pack.js
+
+      # Build NSIS x64 + arm64, portable x64, zip x64 (cau hinh trong package.json -> build.win.target)
+      # --publish always: upload len GitHub Release kem latest.yml + .blockmap cho tu cap nhat.
+      - name: Build va publish
+        run: npx electron-builder --win --publish always
+
+      - name: Tao SHA256SUMS.txt
+        shell: bash
+        run: |
+          cd dist
+          sha256sum MochiNotes-*.exe MochiNotes-*.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload SHA256SUMS.txt vao Release
+        shell: bash
+        run: gh release upload "$GITHUB_REF_NAME" dist/SHA256SUMS.txt --clobber
+
+      # ---- Ky so mien phi qua SignPath Foundation (TAT mac dinh, xem docs/signing.md) ----
+      # Bat: dat repo variable SIGNPATH_ENABLED=true + secret SIGNPATH_API_TOKEN + cac variable SIGNPATH_*.
+      # Luu y: de ky truoc khi publish can tach build/publish (xem docs/signing.md muc 2.3).
+      - name: Upload artifact cho SignPath (tuy chon)
+        if: ${{ vars.SIGNPATH_ENABLED == 'true' }}
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned
+          path: |
+            dist/MochiNotes-*.exe
+            dist/MochiNotes-*.zip
+
+      - name: Ky bang SignPath (tuy chon)
+        if: ${{ vars.SIGNPATH_ENABLED == 'true' }}
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist-signed
