@@ -5,7 +5,8 @@
 //   (xvfb không gửi được phím toàn cục, nên test gọi thẳng hàm đã đăng ký).
 // - globalThis.__mochiTrayMenu: Menu khay gần nhất (bấm mục: item.click()).
 const path = require('path');
-globalThis.__mochiCtx = () => require(path.join(__dirname, '..', '..', '..', 'src', 'main', 'context.js'));
+const ROOT = process.env.MOCHI_E2E_ROOT ? path.resolve(process.env.MOCHI_E2E_ROOT) : path.join(__dirname, '..', '..', '..');
+globalThis.__mochiCtx = () => require(path.join(ROOT, 'src', 'main', 'context.js'));
 globalThis.__mochiRequire = m => require(m);
 globalThis.__mochiShortcuts = {};
 globalThis.__mochiTrayMenu = null;

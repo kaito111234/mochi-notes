@@ -20,7 +20,8 @@ catch (e) {
   throw new Error('Thiếu playwright-core. Cài tạm: npm i --no-save playwright-core@1.48.2');
 }
 
-const ROOT = path.join(__dirname, '..', '..', '..');
+// MOCHI_E2E_ROOT: chạy bộ test với mã nguồn ở thư mục khác (worktree nhánh phòng khác, bản đóng gói giải nén).
+const ROOT = process.env.MOCHI_E2E_ROOT ? path.resolve(process.env.MOCHI_E2E_ROOT) : path.join(__dirname, '..', '..', '..');
 const OUT = path.join(__dirname, '..', 'out');
 fs.mkdirSync(OUT, { recursive: true });
 const ELECTRON = require(path.join(ROOT, 'node_modules', 'electron'));   // đường dẫn binary
