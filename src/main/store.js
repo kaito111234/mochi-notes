@@ -16,9 +16,13 @@ const SAVE_DELAY = 300;
 
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
 
+let normRepeat = null;
+try { normRepeat = require('./alarms/box.js').normRepeat; } catch (_) { /* thiếu module alarms: bỏ qua lặp */ }
+
 function normalizeReminder(r) {
   if (!r || typeof r !== 'object' || !isNum(r.due)) return null;
-  return {
+  const rep = normRepeat ? normRepeat(r.repeat) : null;
+  const out = {
     due: r.due,
     lead: isNum(r.lead) && r.lead > 0 ? r.lead : 0,
     intent: typeof r.intent === 'string' ? r.intent : 'task',
@@ -27,6 +31,8 @@ function normalizeReminder(r) {
     fired: !!r.fired,
     done: !!r.done
   };
+  if (rep) out.repeat = rep;
+  return out;
 }
 
 function normalizeNote(n) {

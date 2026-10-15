@@ -12,6 +12,7 @@
 | `alarm:stopped` / `alarm:snoozed` | notes | `{alarmId, label, minutes?}` |
 | `memo:due` | notes | `{memoId, text, when}` |
 | `pet:interact` | core | `{kind: 'click'\|'pat-head'\|'pat-body'\|'lift'\|'drop'\|'feed', itemId?, itemName?}` |
+| `pet:stageAction` | core | `{stageId, kind, button, alarmId?, noteId?, memoId?}` — người dùng bấm nút trên bé (Tắt/Hoãn/Xong…) |
 | `pet:posture` | core | `{posture: 'idle'\|'walk'\|'sit'\|'sleep'\|'lifted'\|'peek'\|'work'}` |
 | `pet:idleTick` | core | `{quietMs}` — mỗi 15s khi bé rảnh, `quietMs` = thời gian chưa ai tương tác |
 | `game:mode` | game | `{mode: 'happy'\|'normal'\|'tired'\|'sad', energy, mood, level}` |
@@ -19,6 +20,8 @@
 | `game:levelup` | game | `{level}` |
 | `persona:line` | persona | `{text, face?, anim?, priority, ttlMs?}` — yêu cầu bé nói |
 | `app:startup` / `app:idle` / `app:resume` | điều hành | `{}` — khởi động, máy rảnh, thức dậy sau sleep |
+
+Ghi chú: core nghe `alarm:ring` / `memo:due` và tự đưa lên sân khấu, chống trùng theo id (alarmId/memoId) — phòng notes chỉ cần phát bus. Nút trên bé gọi `ctx.alarms.stop/snooze` rồi phát `pet:stageAction`; `alarm:stopped`/`alarm:snoozed` làm bé thôi kêu.
 
 ## Đạo diễn sân khấu (core sở hữu): `ctx.pet.stage`
 Mọi thứ khiến bé "lên sân khấu" (hiện ra, giơ note, nói) đi qua MỘT hàng đợi ưu tiên trong `src/main/pet/`:

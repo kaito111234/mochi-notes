@@ -3,11 +3,23 @@
 const { BrowserWindow, screen } = require('electron');
 
 function init(ctx) {
-  function open() {
+  // Chuyển tab: gửi 'list:tab' (renderer chưa nghe kênh này) và gọi thẳng window.MochiList.setTab trong trang.
+  function gotoTab(win, tab) {
+    if (!tab || !ctx.alive(win)) return;
+    ctx.send(win, 'list:tab', tab);
+    try {
+      win.webContents.executeJavaScript(
+        'window.MochiList && window.MochiList.setTab(' + JSON.stringify(String(tab)) + ')', true
+      ).catch(() => {});
+    } catch (_) { /* bỏ qua */ }
+  }
+  function open(tab) {
+    if (typeof tab !== 'string') tab = '';
     const cur = ctx.windows.list;
     if (ctx.alive(cur)) {
       if (cur.isMinimized()) cur.restore();
       cur.show(); cur.focus();
+      gotoTab(cur, tab);
       return;
     }
     const a = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
@@ -24,6 +36,7 @@ function init(ctx) {
     ctx.hardenWebContents(win);
     win.once('ready-to-show', () => { if (!win.isDestroyed()) { win.show(); win.focus(); } });
     win.on('closed', () => { if (ctx.windows.list === win) ctx.windows.list = null; });
+    if (tab) win.webContents.once('did-finish-load', () => gotoTab(win, tab));
     win.loadFile(ctx.paths.listHtml);
   }
   Object.assign(ctx.list, { open });

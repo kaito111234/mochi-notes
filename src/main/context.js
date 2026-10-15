@@ -30,7 +30,8 @@ const ctx = {
   windows: {
     notes: new Map(),                // id -> BrowserWindow
     list: null,
-    mascot: null
+    mascot: null,
+    pet: null                        // cửa sổ bé (core gán)
   },
   // API do từng module đăng ký:
   notes: {}, pet: {}, list: {}, tray: {},

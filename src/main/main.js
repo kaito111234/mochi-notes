@@ -54,7 +54,6 @@ if (!app.requestSingleInstanceLock()) {
       try { app.setLoginItemSettings({ openAtLogin: !!ctx.settings().startup }); } catch (_) { /* bỏ qua */ }
     }
     if (!ctx.settings().allHidden) ctx.notes.openAllVisible(true);
-    if (ctx.settings().mascotIdle && ctx.settings().mascotEnabled) ctx.pet.ensureMascot();
     ctx.notes.startReminderLoop();
     // Sự kiện vòng đời cho các phòng (docs/spec/02-events.md)
     bus.emit('app:startup', {});

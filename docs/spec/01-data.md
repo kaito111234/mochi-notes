@@ -9,7 +9,7 @@ Một file `userData/mochi-data.json` (`version: 2`), ghi nguyên tử, sao lưu
 ## Ngăn đã đặt tên
 | Ngăn | Chủ | Nội dung tối thiểu |
 |---|---|---|
-| `alarms` | notes | `{ list: Alarm[], memos: Memo[], settings: {...} }` |
+| `alarms` | notes | `{ list: Alarm[], memos: Memo[], missed: {alarmId,label,at}[] /*tối đa 50*/, sounds: {soundFile,name}[], noteMeta: { [noteId]: {repeat?: Repeat\|null, zoom?: number, locked?: boolean} }, settings: {...} }` |
 | `pet` | core | `{ x, y, displayId, posture, settings: { alwaysVisible, scale, walkEnabled } }` |
 | `game` | game | `{ stats: PetStats, inventory, quests, achievements, log: [] }` |
 | `persona` | persona | `{ recentLines: string[], name, settings: {...} }` |
@@ -27,14 +27,17 @@ interface Alarm {
   noteId?: string;           // gắn với note (tuỳ chọn)
   nextAt: number | null;     // epoch ms lần kêu kế tiếp (tính sẵn, nguồn sự thật cho bộ hẹn giờ)
   lastFiredAt?: number;
+  createdAt: number;         // epoch ms lúc tạo
+  snoozedUntil?: number;     // epoch ms hết hoãn (đang hoãn)
 }
-interface Repeat { freq: 'daily' | 'weekdays' | 'weekly' | 'monthly'; interval?: number; byDay?: number[] /*0=CN*/; byMonthDay?: number }
+interface Repeat { freq: 'hourly' | 'daily' | 'weekdays' | 'weekly' | 'monthly'; interval?: number; byDay?: number[] /*0=CN*/; byMonthDay?: number; anchor?: number /*epoch ms mốc tính lặp, dùng cho hourly*/ }
 interface Memo {             // "dặn dò": bé nói khi tới thời điểm, không cần giờ chính xác
   id: string; text: string;
   when: 'startup' | 'morning' | 'noon' | 'evening' | 'before-shutdown';
   days?: number[]; enabled: boolean; lastShownDay?: string; once?: boolean;
 }
 // Note.reminder (0.1) được mở rộng thêm: repeat?: Repeat | null — khi bấm Xong/đã báo, tính lần kế tiếp.
+// store.normalizeReminder giữ `repeat` bằng alarms/box.js normRepeat (bản sao lưu cũng có lặp).
 
 // game
 interface PetStats {
