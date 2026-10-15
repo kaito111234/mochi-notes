@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<path d="M177 348 C177 341 195 341 195 348 L196 372 L177 372 Z" fill="#1C1E24" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M189 346 L195 348 L196 372 L189 372 Z" fill="#0F1013" />
+<path d="M177 348 C177 341 195 341 195 348 L196 372 L177 372 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M172 392 L172 376 C172 370 176 366 180 365 L194 365 C197 366 199 370 199 376 L199 386 C199 390 198 392 196 392 Z" fill="#1C1E24" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M186 366 L195 366 C198 368 199 372 199 378 L199 388 C199 391 197 392 195 392 L188 392 C190 388 190 372 186 366 Z" fill="#0F1013" />
+<path d="M172 386 L199 386 L199 392 L172 392 Z" fill="#0F1013" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" />
+<path d="M172 392 L172 376 C172 370 176 366 180 365 L194 365 C197 366 199 370 199 376 L199 386 C199 390 198 392 196 392 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M174 373 L197 373" stroke="#5A6070" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" fill="none" />
+<path d="M178 370 L190 378 M190 370 L178 378 M178 377 L190 385 M190 377 L178 385" fill="none" stroke="#5A6070" stroke-width="1.5" stroke-linecap="round" />
+<path d="M175 386 C175 382 178 381 181 382" stroke="#5A6070" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" fill="none" />
+<path d="M174 389 L198 389" stroke="#5A6070" stroke-width="1.2" opacity="0.8" />
+</g>
+</svg>
