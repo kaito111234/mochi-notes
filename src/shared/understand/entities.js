@@ -320,6 +320,8 @@
     if ((m = /(?<![a-z0-9])trong\s+tuan(?:\s+nay)?(?![a-z0-9])(?!\s+(?:sau|toi))/.exec(f))) {
       return res('Trong tuần', eod(y, mo, d + 6 - dow), m);
     }
+    // "mai mốt": không rõ ngày, chỉ là hạn mềm vài ngày tới (không bao giờ thành giờ cụ thể)
+    if ((m = /(?<![a-z0-9])mai\s+mot(?![a-z0-9])/.exec(f))) return res('Mai mốt', eod(y, mo, d + 3), m);
     return null;
   }
 
