@@ -76,3 +76,7 @@ Chủ dự án nhấn mạnh: app phải **đọc hiểu note**, không chỉ nh
 
 ## Gửi phòng paper (yêu cầu giao diện cửa sổ note)
 _(phòng notes ghi ở đây khi có API mới)_
+
+## ĐỢT 2B — chủ dự án bổ sung
+1. **Thùng rác note** (xoá mềm): `ctx.notes.trash(id)`, `ctx.notes.restore(id)`, tự xoá hẳn sau 30 ngày; tab/khu "Thùng rác" trong danh sách. Xoá thường cũng vào thùng rác.
+2. **Note hết hạn**: `ctx.notes.expiredCandidates()` → note đang dán mà (a) mọi nhắc đã Xong, hoặc (b) quá hạn > 24 giờ chưa xong, hoặc (c) checklist đã tick hết. Phát `note:expired {noteId, reason}` (tối đa 1 lần/note/ngày) để bé tới hỏi dọn.
