@@ -247,9 +247,12 @@ function mkHarness(o = {}) {
   };
   if (o.big !== false) {
     ctx.pet.bigAlert = info => {
-      h.bigs.push(info.level); h.bigTitles.push(info.title);
+      h.bigs.push(info.level); h.bigTitles.push(info.title); (h.bigInfos = h.bigInfos || []).push(info);
       let resolve; const done = new Promise(r => { resolve = r; });
-      const t = setTimeout(() => resolve({ reason: 'end' }), info.ms);
+      let t = setTimeout(() => resolve({ reason: 'end' }), info.ms);
+      // mô phỏng người bấm nút trên màn nhắc to (o.bigPress: level -> {reason, minutes?} | null)
+      const pr = o.bigPress && o.bigPress(info.level);
+      if (pr) { clearTimeout(t); t = setTimeout(() => { if (pr.reason === 'done') h.pressedDone++; resolve(pr); }, 15); }
       return { done, abort(reason) { h.bigAborts.push(reason); clearTimeout(t); resolve({ reason }); } };
     };
   }
@@ -370,6 +373,48 @@ section('stage', async () => {
     ok(h.completed.length === 0 && h.bigs.length === 1, 'stage: note ' + label + ' -> không completeNote, không nhắc to thêm', JSON.stringify([h.completed, h.bigs]));
     ok(h.bigAborts.includes('invalid') || h.bigs.length === 1, 'stage: note ' + label + ' -> đóng nhắc to đang đập', JSON.stringify(h.bigAborts));
     h.invariant('đổi giữa chừng ' + label);
+  }
+  // --- F2) nút trên màn nhắc to đi cùng đường nút của bé: done / hoãn 5 / hoãn 10 / mở note / bấm bé (click) / Esc
+  {
+    const h = mkHarness({ ts: 0.004, bigPress: lv => (lv === 1 ? { reason: 'done' } : null) });
+    h.addNote('BD', 'BigDone');
+    h.requestDue('BD');
+    ok(await waitFor(() => h.completed.length >= 1, 1500), 'stage: bấm "Xong rồi" trên màn nhắc to -> completeNote');
+    await waitFor(h.idle, 3000);
+    ok(JSON.stringify(h.completed) === '["BD"]' && h.snoozed.length === 0 && h.ctx.findNote('BD').reminder.done, 'stage: nhắc to done -> completeNote đúng 1 lần, note done', JSON.stringify([h.completed, h.snoozed]));
+    ok(h.emitted.filter(e => e.button === 'done').length === 1 && h.bigs.length === 1, 'stage: nhắc to done -> 1 pet:stageAction done, không nhắc to thêm', JSON.stringify(h.bigs));
+    const inf = h.bigInfos[0];
+    ok(Array.isArray(inf.actions) && ['done', 'snooze5', 'snooze10', 'open'].every(a => inf.actions.includes(a)), 'stage: info nhắc to có đủ nút hành động', JSON.stringify(inf.actions));
+    h.invariant('big done');
+  }
+  for (const [label, minutes, want] of [['hoãn 5', 5, 5], ['hoãn 10', 10, 10], ['hoãn số lạ', 9999, 10]]) {
+    const h = mkHarness({ ts: 0.004, bigPress: lv => (lv === 1 ? { reason: 'snooze', minutes } : null) });
+    const n = h.addNote('BS', 'BigSnooze');
+    h.requestDue('BS');
+    ok(await waitFor(() => h.snoozed.length >= 1, 1500), 'stage: nhắc to ' + label + ' -> snoozeNote');
+    await waitFor(h.idle, 3000);
+    ok(h.snoozed.length === 1 && h.snoozed[0][0] === 'BS' && h.snoozed[0][1] === want && h.completed.length === 0, 'stage: nhắc to ' + label + ' -> snoozeNote(BS,' + want + ') đúng 1 lần, không completeNote', JSON.stringify([h.snoozed, h.completed]));
+    ok(n.reminder.due > Date.now() + (want - 1) * MIN && !n.reminder.done, 'stage: nhắc to ' + label + ' -> giờ nhắc dời ~' + want + ' phút');
+    h.invariant('big ' + label);
+  }
+  {
+    const h = mkHarness({ ts: 0.004, bigPress: lv => (lv === 1 ? { reason: 'open' } : null) });
+    h.addNote('BO', 'BigOpen');
+    h.requestDue('BO');
+    ok(await waitFor(() => h.shown.length >= 1, 1500), 'stage: nhắc to "Mở note" -> showNote');
+    await waitFor(h.idle, 3000);
+    ok(JSON.stringify(h.shown) === '["BO"]' && h.completed.length === 0 && h.snoozed.length === 0, 'stage: nhắc to open -> chỉ mở note, không done/snooze', JSON.stringify([h.shown, h.completed, h.snoozed]));
+    h.invariant('big open');
+  }
+  for (const reason of ['click', 'esc']) {
+    const h = mkHarness({ ts: 0.004, bigPress: lv => (lv === 1 ? { reason } : null) });
+    h.addNote('BC', 'BigClick');
+    h.requestDue('BC');
+    await waitFor(() => h.bigs.length >= 1, 1500);
+    await sleep(60);
+    ok(h.completed.length === 0 && h.snoozed.length === 0 && h.stage.current(), 'stage: nhắc to "' + reason + '" (Biết rồi) -> không completeNote/snooze, phiên vẫn cầm note');
+    ok(await waitFor(() => h.bigs.length >= 2 && h.bigs[1] === 2, 3000), 'stage: sau "' + reason + '" vẫn leo mức 2 như cũ', JSON.stringify(h.bigs));
+    await h.finish(); h.invariant('big ' + reason);
   }
   // note đổi giữa chừng khi đang cầm ở góc (sau nhắc to)
   {

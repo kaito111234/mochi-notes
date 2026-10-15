@@ -2,13 +2,15 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data: blob:; connect-src 'self' file: data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data: blob:; connect-src 'self' file: data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' file: data:; script-src 'self'">
 <title>Mochi nhắc to</title>
+<link rel="stylesheet" href="../../assets/fonts/fonts.css">
 <link rel="stylesheet" href="alert.css">
 </head>
 <body>
 <div id="root">
   <div id="dim"></div>
+  <div id="redv"></div>
   <div id="shake">
     <div id="char">
       <div id="outBack" class="outfit" aria-hidden="true"></div>
@@ -16,21 +18,28 @@
       <div id="face" aria-hidden="true"></div>
       <div id="outFront" class="outfit" aria-hidden="true"></div>
     </div>
-    <div id="note">
-      <div id="sheet">
-        <div class="strip"></div>
-        <div class="kicker" id="kicker"></div>
-        <div class="ttl" id="ttl"></div>
-        <div class="tm" id="tm"></div>
-        <div class="late" id="late"></div>
-      </div>
-    </div>
-    <div id="hands" aria-hidden="true"></div>
+    <div id="smoke" aria-hidden="true"></div>
+    <svg id="cracks" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
     <div id="prints" aria-hidden="true"></div>
+    <svg id="arms" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="fx" aria-hidden="true"></div>
     <div id="words" aria-hidden="true"></div>
-    <div id="say"></div>
+    <div id="say"><span id="sayTxt"></span></div>
+    <div id="panel">
+      <div id="card">
+        <div class="pin"></div>
+        <div id="paper">
+          <div class="kicker" id="kicker"></div>
+          <div class="ttl" id="ttl"></div>
+          <div class="meta"><span class="tm" id="tm"></span><span class="late" id="late"></span></div>
+          <div class="body" id="body"></div>
+        </div>
+      </div>
+      <div id="acts"></div>
+      <div id="hint"></div>
+    </div>
   </div>
-  <div id="hint">Bấm vào bé để tắt</div>
+  <div id="flash"></div>
 </div>
 <script src="../shared/outfit.js"></script>
 <script src="../shared/wear.js"></script>

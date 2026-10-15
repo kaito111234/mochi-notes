@@ -206,6 +206,8 @@ function create(ctx, deps = {}) {
     } catch (_) { /* bỏ qua */ }
   }
   const btnId = ev => (ev && ev.data && ev.data.id) || null;
+  // nút Hoãn của bé ở góc = 10 phút; nút Hoãn 5/10 trên màn nhắc to gửi kèm số phút
+  const snoozeMins = ev => { const m = Math.round(Number(ev && ev.data && ev.data.m)); return m >= 1 && m <= 60 ? m : 10; };
 
   // ---------------------------------------------------------------- diễn
   async function ready(sess, actor) {
@@ -284,11 +286,14 @@ function create(ctx, deps = {}) {
       st.n = lv;
       const v = varsFor(item, n);
       const l = lines.pick('big_' + lv, v);
+      const bodyTxt = String(n.text || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean).slice(1).join(' · ');
       const lateMs = t - n.reminder.due;
       info = {
         kicker: lv === 1 ? 'Tới giờ rồi!' : (lv >= 5 ? 'Chờ lâu lắm rồi!' : 'Tới giờ lâu rồi đó!'),
         title: v.title, time: v.time, level: lv, say: l && l.text ? l.text : undefined,
-        late: lv >= 2 && lateMs > 0 ? 'đã trễ ' + P.dur(lateMs) : ''
+        late: lv >= 2 && lateMs > 0 ? 'đã trễ ' + P.dur(lateMs) : '',
+        body: clip(bodyTxt, 110),
+        actions: ['done', 'snooze5', 'snooze10', 'open']          // nút trên màn nhắc to; kết quả đi về luồng nút cũ (xem flushBig)
       };
     } else {
       dec = await bigDecision(sess);
@@ -298,19 +303,27 @@ function create(ctx, deps = {}) {
     busyUntil = 0;
     info.volume = dec.sound;
     let h = null;
-    try { h = api(Object.assign({ ms: T(5500 + 250 * (lv - 1)) }, info)); } catch (e) { log('bigAlert lỗi', e && e.message); return; }
+    try { h = api(Object.assign({ ms: T(8000 + 250 * (lv - 1)) }, info)); } catch (e) { log('bigAlert lỗi', e && e.message); return; }
     if (!h || !h.done) return;
     // đang đập mà note xong/xoá/dời giờ (ở cửa sổ note hay chỗ khác) -> dừng ngay
     const iv = setInterval(() => { if (!stillValid(item)) { try { h.abort('invalid'); } catch (_) { /* bỏ qua */ } } }, T(400));
     sess.timers.add(iv);
     let res;
     try {
-      res = await sess.wait(T(14000), { promise: h.done, timeoutValue: undefined, errorValue: undefined });
+      res = await sess.wait(T(26000), { promise: h.done, timeoutValue: undefined, errorValue: undefined });
     } finally {
       clearInterval(iv); sess.timers.delete(iv);
       try { if (typeof h.abort === 'function') h.abort('stage'); } catch (_) { /* bỏ qua */ }   // no-op nếu đã xong; huỷ phiên -> dọn ngay
     }
+    // nút trên màn nhắc to -> cùng đường với nút của bé ở góc: giao sự kiện 'button' cho vòng chờ của phiên 'due' (flushBig)
+    if (k === 'due' && res && (res.reason === 'done' || res.reason === 'snooze' || res.reason === 'open')) sess.bigAct = { id: res.reason, m: res.minutes };
     return res && res.reason;
+  }
+  function flushBig(sess) {
+    const a = sess.bigAct;
+    if (!a) return;
+    sess.bigAct = null;
+    sess.deliver('button', { id: a.id, m: a.m, big: true });
   }
 
   async function perform(sess) {
@@ -368,6 +381,7 @@ function create(ctx, deps = {}) {
         ding(actor); pulse();
         A('say', lineFor('due', v).text, { buttons });
         sess.listen();
+        flushBig(sess);          // vừa bấm nút trên màn nhắc to ngay lượt đầu
         let again = 0;
         const since = now();
         const st0 = bigStateOf(item, n);
@@ -402,6 +416,7 @@ function create(ctx, deps = {}) {
               A('say', l && l.text ? l.text : lineFor('due_again', vv).text, { buttons });
               pulse();
               sess.listen();
+              flushBig(sess);
               continue;
             }
             A('say', lineFor('due_again', vv).text, { buttons });
@@ -426,9 +441,9 @@ function create(ctx, deps = {}) {
           }
           if (id === 'snooze') {
             sess.acting = true;
-            try { ctx.notes.snoozeNote(p.noteId, 10); } catch (e) { log(e && e.message); }
+            try { ctx.notes.snoozeNote(p.noteId, snoozeMins(ev)); } catch (e) { log(e && e.message); }
             sess.acting = false;
-            emitAction(sess, 'snooze');
+            emitAction(sess, 'snooze', { minutes: snoozeMins(ev) });
             sess.listening = false;
             A('holdNote', null); A('shake', false);
             A('say', lineFor('snooze', v).text, { ttlMs: 1400 });

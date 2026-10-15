@@ -13,7 +13,7 @@ const POSTURES = ['idle', 'walk', 'sit', 'sleep', 'lifted', 'peek', 'work'];
 const MODES = ['happy', 'normal', 'tired', 'sad'];
 
 function defaults() {
-  return { x: null, y: null, displayId: null, posture: 'idle', settings: { alwaysVisible: true, scale: 1, walkEnabled: true, bigAlert: true, smartAlert: true, alertVolume: 70, quietHours: { on: true, from: '22:00', to: '07:00' } } };
+  return { x: null, y: null, displayId: null, posture: 'idle', settings: { alwaysVisible: true, scale: 1, walkEnabled: true, bigAlert: true, smartAlert: true, alertMotion: 'full', alertVolume: 70, quietHours: { on: true, from: '22:00', to: '07:00' } } };
 }
 const HM = /^([01]?d|2[0-3]):[0-5]d$/;
 const fixHM = (v, d) => (typeof v === 'string' && HM.test(v.trim()) ? v.trim().replace(/^(d):/, '0$1:') : d);
@@ -29,6 +29,7 @@ function normalize(raw) {
   if (typeof s.walkEnabled === 'boolean') d.settings.walkEnabled = s.walkEnabled;
   if (typeof s.bigAlert === 'boolean') d.settings.bigAlert = s.bigAlert;
   if (typeof s.smartAlert === 'boolean') d.settings.smartAlert = s.smartAlert;
+  if (s.alertMotion === 'full' || s.alertMotion === 'calm') d.settings.alertMotion = s.alertMotion;
   if (typeof s.alertVolume === 'number' && isFinite(s.alertVolume)) d.settings.alertVolume = volOf(s.alertVolume);
   if (s.quietHours && typeof s.quietHours === 'object') {
     const q = d.settings.quietHours;
@@ -189,6 +190,7 @@ function init(ctx) {
     if (typeof patch.walkEnabled === 'boolean') s.walkEnabled = patch.walkEnabled;
     if (typeof patch.bigAlert === 'boolean') s.bigAlert = patch.bigAlert;
     if (typeof patch.smartAlert === 'boolean') s.smartAlert = patch.smartAlert;
+    if (patch.alertMotion === 'full' || patch.alertMotion === 'calm') s.alertMotion = patch.alertMotion;
     if (typeof patch.alertVolume === 'number' && isFinite(patch.alertVolume)) s.alertVolume = volOf(patch.alertVolume);
     if (patch.quietHours && typeof patch.quietHours === 'object') {
       const q = Object.assign({ on: true, from: '22:00', to: '07:00' }, s.quietHours);

@@ -4,15 +4,18 @@
 // Nạp lại đúng gói hình + đồ đang mặc + hướng của bé thật, giải mã khung ở cỡ gốc rồi vẽ phóng to (smoothing 'high').
 // API: createBigAlert(core).bigAlert({ title, time, kicker?, ms?, level?, say?, late?, volume? (0..1) }) -> { done: Promise<{reason}>, abort(reason?) }
 //   level 1..5 = mức giận (1 ngạc nhiên, 2 hờn, 3 giận đập nhanh, 4 đập hai tay, 5 khóc dỗi); mặc định 1.
-//   reason: 'timeout' | 'click' | 'esc' | 'fail' | 'abort' | 'closed'. Promise luôn resolve, không bao giờ reject.
+//   opts.body? (1-2 dòng nội dung note), opts.actions? ['done','snooze5','snooze10','open'] (nút hiện trên màn nhắc).
+//   reason: 'timeout' | 'click' | 'esc' | 'done' | 'snooze' (kèm minutes) | 'open' | 'fail' | 'abort' | 'closed'. Promise luôn resolve, không bao giờ reject.
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { BrowserWindow, ipcMain, screen } = require('electron');
 
 const ALLOWED = new Set(['ready', 'loaded', 'end', 'ignore']);
+const END_REASONS = ['timeout', 'click', 'esc', 'done', 'snooze', 'open'];
+const ACTIONS = ['done', 'snooze5', 'snooze10', 'open'];
 const LOAD_TIMEOUT = 3500;
 const levelOf = o => Math.min(5, Math.max(1, Math.round(Number(o && o.level)) || 1));
-const msOf = o => Math.max(1500, Number(o && o.ms) || (5500 + 250 * (levelOf(o) - 1)));      // giận hơn thì đập lâu hơn chút
+const msOf = o => Math.max(8000, Number(o && o.ms) || (8000 + 250 * (levelOf(o) - 1)));      // giận hơn thì đập lâu hơn chút
 const txt = (v, n) => String(v == null ? '' : v).slice(0, n);      // quá hạn mà renderer chưa nạp xong khung -> bỏ, luồng cũ tiếp tục
 
 function createBigAlert(core) {
@@ -32,7 +35,7 @@ function createBigAlert(core) {
       run.fadedPet = false;
       try { core.window.cmd({ op: 'fade', to: 1, ms: 220 }); } catch (_) { /* bỏ qua */ }
     }
-    function finish(reason) {
+    function finish(reason, extra) {
       if (run.finished) return;
       run.finished = true;
       for (const t of run.timers) clearTimeout(t);
@@ -41,7 +44,7 @@ function createBigAlert(core) {
       if (cur === run) cur = null;
       if (w && !w.isDestroyed()) { try { w.destroy(); } catch (_) { /* bỏ qua */ } }
       restorePet();
-      resolveDone({ reason: reason || 'timeout' });
+      resolveDone(Object.assign({ reason: reason || 'timeout' }, extra || {}));
     }
     run.abort = reason => finish(reason || 'abort');
     cur = run;
@@ -88,12 +91,16 @@ function createBigAlert(core) {
         } catch (_) { /* bỏ qua */ }
         run.win.webContents.send('alert:cmd', { op: 'go' });
         const total = msOf(opts);
-        after(total + 3500, () => finish('timeout'));      // chốt chặn nếu renderer treo
+        after(total + 12000, () => finish('timeout'));      // chốt chặn nếu renderer treo
       } else if (type === 'ignore') {
-        try { run.win.setIgnoreMouseEvents(!!(data && data.v), { forward: true }); } catch (_) { /* bỏ qua */ }
+        const ig = !!(data && data.v);
+        try { run.win.setIgnoreMouseEvents(ig, { forward: true }); } catch (_) { /* bỏ qua */ }
+        // rê chuột vào thẻ/nút/bé = đang muốn tương tác: nhận bàn phím (Enter/S/Esc) một lần, không cướp focus lúc đang gõ
+        if (!ig && !run.focused) { run.focused = true; try { run.win.focus(); } catch (_) { /* bỏ qua */ } }
       } else if (type === 'end') {
         const r = data && typeof data.reason === 'string' ? data.reason : 'timeout';
-        finish(['timeout', 'click', 'esc'].includes(r) ? r : 'timeout');
+        const m = Math.round(Number(data && data.minutes));
+        finish(END_REASONS.includes(r) ? r : 'timeout', r === 'snooze' ? { minutes: m >= 1 && m <= 60 ? m : 10 } : null);
       }
     };
     return { done, abort: reason => run.abort(reason) };
@@ -132,7 +139,9 @@ function createBigAlert(core) {
       faces: pack.faces && typeof pack.faces === 'object' ? pack.faces : {},      // ảnh mặt (đường dẫn trong gói), renderer tự đặt đè lên đầu bé
       baseUrl, mood, dir: core.body && core.body.face() === 'left' ? 'left' : 'right',
       outfit: outfit.items, wear: outfit.wear,
-      title: txt(opts.title, 120), time: txt(opts.time, 40), kicker: txt(opts.kicker || 'Tới giờ rồi!', 60),
+      title: txt(opts.title, 120), time: txt(opts.time, 40), kicker: txt(opts.kicker || 'Tới giờ rồi!', 60), body: txt(opts.body, 160),
+      actions: (Array.isArray(opts.actions) ? opts.actions : []).filter(a => ACTIONS.includes(a)),
+      motion: (core.box && core.box.settings && core.box.settings.alertMotion === 'calm') ? 'calm' : 'full',
       level: levelOf(opts), say: txt(opts.say, 120), late: txt(opts.late, 60),
       ms: msOf(opts), sound, volume, origin, petH,
       screen: { w: b.width, h: b.height }

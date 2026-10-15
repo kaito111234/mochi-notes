@@ -27,6 +27,9 @@ function init(ctx) {
       { label: 'Âm lượng nhắc', submenu: [['Tắt', 0], ['Nhỏ', 30], ['Vừa', 70], ['To', 100]].map(([name, v]) => ({
         label: v === 0 ? name : name + ' ' + v, type: 'radio', checked: (typeof ps.alertVolume === 'number' ? ps.alertVolume : 70) === v, click: () => setPet({ alertVolume: v })
       })) },
+      { label: 'Hiệu ứng nhắc to', submenu: [['Sinh động', 'full'], ['Nhẹ nhàng', 'calm']].map(([name, v]) => ({
+        label: name, type: 'radio', checked: (ps.alertMotion === 'calm' ? 'calm' : 'full') === v, click: () => setPet({ alertMotion: v })
+      })) },
       { label: 'Cỡ bé', submenu: [0.75, 1, 1.25].map(v => ({
         label: Math.round(v * 100) + '%', type: 'radio', checked: Math.abs((ps.scale || 1) - v) < 0.01, click: () => setPet({ scale: v })
       })) }
