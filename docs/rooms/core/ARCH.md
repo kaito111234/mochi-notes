@@ -187,3 +187,55 @@ Tin renderer → main (thêm vào `ALLOWED` trong window.js):
 - Trước khi diễn mức ≥ 60: `ctx.pet.capture && ctx.pet.capture.isOpen() && ctx.pet.capture.suspend()` (nháp được giữ).
 - Lỗi tờ note sát mép phải: phần này B sửa trong `goToCorner`; S chỉ đảm bảo gọi đúng.
 - Câu mặc định cho ghi nhanh (`captureSaved`, `captureSavedTime`, `captureBusy`, `captureFail`) thêm vào `lines.js` để W dùng: `lines.pick(key, vars)` (giữ API cũ của lines.js).
+
+---
+# Đợt 2B — chia việc nội bộ & hợp đồng (trưởng phòng chốt 2026-10-15, lượt 3)
+Nhiệm vụ: `docs/rooms/core.md` mục "ĐỢT 2B" + lỗi core trong `docs/rooms/qa/BUGS.md` (BUG-014, 016, 023, 024, 030; phối hợp 013/015).
+API notes đã có ở main: `ctx.notes.trash(id)` (xoá mềm, đóng cửa sổ, phát `note:trashed`), `restore(id)`, `expiredCandidates() -> [{noteId, reason, title}]`, bus `note:expired {noteId, reason:'done'|'overdue'|'checklist'}`; `ctx.notes.quickCapture(text,{source}) -> {ok, note, insight, reply}`. Game: `ctx.game.open(tab?)`, bus `game:outfit {worn}`.
+
+## Sơ đồ file 2B
+| Nhân viên | File |
+|---|---|
+| P. Gói hình | `tools/anim/**`, `assets/pet/placeholder/**` |
+| S. Sân khấu | `src/main/pet/stage.js`, `src/main/pet/lines.js` |
+| T. Dọn note | `src/main/petcore/tidy.js` (mới), `src/pet/bin.html|css|js` (mới, thùng rác), `src/pet/crumple.html|css|js` (mới, tờ giấy bị mang/vo/ném) |
+| K. Gõ cửa | `src/main/petcore/foreground.js` (mới), `src/main/petcore/knock.js` (mới) |
+| B. Thân & não | `src/main/petcore/body.js`, `src/main/petcore/brain.js` |
+| W. Nối & renderer | `src/main/petcore/index.js`, `window.js`, `capture.js`, `menu.js`, `src/pet/pet.js|css|html` |
+| M. Cài đặt | `src/pet/settings.*`, `src/main/petcore/settingsWindow.js` |
+
+## Action mới (P vẽ hình tạm; thiếu thì engine fallback `idle`)
+`knock` (gõ cộc cộc sang phải), `carry_note` (hai tay ôm/giơ tờ giấy, đi được — dùng khi mang), `crumple` (vo giấy trong tay), `throw` (ném sang phải), `peek_note` (thò đầu từ sau mép — hình gốc thò từ bên trái sang phải), `sit_on_note` (ngồi buông chân), `yawn`, `stretch`, `read` (cầm tờ giấy đọc), `cheer` (reo mừng), `play_cat` (chơi với mèo đen nhỏ — vẽ mèo đen đơn giản bằng hình khối, tự vẽ, không lấy hình ở đâu). Quy ước hướng: hình gốc quay mặt/hành động sang PHẢI; body lật khi cần.
+
+## Cài đặt mới (ngăn `pet.settings`, W thêm normalize/setSettings, M thêm vào cửa sổ cài đặt)
+`autoTidy: false` (tự dọn note đã xong mà không hỏi — chỉ áp cho reason `done`), `tidyEnabled: true` (bé đi hỏi dọn note hết hạn), `knockEnabled: true` (bé gõ vào app đang dùng để nhắc). Ngăn `pet` thêm `outfit: {}` (ghi lại `game:outfit.worn`).
+
+## B. Thân — API mới
+```js
+core.body.goToRect(bounds, {prefer:'right'|'left', fast?:true}) -> Promise<{ok, side}>  // tới sàn sát cạnh hình chữ nhật (cửa sổ bất kỳ / thùng rác), quay mặt về nó; goToNote dùng lại hàm này
+core.body.handScreen() -> {x, y} | null      // toạ độ màn hình (DIP) của pack.hand theo hướng mặt hiện tại
+core.body.face() -> 'left'|'right';  core.body.setFace(dir)  (đã có nội bộ thì công bố)
+core.body.footScreen() -> {x, y}             // = pos()
+```
+Não: dùng thêm `yawn`/`stretch` (trước/sau ngủ), `read` (đứng/ngồi cạnh note), `sit_on_note` (khi ngồi trên note), `peek_note` (thỉnh thoảng đứng sau mép note), `play_cat` (thỉnh thoảng khi rảnh lâu), `cheer` khi bus `reminder:done` (nếu không đang diễn). Không phá CPU đứng yên.
+
+## T. Dọn note — `tidy.js` `createTidy(core) -> { carryAway(noteId) -> Promise<boolean>, binRect() }`, W đăng ký `ctx.pet.tidy = core.tidy`
+- Nghe `note:expired`: nếu `tidyEnabled` và cửa sổ note đang hiện → `ctx.pet.stage.request({kind:'tidy', priority:35, payload:{noteId, reason, title}, ttlMs: 30*60000})`; tối đa 1 lần hỏi / 10 phút (xếp hàng phần còn lại tối đa 3). `autoTidy && reason==='done'` → vẫn qua stage nhưng payload `auto:true` (không hỏi).
+- `carryAway(noteId)`: (1) `w.webContents.capturePage()` cửa sổ note → dataURL; (2) mở cửa sổ phụ trong suốt `crumple.html` (click xuyên, không focus, luôn nổi) đè đúng bounds note, nạp ảnh bằng `win.webContents.executeJavaScript('window.setPaper(' + JSON.stringify(url) + ')')`; (3) `ctx.notes.trash(noteId)` (cửa sổ note thật đóng; không bao giờ xoá hẳn); (4) hiện thùng rác `bin.html` (cửa sổ nhỏ ~96×110 trong suốt, đứng trên sàn workArea cùng màn hình, phía xa bé hơn hoặc góc dưới trái/phải còn trống, né cửa sổ chuông góc dưới phải nếu có thể); (5) tờ giấy co nhỏ (~120px) về tay bé, bé `carry_note` đi tới cạnh thùng (`core.body.goToRect(binRect)`), tờ giấy bám `core.body.handScreen()` ~30 lần/s CHỈ trong lúc mang; (6) `crumple`: tờ giấy vo thành cục (CSS), bé play `crumple`; (7) `throw`: cục giấy bay theo đường cong vào miệng thùng (dời cửa sổ crumple), thùng nảy nắp (`window.bump()` qua executeJavaScript); (8) ẩn cả hai sau ~1,2s. Mọi bước có timeout; lỗi giữa chừng vẫn đảm bảo note đã vào thùng rác HOẶC chưa bị đụng (không mất note). Trả true nếu đã trash.
+- Hai trang tĩnh, CSP `default-src 'self'; img-src data:; script-src 'self'; style-src 'self'`, không cần preload API.
+
+## S. Sân khấu
+- Kind mới `tidy` (priority 35): `actor.goToNote(noteId)` → play `point` + flashNote → hỏi "Note “{title}” {lý do} rồi, tớ dọn vào thùng rác nha?" nút **Dọn đi** / **Giữ lại** (ttl 60s → Giữ lại, không làm gì). Payload `auto` → bỏ hỏi. Dọn đi → `ctx.pet.tidy.carryAway(noteId)` → nói "Tớ dọn rồi nha. Cần thì lấy lại trong thùng rác." Lỗi → nói xin lỗi, note giữ nguyên. Bị mức cao hơn chen ngang trước khi bấm → hủy (không dọn). Phát `pet:stageAction` như các kind khác.
+- Gõ cửa: khi diễn `nag` hoặc `pre`, nếu `ctx.pet.knock && await ctx.pet.knock.target()` trả `{rect}` (đã kiểm giới hạn tần suất, cài đặt, toàn màn hình) → thay `goToCorner` bằng `actor.goToRect(rect, {prefer:'right'})`, play `knock` 2 lượt + `actor.sound('knock')` + `bus.emit('pet:knock', {target:'foreground'})`, rồi bong bóng + nút như cũ (giơ tờ note như cũ). Mọi lỗi/timeout 6s → đường cũ. Nhắc lịch tất định: knock chỉ thêm đoạn mở màn, không bao giờ làm mất lời nhắc.
+- Sửa BUG-014 (tờ "Dặn dò" NaN — `when` là 'startup'|'morning'|'noon'|'evening'|'before-shutdown' → nhãn "Lúc mở máy"/"Buổi sáng"/"Buổi trưa"/"Buổi tối"/"Trước khi tắt máy"), BUG-023 (`varsFor` thêm `intent` của note qua `require('../../shared/parse.js').intentOf` hoặc `analyze` nếu có; reminder có `title` thì dùng `payload.title`/`reminder.title`), BUG-030 (số phút hoãn lấy từ cài đặt hoãn mặc định của báo thức: `ctx.alarms` nếu có API settings, nếu không đọc `ctx.store.data.alarms.settings.defaultSnoozeMin`, mặc định 10; nhãn nút "Hoãn N phút"), dùng `p.reminderId` khi gọi `ctx.notes.completeNote/snoozeNote(noteId, …, reminderId)`, thông báo dự phòng note dùng `ctx.alarms.toast` nếu có (xem docs/rooms/notes/API2.md mục 6), không thì như cũ.
+- lines.js thêm khoá: `tidyAsk` ({title},{why}), `tidyDone`, `tidyKeep`, `tidyFail`, `knock`, `cheer`, `yawn`, `catPlay`.
+
+## K. Gõ cửa — `foreground.js` + `knock.js`
+- `foreground.js` `createForeground() -> { get(): Promise<{rect:{x,y,width,height}, title, fullscreen:boolean, ownPid:boolean} | null>, stop() }`: chỉ `win32`: một tiến trình PowerShell sống lâu (`-NoProfile -NonInteractive -WindowStyle Hidden -Command -`), Add-Type C# nhỏ gọi user32 `GetForegroundWindow`, `GetWindowRect`, `GetWindowThreadProcessId`, `MonitorFromWindow`/`GetMonitorInfo` (toàn màn hình = rect phủ hết monitor), `IsIconic`; giao tiếp từng dòng JSON qua stdin/stdout, timeout 1,5s mỗi lần hỏi, tự khởi động lại tối đa 3 lần, khởi chạy lười (lần hỏi đầu). Toạ độ trả về là pixel vật lý → đổi sang DIP bằng `screen.screenToDipRect(null, rect)`. Nền tảng khác → luôn `null`. Biến gỡ lỗi `MOCHI_FAKE_FG="x,y,w,h"` trả rect giả trên mọi nền tảng (để thử trên xvfb).
+- `knock.js` `createKnock(core) -> { target(): Promise<{rect}|null>, allowed(): boolean }`, W đăng ký `ctx.pet.knock`: `allowed` = `knockEnabled` && bé không bị tắt && đã ≥ 15 phút từ lần gõ trước && không `app:idle`; `target`: lấy foreground; bỏ nếu null, fullscreen (đang trình chiếu/xem phim), cửa sổ của chính app (pid trùng `process.pid` hoặc tiến trình con — so `ownPid`), rect quá nhỏ (< 200×150), hoặc thu nhỏ; ghi lại thời điểm gõ khi trả rect. Rect được kẹp vào workArea.
+
+## W. Nối
+- index.js: settings mới + `outfit`; nghe `game:outfit` → lưu `box.outfit`, gửi renderer `{op:'outfit', worn}` (renderer chỉ ghi nhận); tạo `core.tidy`, `core.knock` (require phòng thủ); `ctx.pet.tidy`, `ctx.pet.knock`; `actor.goToRect(rect, opts)` → `core.body.goToRect`; `actor.handScreen()`.
+- capture.js: dùng `res.reply` của `quickCapture` khi `res.ok` (câu do notes soạn), `res.ok === false` → nói `res.message`; giữ đường dự phòng cũ.
+- menu.js: thêm "Phòng của Mochi" (`ctx.game.open()` nếu có) và "Dọn note hết hạn…" (gọi `ctx.notes.expiredCandidates()` → đưa từng note (tối đa 3) lên sân khấu `tidy`; không có → bé nói "Không có note nào cần dọn cả").
+- pet.js: âm `knock` (2 tiếng gõ gỗ ngắn, WebAudio), `crumple` (tiếng sột soạt noise ngắn); op `outfit` lưu lại. Không đổi gì khác.
