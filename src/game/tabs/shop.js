@@ -78,7 +78,7 @@
       card.appendChild(h('div', 'sh-gain', '+' + m + ' Tâm trạng · +' + en + ' Năng lượng'));
       var tag = h('div', 'sh-tag' + (factor < 1 ? ' on' : ''));
       if (factor < 1) {
-        tag.textContent = 'Bé hơi ngán (×' + String(Math.round(factor * 100) / 100).replace('.', ',') + ')';
+        tag.textContent = 'Mochi hơi ngán (×' + String(Math.round(factor * 100) / 100).replace('.', ',') + ')';
         tag.title = 'Ăn món khác hoặc đợi vài giờ nhé';
         card.title = 'Ăn món khác hoặc đợi vài giờ nhé';
       } else {
@@ -144,7 +144,7 @@
       res = res || {};
       if (res.view) room.setView(res.view);
       if (res.ok) {
-        room.toast('Bé đã ăn ' + f.name, 'ok');
+        room.toast('Mochi đã ăn ' + f.name, 'ok');
         say(res.line || 'Ngon quá, cảm ơn cậu nha!');
         var c = refs.grid.querySelector('[data-food="' + f.id + '"]') || card;
         fly(c, f);

@@ -74,7 +74,7 @@
     chartCard.appendChild(head);
     els.wrap = el('div', 'st-chart');
     els.tip = el('div', 'st-tip'); els.tip.hidden = true;
-    els.empty = el('div', 'st-empty', 'Xong việc đầu tiên để bé ghi sổ nhé');
+    els.empty = el('div', 'st-empty', 'Xong việc đầu tiên để Mochi ghi sổ nhé');
     els.empty.hidden = true;
     chartCard.appendChild(els.wrap);
     chartCard.appendChild(els.empty);

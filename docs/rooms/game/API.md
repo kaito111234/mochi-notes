@@ -59,7 +59,7 @@ Logic thuần (`logic/*`, `catalog.js`) **không require electron**, không đ�
 Hằng số xuất ở `RULES`:
 | Việc | Xu | Exp | Ghi chú |
 |---|---|---|---|
-| Xong note (`reminder:done`) | +10 | +10 | note phải tồn tại ≥ 2 phút (`now - note.createdAt ≥ 120000`); khoá `done:<noteId>:<due>` thưởng 1 lần |
+| Xong note (`reminder:done`) | +10 | +10 | note phải tồn tại ≥ 2 phút (`now - note.createdAt ≥ 120000`); khoá `done:<noteId>:<reminderId>:<due>` thưởng 1 lần (payload có `reminderId` hợp lệ: chuỗi 1–40 ký tự; due lấy từ `note.reminders[id]`, fallback `note.reminder`); thiếu/rác `reminderId` → khoá cũ `done:<noteId>:<due>` |
 | …đúng hạn (`onTime !== false`) | +5 | +5 | |
 | …việc dài hạn (note tạo ≥ 24 giờ trước) | +20 | +20 | |
 | Mỗi mục checklist (`note:checkItem` done=true) | +2 | +2 | khoá `chk:<noteId>:<index>`; note ≥ 2 phút |
@@ -112,7 +112,7 @@ gacha.effectiveRates()                    // tỉ lệ thực tế khi tính c�
 Món chọn đều trong cùng độ hiếm. Trùng → +mảnh theo bảng, `count` vẫn tăng.
 
 ## 6. Nhiệm vụ & thành tích (logic/quests.js)
-Ngày (3, cố định): `daily.done3` "Xong 3 note" (goal 3, đếm reminder:done), `daily.tidy1` "Dọn 1 note hết hạn" (goal 1, đếm `note:trashed`), `daily.pat1` "Xoa đầu bé" (goal 1, `pet:interact` pat-head).
+Ngày (3, cố định): `daily.done3` "Xong 3 note" (goal 3, đếm reminder:done), `daily.tidy1` "Dọn 1 note hết hạn" (goal 1, đếm `note:trashed`), `daily.pat1` "Xoa đầu Mochi" (goal 1, `pet:interact` pat-head).
 Tuần (1): `weekly.done15` "Xong 15 note trong tuần" (goal 15). Tuần bắt đầu thứ Hai.
 ```js
 quests.roll(box, now)                 // đổi ngày/tuần → tạo lại danh sách
@@ -169,12 +169,13 @@ api.game = {
 
 ## 9. Bus
 Nghe: `reminder:done`, `note:checkItem`, `note:created`, `note:trashed`, `alarm:stopped`, `pet:interact`, `pet:posture`, `app:idle`, `app:resume`, `app:startup`.
-Phát: `game:reward {candy,exp,affection,reason}` (persona tự nói câu `reward`), `game:levelup {level}`, `game:mode {mode,energy,mood,level}` (khi đổi và lúc khởi động), `game:outfit {worn}`.
+Phát: `game:reward {candy,exp,affection,reason}` (persona tự nói câu `reward`), `game:levelup {level}`, `game:mode {mode,energy,mood,level}` (khi đổi và lúc khởi động), `game:outfit {worn}`, `game:fed {foodId,name}` (mỗi lần cho ăn thành công, sau khi cập nhật chỉ số; không phát khi tắt game/thất bại).
+`reminder:done` payload: `{noteId, onTime, reminderId, title}`.
 Gacha/cho ăn: index.js gọi `ctx.persona.pick('gacha_win'|'gacha_dup'|'feed', {item})` (nếu có) rồi phát `persona:line {text, face, anim, priority: 30, ttlMs: 6000}`; không có câu → câu mặc định của phòng.
 **Không bao giờ** gọi gì của notes/alarms, không chặn sự kiện; mọi người nghe bọc try/catch.
 
 ## 10. Cửa sổ
-`ctx.game.open(tab?)` — một cửa sổ 760×560, không viền (frame:false), có titlebar kéo được, nút đóng. Phím tắt đề xuất Ctrl+Alt+G (điều hành đăng ký). Chạy thử: biến môi trường `MOCHI_GAME_OPEN=<tab>` mở sẵn cửa sổ sau khởi động 1,5 giây.
+`ctx.game.open(tab?)` — một cửa sổ 760×560, không viền (frame:false), có titlebar kéo được, nút đóng. Phím tắt đề xuất Ctrl+Alt+G (điều hành đăng ký). `ctx.game` gồm `open`, `view`, `enabled`, `setEnabled(on)` (bật/tắt game cho cửa sổ cài đặt chung, trả View). Chạy thử: biến môi trường `MOCHI_GAME_OPEN=<tab>` mở sẵn cửa sổ sau khởi động 1,5 giây.
 
 ## 11. Renderer (`src/game/`) — quy ước giữa khung và các tab
 Thứ tự nạp script trong `room.html` (script thường, không module): `preview.js`, `room.js`, `tabs/wardrobe.js`, `tabs/gacha.js`, `tabs/shop.js`, `tabs/quests.js`, `tabs/stats.js`. CSS: `room.css` rồi `tabs/*.css`.

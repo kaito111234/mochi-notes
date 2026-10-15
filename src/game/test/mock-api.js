@@ -23,7 +23,7 @@
       daily: [
         { id: 'daily.done3', name: 'Xong 3 note', progress: 3, goal: 3, claimed: false, reward: { candy: 30, exp: 20 } },
         { id: 'daily.tidy1', name: 'Dọn 1 note hết hạn', progress: 0, goal: 1, claimed: false, reward: { candy: 30, exp: 20 } },
-        { id: 'daily.pat1', name: 'Xoa đầu bé', progress: 1, goal: 1, claimed: true, reward: { candy: 30, exp: 20 } }
+        { id: 'daily.pat1', name: 'Xoa đầu Mochi', progress: 1, goal: 1, claimed: true, reward: { candy: 30, exp: 20 } }
       ],
       weekly: [{ id: 'weekly.done15', name: 'Xong 15 note trong tuần', progress: 9, goal: 15, claimed: false, reward: { candy: 150, exp: 80 } }]
     },
@@ -32,7 +32,7 @@
       ['done100', 'Siêu chăm', 'Xong 100 note', 200, 0], ['streak3', 'Ba ngày liền', 'Chuỗi 3 ngày', 30, 1],
       ['streak7', 'Một tuần', 'Chuỗi 7 ngày', 70, 0], ['streak30', 'Một tháng', 'Chuỗi 30 ngày', 300, 0],
       ['pull10', 'Thử vận may', '10 lượt gacha', 50, 1], ['legend1', 'Ánh vàng', 'Có món Huyền thoại', 100, 0],
-      ['feed10', 'Bé no bụng', 'Cho ăn 10 lần', 40, 0], ['pat50', 'Xoa mãi', 'Xoa đầu 50 lần', 60, 0],
+      ['feed10', 'Mochi no bụng', 'Cho ăn 10 lần', 40, 0], ['pat50', 'Xoa mãi', 'Xoa đầu 50 lần', 60, 0],
       ['wear5', 'Mặc đủ bộ', 'Mặc đủ 5 khe', 80, 0], ['collect20', 'Nhà sưu tầm', 'Gom 20 món', 120, 0],
       ['outfit1', 'Có gu', 'Lưu một bộ đồ', 30, 1], ['alarm10', 'Dậy đúng giờ', 'Tắt 10 báo thức', 40, 0]
     ].map(function (a, i) { return { id: a[0], name: a[1], desc: a[2], icon: a[0], reward: a[3], unlocked: !!a[4], at: a[4] ? Date.now() - (i + 1) * 86400000 : 0 }; }),
@@ -114,7 +114,7 @@
       return { ok: true, results: res, line: best ? 'Wow… đẹp quá, tớ thích cái này.' : 'Ừm, cũng xinh nè.', view: emit() }; }); },
     exchange: function (id) { return wait(function () {
       var it = itemById(id); if (!it) return fail('Không có món này');
-      if (S.items[id]) return fail('Cậu đã có món này rồi');
+      if (S.items[id]) return fail('Bạn đã có món này rồi');
       var p = SHARD_PRICE[it.rarity]; if (S.shards < p) return fail('Chưa đủ mảnh');
       S.shards -= p; S.items[id] = { count: 1 }; return { ok: true, view: emit() }; }); },
     buyFeed: function (id) { return wait(function () {
