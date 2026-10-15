@@ -52,7 +52,7 @@ function pull(box, catalog, count, rng, now) {
   return results;
 }
 
-function exchange(box, catalog, itemId) {
+function exchange(box, catalog, itemId, now) {
   const item = itemById(catalog, itemId);
   if (!item) return { ok: false, reason: 'Không có món này' };
   const inv = box.inventory;
@@ -60,7 +60,7 @@ function exchange(box, catalog, itemId) {
   const price = SHARD_PRICE[item.rarity];
   if (inv.shards < price) return { ok: false, reason: 'Chưa đủ mảnh' };
   inv.shards -= price;
-  inv.items[itemId] = { count: 1, firstAt: Date.now() };
+  inv.items[itemId] = { count: 1, firstAt: Number.isFinite(now) ? now : Date.now() };
   return { ok: true };
 }
 

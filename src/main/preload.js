@@ -98,7 +98,22 @@ api.pet = {
 };
 // ===== HẾT PHÒNG core =====
 // ===== BẮT ĐẦU PHÒNG game (kênh 'game:*') =====
-api.game = {};
+api.game = {
+  state: () => inv('game:state'),                 // -> View
+  catalog: () => inv('game:catalog'),
+  setEnabled: on => inv('game:setEnabled', !!on),
+  wear: (slot, itemId) => inv('game:wear', slot, itemId),   // itemId null = cởi
+  saveOutfit: name => inv('game:saveOutfit', name),
+  applyOutfit: id => inv('game:applyOutfit', id),
+  deleteOutfit: id => inv('game:deleteOutfit', id),
+  pull: count => inv('game:pull', count),         // 1 | 10
+  exchange: itemId => inv('game:exchange', itemId),
+  buyFeed: foodId => inv('game:feed', foodId),    // mua + cho ăn ngay
+  claim: questId => inv('game:claim', questId),
+  close: () => inv('game:close'),
+  onChanged: cb => on('game:changed', cb),        // cb(View)
+  onTab: cb => on('game:tab', cb)                 // cb('wardrobe'|'gacha'|'shop'|'quests'|'stats')
+};
 // ===== HẾT PHÒNG game =====
 // ===== BẮT ĐẦU PHÒNG paper (kênh 'paper:*') =====
 api.paper = {};
