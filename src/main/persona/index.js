@@ -3,8 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const dialogue = require('../../shared/dialogue.js');
+const { solarToLunar } = require('./lunar.js');
 
 const LINES_FILE = path.join(__dirname, '../../../assets/dialogue/vi.json');
+const CATALOG_FILE = path.join(__dirname, '../../../assets/game/catalog.json');
 const MAX_RECENT = 20;
 const MIN = 6e4;
 // click/pat/feed do petcore/game tự nói; persona chỉ nói khi nhấc lên/thả xuống (tránh nói 2 lần).
@@ -12,6 +14,8 @@ const KIND_EVENT = { lift: 'lift', drop: 'drop' };
 const DONE_DELAY_MS = 400;     // hoãn câu done/snooze để chờ core (pet:stageAction) tự nói
 const REWARD_QUIET_MS = 5000;  // sau một câu priority >= 30 thì không nói reward
 const EXPIRED_REASONS = ['done', 'overdue', 'checklist'];
+// Event nhắc lịch: nếu thiếu intent thì tự tra từ note/reminder (BUG-023).
+const INTENT_EVENTS = ['pre', 'due', 'due_again', 'nag', 'snooze', 'done', 'done_late', 'knock', 'note_created'];
 
 const defaults = () => ({ recentLines: [], name: '', settings: { chatter: true, chatterEveryMin: 20 } });
 
@@ -81,6 +85,16 @@ function createPersona(ctx, opts) {
   const box = ctx.store.section('persona', defaults, normalize);
   const st = { mode: 'normal', level: undefined, energy: undefined, mood: undefined };
   let lines = [];
+  // Danh mục game: id -> {rarity}, tên -> id (để đổi tên món sang id cho cond.item/rarity). Lỗi thì bỏ qua.
+  const catById = new Map(), catByName = new Map();
+  try {
+    const cat = JSON.parse(fs.readFileSync(opts.catalogFile || CATALOG_FILE, 'utf8').replace(/^﻿/, ''));
+    for (const it of (cat.items || []).concat(cat.foods || [])) {
+      if (!it || !it.id) continue;
+      catById.set(it.id, it);
+      if (typeof it.name === 'string' && !catByName.has(it.name)) catByName.set(it.name, it.id);
+    }
+  } catch (_) { /* không có catalog: bỏ qua item/rarity */ }
   const lastInteract = {};
   let lastWake = -Infinity;
   let lastChatter = now();
@@ -107,13 +121,57 @@ function createPersona(ctx, opts) {
     if (st.level !== undefined) s.level = st.level;
     if (st.energy !== undefined) s.energy = st.energy;
     if (st.mood !== undefined) s.mood = st.mood;
+    s.date = pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    try {
+      const l = solarToLunar(d.getDate(), d.getMonth() + 1, d.getFullYear()); // tháng nhuận coi như tháng thường
+      s.lunar = pad(l.month) + '-' + pad(l.day);
+      // Giao thừa: ngày cuối tháng Chạp luôn coi là "12-30" (tháng thiếu chỉ có 29 ngày, vd. 16/02/2026).
+      if (l.month === 12) {
+        const tm = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        const n = solarToLunar(tm.getDate(), tm.getMonth() + 1, tm.getFullYear());
+        if (n.month === 1 && n.day === 1) s.lunar = '12-30';
+      }
+    } catch (_) { /* bỏ qua */ }
     if (vars && vars.intent) s.intent = vars.intent;
+    if (vars) {
+      const id = vars.itemId !== undefined && vars.itemId !== null && vars.itemId !== '' ? String(vars.itemId)
+        : (typeof vars.item === 'string' && catByName.has(vars.item) ? catByName.get(vars.item) : undefined);
+      if (id !== undefined) {
+        s.item = id;
+        const it = catById.get(id);
+        if (it && it.rarity) s.rarity = it.rarity;
+      }
+      if (vars.rarity) s.rarity = vars.rarity;
+    }
     return s;
+  }
+
+  /** Tìm intent của một nhắc theo noteId/reminderId hoặc theo title (BUG-023). */
+  function findIntent(vars) {
+    try {
+      const mainOf = (n, rid) => { const rs = remindersOf(n); return (rid !== undefined && rs.find(x => x.id === rid)) || n.reminder || rs[0] || null; };
+      if (vars.noteId !== undefined && vars.noteId !== null) {
+        const n = noteOf(vars.noteId);
+        const r = n && mainOf(n, vars.reminderId);
+        return r && r.intent ? r.intent : undefined;
+      }
+      const title = vars.title;
+      if (!title) return undefined;
+      const notes = ctx.store.data.notes || [];
+      for (const n of notes) for (const r of remindersOf(n)) if (!r.done && r.title === title && r.intent) return r.intent;
+      for (const n of notes) {
+        if (titleOf(n) !== title) continue;
+        const r = mainOf(n);
+        if (r && r.intent) return r.intent;
+      }
+    } catch (_) { /* bỏ qua */ }
+    return undefined;
   }
 
   function pick(event, vars) {
     vars = Object.assign({}, vars);
     if (!vars.name && box.name) vars.name = box.name;
+    if (!vars.intent && INTENT_EVENTS.includes(event)) { const it = findIntent(vars); if (it) vars.intent = it; }
     const r = dialogue.pick(lines, event, vars, state(vars), box.recentLines);
     if (!r) return null;
     box.recentLines.push(r.id);
@@ -138,6 +196,15 @@ function createPersona(ctx, opts) {
     if (box.greeted && box.greeted[bucket] === day) return false;
     if (!say(bucket, {}, 15, 12000)) return false;
     box.greeted = Object.assign({}, box.greeted, { [bucket]: day });
+    return true;
+  }
+
+  /** Chào lễ/mùa: mỗi ngày tối đa một lần; ngày thường không có câu holiday nào khớp nên im. */
+  function greetHoliday() {
+    const day = dayKey(new Date(now()));
+    if (box.greeted && box.greeted.holiday === day) return false;
+    if (!say('holiday', {}, 15, 12000)) return false;
+    box.greeted = Object.assign({}, box.greeted, { holiday: day });
     return true;
   }
 
@@ -185,6 +252,14 @@ function createPersona(ctx, opts) {
   }));
   bus.on('game:reward', safe(p => {
     if (pendingDone.length || now() - lastBig < REWARD_QUIET_MS) return;
+    const reason = typeof p.reason === 'string' ? p.reason : '';
+    let ev = 'reward', v = { count: p.candy };
+    if (reason.startsWith('quest:')) {
+      ev = 'quest_done';
+      const title = p.title || p.questName;
+      if (typeof title === 'string' && title) v.title = title;
+    } else if (Number.isFinite(p.streak)) { ev = 'checkin'; v = { count: p.streak }; }
+    if (ev !== 'reward' && say(ev, v, 30, 6000)) return;
     say('reward', { count: p.candy }, 30, 6000);
   }));
 
@@ -200,6 +275,7 @@ function createPersona(ctx, opts) {
 
   bus.on('app:startup', safe(() => {
     say('startup', {}, 15, 15000);
+    greetHoliday();
     greet(bucketOf(new Date(now()).getHours()));
   }));
   bus.on('app:resume', safe(() => {
@@ -212,6 +288,7 @@ function createPersona(ctx, opts) {
     const t = now();
     if (t - lastChatter < box.settings.chatterEveryMin * MIN) return;
     lastChatter = t;
+    if (greetHoliday()) return;
     if (greet(bucketOf(new Date(t).getHours()))) return;
     say(st.energy !== undefined && st.energy < 25 ? 'sleepy' : 'idle', {}, 10, 8000);
   }));

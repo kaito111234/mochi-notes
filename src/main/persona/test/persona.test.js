@@ -212,7 +212,7 @@ test('state: mode, overdue, weekday, hour', () => {
     { id: '3', text: 'c', reminder: { due: future, done: false } },
     { id: '4', text: 'd', reminder: null }] } });
   s.ctx.bus.emit('game:mode', { mode: 'sad' });
-  assert.deepEqual(s.ctx.persona.state(), { mode: 'sad', hour: 9, weekday: 1, overdue: 1 });
+  assert.deepEqual(s.ctx.persona.state(), { mode: 'sad', hour: 9, weekday: 1, overdue: 1, date: '01-05', lunar: '11-17' });
   s.ctx.bus.emit('game:mode', { mode: 'happy', level: 7 });
   assert.equal(s.ctx.persona.state().level, 7);
 });
@@ -370,4 +370,125 @@ test('note:expired: pet tossesNotes thì im; không thì nói expired_<reason>, 
   s.ctx.bus.emit('note:expired', { noteId: 'n1', reason: 'checklist' });
   s.ctx.bus.emit('note:expired', { noteId: 'n1', reason: 'lạ' });
   assert.deepEqual(s.out.map(o => o.text), ['bỏ Mua sữa', 'quá hạn Mua sữa', 'xong hết']);
+});
+
+// ---- Đợt 3 ----
+test('state có date và lunar (17/02/2026 = 1/1 âm)', () => {
+  const s = setup([], { t: new Date(2026, 1, 17, 9, 0).getTime() });
+  assert.equal(s.ctx.persona.state().date, '02-17');
+  assert.equal(s.ctx.persona.state().lunar, '01-01');
+});
+
+test('event mới pick được qua persona.pick', () => {
+  const evs = ['capture', 'capture_many', 'checkin', 'quest_done', 'expire_ask', 'expire_keep'];
+  const s = setup(evs.map(e => L(e, e, e + ' {title}{count}')));
+  assert.equal(s.ctx.persona.pick('capture', { title: 'A', count: 1 }).text, 'capture A1');
+  assert.equal(s.ctx.persona.pick('expire_ask', { title: 'B', count: 2 }).text, 'expire_ask B2');
+});
+
+test('món ăn/gacha: tên -> id, rarity từ catalog; ưu tiên item > rarity > chung', () => {
+  const s = setup([
+    L('g', 'feed', 'chung'),
+    L('r', 'feed', 'hiếm', { cond: { rarity: ['common'] } }),
+    L('i', 'feed', 'riêng', { cond: { item: ['hat_cat_beanie'] } }),
+    L('f', 'feed', 'mochi', { cond: { item: ['food_mochi'] } })
+  ]);
+  const P2 = { pick: (e, v) => { s.box.recentLines.length = 0; return s.ctx.persona.pick(e, v); } };
+  assert.equal(P2.pick('feed', { item: 'Mũ len tai mèo' }).id, 'i');
+  assert.equal(s.ctx.persona.pick('feed', { item: 'Mũ len tai mèo' }).id, 'r');   // chống lặp ('i' vừa dùng): rơi nhóm kế
+  assert.equal(P2.pick('feed', { item: 'Bánh mochi' }).id, 'f');        // món ăn, không có rarity
+  assert.equal(P2.pick('feed', { itemId: 'hat_beret', item: 'x' }).id, 'r'); // itemId ưu tiên, rarity common
+  assert.equal(P2.pick('feed', { item: 'Không có trong danh mục' }).id, 'g');
+  assert.equal(P2.pick('feed', { rarity: 'common', item: 'abc' }).id, 'r'); // rarity truyền thẳng
+});
+
+test('BUG-023: tra intent từ note khi vars thiếu intent', () => {
+  const notes = [
+    { id: 'n1', text: 'Gọi điện cho mẹ', reminder: { id: 'r1', due: Date.now() + 1e6, title: 'Gọi điện cho mẹ', intent: 'call' } },
+    { id: 'n2', text: 'Đi chợ', reminders: [{ id: 'a', due: 1, done: true, title: 'Đi chợ', intent: 'go' }, { id: 'b', due: 2, title: 'Mua rau', intent: 'shop' }] }
+  ];
+  const lines = [L('go', 'due', 'đi {title}', { cond: { intent: ['go'] } }), L('call', 'due', 'gọi {title}', { cond: { intent: ['call'] } }), L('gen', 'due', 'chung {title}')];
+  const s = setup(lines, { data: { notes } });
+  const p = { pick: (e, v) => { s.box.recentLines.length = 0; return s.ctx.persona.pick(e, v); } };
+  assert.equal(p.pick('due', { title: 'Gọi điện cho mẹ' }).id, 'call');          // theo title reminder
+  assert.equal(p.pick('due', { title: 'Gọi điện cho mẹ', noteId: 'n1' }).id, 'call'); // theo noteId
+  assert.equal(p.pick('due', { title: 'Mua rau', noteId: 'n2', reminderId: 'b' }).id, 'gen'); // intent shop không có câu -> chung
+});
+
+test('BUG-023: tra theo tiêu đề note, và không áp cho event ngoài nhóm nhắc', () => {
+  const notes = [{ id: 'n1', text: 'Uống thuốc\nsau ăn', reminder: { id: 'r', due: 5, intent: 'medicine' } }];
+  const s = setup([L('m', 'due', 'thuốc {title}', { cond: { intent: ['medicine'] } }), L('g', 'due', 'chung {title}'),
+    L('c', 'click', 'x', { cond: { intent: ['medicine'] } })], { data: { notes } });
+  assert.equal(s.ctx.persona.pick('due', { title: 'Uống thuốc' }).id, 'm');
+  assert.equal(s.ctx.persona.pick('click', { title: 'Uống thuốc' }), null);
+});
+
+test('reminder:done lấy intent qua noteId (câu call, không phải go)', () => {
+  const notes = [{ id: 'n1', text: 'Gọi điện cho mẹ', reminder: { id: 'r1', due: 1, intent: 'call' } }];
+  const s = setup([L('go', 'done', 'đi', { cond: { intent: ['go'] } }), L('call', 'done', 'gọi xong {title}', { cond: { intent: ['call'] } })], { data: { notes } });
+  s.ctx.bus.emit('reminder:done', { noteId: 'n1', onTime: true });
+  s.flush();
+  assert.equal(s.out[0].text, 'gọi xong Gọi điện cho mẹ');
+});
+
+test('holiday: chỉ nói ngày có câu khớp, mỗi ngày một lần; ngày thường im', () => {
+  const lines = [L('h', 'holiday', 'Chúc mừng Tết!', { cond: { lunar: ['01-01', '01-03'] } }),
+    L('s', 'holiday', 'Giáng sinh', { cond: { date: ['12-24', '12-25'] } }), L('st', 'startup', 'chào')];
+  const s = setup(lines, { t: new Date(2026, 1, 17, 9, 0).getTime() });
+  s.ctx.bus.emit('app:startup', {});
+  assert.deepEqual(s.out.map(o => o.text), ['chào', 'Chúc mừng Tết!']);
+  assert.equal(s.box.greeted.holiday, '2026-02-17');
+  s.ctx.bus.emit('app:startup', {});
+  assert.equal(s.out.filter(o => o.text === 'Chúc mừng Tết!').length, 1);
+  // ngày thường
+  const s2 = setup(lines);
+  s2.ctx.bus.emit('app:startup', {});
+  assert.deepEqual(s2.out.map(o => o.text), ['chào']);
+  assert.equal(s2.box.greeted, undefined);
+});
+
+test('holiday trong chatter idleTick (trước greet)', () => {
+  const lines = [L('s', 'holiday', 'Giáng sinh', { cond: { date: ['12-24', '12-25'] } }), L('m', 'morning', 'sáng'), L('i', 'idle', 'rảnh')];
+  const s = setup(lines, { t: new Date(2026, 11, 25, 9, 0).getTime() });
+  s.advance(25 * 60000);
+  s.ctx.bus.emit('pet:idleTick', { quietMs: 70000 });
+  assert.deepEqual(s.out.map(o => o.text), ['Giáng sinh']);
+  s.advance(25 * 60000);
+  s.ctx.bus.emit('pet:idleTick', { quietMs: 70000 });
+  assert.equal(s.out[1].text, 'sáng');
+});
+
+test('game:reward: quest_done / checkin / reward, rơi về reward', () => {
+  const s = setup([L('q', 'quest_done', 'nhiệm vụ {title} {count}'), L('c', 'checkin', 'chuỗi {count}'), L('r', 'reward', '{count} kẹo')]);
+  const emit = p => { s.advance(10000); s.ctx.bus.emit('game:reward', p); return s.out[s.out.length - 1].text; };
+  assert.equal(emit({ candy: 5, reason: 'quest:q1', title: 'Việc A' }), 'nhiệm vụ Việc A 5');
+  assert.equal(emit({ candy: 5, reason: 'quest:q1' }), '5 kẹo');          // thiếu {title} -> không có câu quest_done -> reward
+  assert.equal(emit({ candy: 2, reason: 'first:x', streak: 4 }), 'chuỗi 4');
+  assert.equal(emit({ candy: 3, reason: 'done' }), '3 kẹo');
+});
+
+test('game:reward: event riêng không có kho câu thì về reward', () => {
+  const s = setup([L('r', 'reward', '{count} kẹo')]);
+  s.ctx.bus.emit('game:reward', { candy: 7, reason: 'quest:z' });
+  assert.equal(s.out[0].text, '7 kẹo');
+});
+
+test('giao thừa tháng Chạp thiếu (16/02/2026 = 29/12 âm) vẫn là lunar 12-30', () => {
+  const s = setup([], { t: new Date(2026, 1, 16, 9, 0).getTime() });
+  assert.equal(s.ctx.persona.state().lunar, '12-30');
+  const s2 = setup([], { t: new Date(2026, 1, 15, 9, 0).getTime() });
+  assert.equal(s2.ctx.persona.state().lunar, '12-28');
+});
+
+test('kho thật: BUG-023 note "Gọi điện cho mẹ" (intent call) ra câu call, không ra câu go', () => {
+  const real = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../../assets/dialogue/vi.json'), 'utf8'));
+  const note = { id: 'n1', text: 'Gọi điện cho mẹ', reminders: [{ id: 'r1', due: 1, intent: 'call', title: 'Gọi điện cho mẹ' }] };
+  note.reminder = note.reminders[0];
+  const s = setup(real, { data: { notes: [note] } });
+  // 5 câu due.call; quá 5 lần liên tiếp thì chống lặp cho rơi về câu chung (đúng thiết kế).
+  for (let i = 0; i < 5; i++) {
+    const r = s.ctx.persona.pick('due', { title: 'Gọi điện cho mẹ', time: '09:00' });
+    assert.ok(r && /^due\.(call|gen)/.test(r.id) && !/^due\.go/.test(r.id), r && r.id);
+    assert.ok(r.id.startsWith('due.call'), 'phải ưu tiên câu call: ' + r.id);
+  }
 });
