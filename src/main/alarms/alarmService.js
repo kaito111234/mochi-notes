@@ -9,8 +9,9 @@ const path = require('path');
 const { app, ipcMain, BrowserWindow, Notification, dialog, screen, powerMonitor } = require('electron');
 const { getBox, normalize, normAlarm } = require('./box.js');
 const L = require('./alarmLogic.js');
+const { placeAvoiding, needsMove } = require('./placement.js');
 
-const RING_W = 360, RING_H = 236;
+const RING_W = 360, RING_H = 262;
 const SOUND_EXT = ['mp3', 'wav', 'ogg', 'm4a'];
 const MAX_SOUND_BYTES = 25 * 1024 * 1024;
 
@@ -54,10 +55,35 @@ function init(ctx) {
   }
 
   // ---------- cửa sổ chuông ----------
+  const petRect = () => {
+    try { return ctx.pet && typeof ctx.pet.occupiedRect === 'function' ? ctx.pet.occupiedRect() : null; } catch (_) { return null; }
+  };
   function placeRing(win) {
     const a = screen.getPrimaryDisplay().workArea;
-    win.setBounds({ x: a.x + a.width - RING_W - 16, y: a.y + a.height - RING_H - 16, width: RING_W, height: RING_H });
+    const p = placeAvoiding(a, { width: RING_W, height: RING_H }, petRect(), 16);
+    win.setBounds({ x: p.x, y: p.y, width: RING_W, height: RING_H });
+    ctx.bus.emit('alarms:layout', { ring: ringBounds() });
   }
+  function ringBounds() {
+    if (!ctx.alive(ringWin) || !ringWin.isVisible()) return null;
+    const b = ringWin.getBounds();
+    return { x: b.x, y: b.y, width: b.width, height: b.height };
+  }
+  // bé di chuyển: dời cửa sổ chuông nếu bị đè (throttle 300ms)
+  let moveTimer = null;
+  ctx.bus.on('pet:moved', () => {
+    if (moveTimer || !ringWin) return;
+    moveTimer = setTimeout(() => {
+      moveTimer = null;
+      try {
+        if (!ctx.alive(ringWin) || !ringWin.isVisible()) return;
+        const r = petRect();
+        if (r && needsMove(ringWin.getBounds(), r)) placeRing(ringWin);
+      } catch (_) { /* bỏ qua */ }
+    }, 300);
+    if (moveTimer.unref) moveTimer.unref();
+  });
+
   function ensureRingWin() {
     if (ctx.alive(ringWin)) return ringWin;
     try {
@@ -118,6 +144,10 @@ function init(ctx) {
     };
     if (alarm.soundFile) info.soundFile = alarm.soundFile;
     if (alarm.noteId) { info.noteId = alarm.noteId; const t = noteTitle(alarm.noteId); if (t) info.noteTitle = t; }
+    try {
+      const ln = ctx.persona && typeof ctx.persona.pick === 'function' ? ctx.persona.pick('alarm', { label: info.label, time: info.time }) : null;
+      if (ln && typeof ln.text === 'string' && ln.text.trim()) info.line = ln.text.trim().slice(0, 140);
+    } catch (_) { /* câu thoại không ảnh hưởng chuông */ }
     ringing.set(rid, info);
 
     if (!test) {   // kêu thử: không phát bus / không gọi sân khấu bé
@@ -137,7 +167,11 @@ function init(ctx) {
     let mascotOff = false;
     try { mascotOff = ctx.settings().mascotEnabled === false; } catch (_) { /* bỏ qua */ }
     if (!ok || mascotOff) {
-      notify('Báo thức ' + info.time, info.label || 'Đã tới giờ', () => { if (ringing.size) showRingWin(); });
+      if (typeof ctx.alarms.toast === 'function' && ctx.alarms.toast({
+        kind: 'alarm', refId: rid, title: 'Báo thức ' + info.time, body: info.label || 'Đã tới giờ',
+        extra: { m: info.snoozeMin },
+        buttons: [{ id: 'stop', label: 'Tắt' }, { id: 'snooze', label: 'Hoãn ' + info.snoozeMin + ' phút', m: info.snoozeMin }]
+      })) { /* đã có toast nút */ } else notify('Báo thức ' + info.time, info.label || 'Đã tới giờ', () => { if (ringing.size) showRingWin(); });
     }
     return true;
   }
@@ -145,6 +179,7 @@ function init(ctx) {
   /** Kết thúc một chuông. kind: 'stopped' | 'snoozed'. */
   function endRing(id, kind, minutes, fromClose) {
     if (!ringing.has(id)) return false;
+    try { if (ctx.alarms.closeToast) ctx.alarms.closeToast('alarm', id); } catch (_) { /* bỏ qua */ }
     const wasTest = !!ringing.get(id).test;
     ringing.delete(id);
     const k = pendingSend.findIndex(i => i.alarmId === id); if (k >= 0) pendingSend.splice(k, 1);
@@ -308,6 +343,7 @@ function init(ctx) {
 
   Object.assign(ctx.alarms, {
     list: () => box.list.slice(), create, update, remove, stop, snooze,
+    isRinging: id => ringing.has(id), ringBounds,
     ring: id => testRing(id)        // kêu thử (không đổi lịch) cho module khác
   });
 

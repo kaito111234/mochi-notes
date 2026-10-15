@@ -32,7 +32,7 @@
   const COLORS = ['yellow', 'green', 'pink', 'purple', 'blue', 'gray', 'charcoal'];
   const FILTERS = {
     all: () => true,
-    remind: n => !!n.reminder,
+    remind: n => remList(n).length > 0,
     shown: n => !!n.visible,
     hidden: n => !n.visible
   };
@@ -42,6 +42,10 @@
   let filter = 'all';
   let confirmId = null;
   let panelOpen = false;
+  let trash = [];
+  let trashConfirm = null; // id | 'all'
+  let trashTimer = 0;
+  const hasTrash = () => !!(api.notes2 && typeof api.notes2.trashList === 'function');
 
   const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 
@@ -71,6 +75,20 @@
     return { done: false, late: diff < 0, text: (diff < 0 ? 'quá hạn ' : 'còn ') + P.dur(diff), when: P.whenLabel(r.due) };
   }
 
+  // ---------- nhiều nhắc ----------
+  function remList(n) {
+    if (Array.isArray(n.reminders) && n.reminders.length) return n.reminders;
+    return n.reminder ? [n.reminder] : [];
+  }
+  function openRems(n) { return remList(n).filter(r => r && !r.done).sort((a, b) => a.due - b.due); }
+  const hasRem = n => remList(n).length > 0;
+  function remTitle(n, r) { return r.title || splitText(n.text).title || 'Note'; }
+  function remText(r) {
+    if (r.done) return 'đã xong';
+    const diff = r.due - Date.now();
+    return (diff < 0 ? 'quá hạn ' : 'còn ') + P.dur(diff);
+  }
+
   // ---------- render ----------
   function visibleNotes() {
     const q = norm($('q').value).trim();
@@ -79,29 +97,83 @@
   }
 
   function renderChips() {
-    document.querySelectorAll('.chip').forEach(c => {
+    const chips = $('chips');
+    let tc = chips.querySelector('[data-f="trash"]');
+    if (hasTrash() && !tc) {
+      tc = el('button', 'chip');
+      tc.type = 'button'; tc.dataset.f = 'trash'; tc.setAttribute('aria-pressed', 'false');
+      tc.append('Thùng rác ', el('span', 'n', '0'));
+      chips.appendChild(tc);
+    }
+    chips.querySelectorAll('.chip').forEach(c => {
       const f = c.dataset.f;
       c.setAttribute('aria-pressed', String(f === filter));
-      c.querySelector('.n').textContent = notes.filter(FILTERS[f]).length;
+      c.querySelector('.n').textContent = f === 'trash' ? trash.length : notes.filter(FILTERS[f]).length;
     });
   }
 
   function renderUpcoming() {
     const box = $('upcoming'), rows = $('upRows');
-    const list = notes.filter(n => n.reminder && !n.reminder.done)
-      .sort((a, b) => a.reminder.due - b.reminder.due).slice(0, 3);
+    const list = notes.map(n => ({ n, r: openRems(n)[0] })).filter(x => x.r)
+      .sort((a, b) => a.r.due - b.r.due).slice(0, 3);
     rows.textContent = '';
-    box.hidden = !list.length;
-    list.forEach(n => {
-      const st = remStatus(n.reminder);
+    box.hidden = !list.length || filter === 'trash';
+    list.forEach(({ n, r }) => {
+      const st = remStatus(r);
       const b = el('button', 'up-row');
       b.type = 'button';
       b.dataset.id = n.id;
-      b.appendChild(el('span', 'up-title', splitText(n.text).title || 'Note trống'));
+      b.appendChild(el('span', 'up-title', (r.title && remList(n).length > 1 ? r.title : splitText(n.text).title) || 'Note trống'));
       b.appendChild(el('span', 'up-status' + (st.late ? ' late' : ''), st.text));
       b.appendChild(el('span', 'up-when', st.when));
       rows.appendChild(b);
     });
+  }
+
+  const expanded = new Set();
+  const suggs = new Map(); // noteId -> mảng gợi ý | 'loading' | 'none'
+  function buildDetail(n) {
+    const box = el('div', 'detail');
+    const rl = remList(n).slice().sort((a, b) => a.due - b.due);
+    if (rl.length) {
+      const ul = el('ul', 'rem-list');
+      rl.forEach(r => {
+        const li = el('li', 'rem-row' + (r.done ? ' done' : r.due < Date.now() ? ' late' : ''));
+        li.appendChild(el('span', 'rem-when', P.whenLabel(r.due)));
+        li.appendChild(el('span', 'rem-title', remTitle(n, r)));
+        li.appendChild(el('span', 'rem-st', r.done ? 'Đã xong' : remText(r)));
+        if (!r.done && r.id && api.notes2 && api.notes2.doneItem) {
+          const d = el('button', 'btn sm', 'Xong');
+          d.type = 'button'; d.dataset.act = 'rdone'; d.dataset.rid = r.id;
+          li.appendChild(d);
+          if (api.notes2.snoozeItem) {
+            const s = el('button', 'btn sm', 'Hoãn 10p');
+            s.type = 'button'; s.dataset.act = 'rsnooze'; s.dataset.rid = r.id;
+            li.appendChild(s);
+          }
+        }
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    } else box.appendChild(el('p', 'rem-none', 'Chưa có nhắc lịch.'));
+    if (api.alarms && api.alarms.insight && api.alarms.applySuggestion) {
+      const sg = suggs.get(n.id);
+      if (Array.isArray(sg) && sg.length) {
+        const w = el('div', 'sug-list');
+        sg.forEach(s => {
+          const b = el('button', 'btn sm sug', s.label || s.id);
+          b.type = 'button'; b.dataset.act = 'apply'; b.dataset.sid = s.id;
+          w.appendChild(b);
+        });
+        box.appendChild(w);
+      } else if (sg === 'none') box.appendChild(el('p', 'rem-none', 'Bé chưa có gợi ý nào cho note này.'));
+      else {
+        const b = el('button', 'btn sm', sg === 'loading' ? 'Đang xem…' : 'Gợi ý');
+        b.type = 'button'; b.dataset.act = 'suggest'; if (sg === 'loading') b.disabled = true;
+        box.appendChild(b);
+      }
+    }
+    return box;
   }
 
   function buildCard(n) {
@@ -123,11 +195,15 @@
     if (excerpt) body.appendChild(el('p', 'excerpt', excerpt));
 
     const foot = el('div', 'card-foot');
-    const st = remStatus(n.reminder);
-    if (st) {
+    const rl = remList(n), open = openRems(n);
+    if (rl.length) {
+      const nx = open[0] || null;
+      const st = nx ? remStatus(nx) : { done: true };
       const r = el('span', 'foot-remind' + (st.done ? ' done' : st.late ? ' late' : ''));
       r.appendChild(icon(st.done ? 'check' : 'clock'));
-      r.appendChild(document.createTextNode(st.done ? 'Đã xong' : P.whenLabel(n.reminder.due)));
+      r.appendChild(document.createTextNode(st.done ? 'Đã xong' : P.whenLabel(nx.due)));
+      if (open.length > 1) r.appendChild(el('span', 'more', '+' + (open.length - 1)));
+      r.title = rl.map(x => P.whenLabel(x.due) + ' · ' + remTitle(n, x) + ' · ' + remText(x)).join('\n');
       foot.appendChild(r);
     }
     foot.appendChild(el('span', 'foot-time', ago(n.updatedAt || n.createdAt || Date.now())));
@@ -144,16 +220,21 @@
     del.type = 'button';
     del.dataset.act = 'ask';
     del.prepend(icon('trash'));
-    acts.append(toggle, del);
+    const more = el('button', 'act', expanded.has(n.id) ? 'Thu gọn' : 'Chi tiết');
+    more.type = 'button';
+    more.dataset.act = 'expand';
+    more.setAttribute('aria-expanded', String(expanded.has(n.id)));
+    acts.append(more, toggle, del);
     card.appendChild(acts);
+    if (expanded.has(n.id)) card.appendChild(buildDetail(n));
 
     if (confirmId === n.id) {
       card.classList.add('is-confirming');
       const c = el('div', 'confirm');
       c.setAttribute('role', 'alertdialog');
       c.setAttribute('aria-label', 'Xác nhận xoá');
-      c.appendChild(el('span', 'confirm-q', 'Xoá?'));
-      const yes = el('button', 'btn sm danger', 'Xoá');
+      c.appendChild(el('span', 'confirm-q', hasTrash() ? 'Chuyển vào thùng rác?' : 'Xoá?'));
+      const yes = el('button', 'btn sm danger', hasTrash() ? 'Bỏ vào thùng' : 'Xoá');
       yes.type = 'button'; yes.dataset.act = 'delete';
       const no = el('button', 'btn sm', 'Huỷ');
       no.type = 'button'; no.dataset.act = 'cancel';
@@ -163,7 +244,64 @@
     return card;
   }
 
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function buildTrashCard(t) {
+    const { title, excerpt } = splitText(t.text || t.title);
+    const card = el('article', 'card trash-card');
+    card.dataset.id = t.id;
+    card.style.setProperty('--stripe', 'var(--c-' + (COLORS.includes(t.color) ? t.color : 'yellow') + ')');
+    const body = el('div', 'card-body');
+    const top = el('div', 'card-top');
+    top.appendChild(el('span', 'card-title' + ((title || t.title) ? '' : ' untitled'), t.title || title || 'Note trống'));
+    body.appendChild(top);
+    if (excerpt) body.appendChild(el('p', 'excerpt', excerpt));
+    const d = new Date(t.trashedAt || Date.now());
+    const days = Math.max(0, Math.ceil(((t.expiresAt || 0) - Date.now()) / 864e5));
+    const info = 'Xoá lúc ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' ' + pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) +
+      (t.expiresAt ? ' · tự xoá hẳn sau ' + days + ' ngày' : '');
+    const foot = el('div', 'card-foot');
+    foot.appendChild(el('span', 'foot-time', info));
+    body.appendChild(foot);
+    card.appendChild(body);
+    const acts = el('div', 'tr-actions');
+    const rs = el('button', 'btn sm', 'Khôi phục'); rs.type = 'button'; rs.dataset.act = 'trestore';
+    const confirming = trashConfirm === t.id;
+    const pg = el('button', 'btn sm danger', confirming ? 'Chắc chắn xoá hẳn?' : 'Xoá hẳn');
+    pg.type = 'button'; pg.dataset.act = 'tpurge';
+    acts.append(rs, pg);
+    card.appendChild(acts);
+    return card;
+  }
+  function armTrashConfirm(v) {
+    trashConfirm = v;
+    clearTimeout(trashTimer);
+    trashTimer = setTimeout(() => { trashConfirm = null; if (filter === 'trash') renderCards(); }, 3000);
+  }
+  function renderTrash() {
+    const cards = $('cards'), empty = $('empty');
+    const q = norm($('q').value).trim();
+    const list = trash.filter(t => !q || norm(t.text || t.title).includes(q));
+    cards.textContent = '';
+    empty.textContent = '';
+    if (trash.length) {
+      const head = el('div', 'trash-head');
+      head.appendChild(el('span', 'trash-note', trash.length + ' note trong thùng · tự xoá hẳn sau 30 ngày'));
+      const all = el('button', 'btn sm danger', trashConfirm === 'all' ? 'Chắc chắn dọn sạch?' : 'Dọn sạch');
+      all.title = 'Xoá hẳn mọi note trong thùng rác';
+      all.type = 'button'; all.dataset.tact = 'empty';
+      head.appendChild(all);
+      cards.appendChild(head);
+    }
+    list.forEach(t => cards.appendChild(buildTrashCard(t)));
+    empty.hidden = list.length > 0;
+    if (!list.length) {
+      empty.append(icon('trash'), el('h3', null, trash.length ? 'Không tìm thấy' : 'Thùng rác trống.'),
+        el('p', null, trash.length ? 'Không có note nào khớp trong thùng rác.' : 'Note đã xoá nằm ở đây 30 ngày.'));
+    }
+  }
+
   function renderCards() {
+    if (filter === 'trash') { renderTrash(); return; }
     const cards = $('cards'), empty = $('empty');
     const list = visibleNotes();
     const focusedId = document.activeElement && document.activeElement.closest && document.activeElement.closest('.card');
@@ -234,13 +372,19 @@
     if (hooks[name]) { try { hooks[name](); } catch (e) { /* bỏ qua */ } }
   }
   let toastTimer = 0;
-  function toast(msg, bad) {
+  function toast(msg, bad, action) {
     const t = $('toast');
     t.textContent = msg;
     t.classList.toggle('bad', !!bad);
+    if (action) {
+      const b = el('button', 'toast-act', action.label);
+      b.type = 'button';
+      b.addEventListener('click', () => { t.hidden = true; clearTimeout(toastTimer); action.run(); });
+      t.append(' ', b);
+    }
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
+    toastTimer = setTimeout(() => { t.hidden = true; }, action ? 5000 : 3200);
   }
   window.MochiList = { toast, el, setTab, setPanel, onTab: (n, fn) => { hooks[n] = fn; }, isPanelOpen: () => panelOpen, getTab: () => curTab };
   hooks.note = () => { render(); };
@@ -254,6 +398,7 @@
     api.alarms.devHint().then(h => {
       const t = h && h.tab;
       if (t === 'alarms' || t === 'memos') setTab(t);
+      else if (t === 'trash') { filter = 'trash'; render(); }
       else if (t === 'alarms-new') { setTab('alarms'); setTimeout(() => $('alAdd').click(), 300); }
       else if (t === 'memos-edit') { setTab('memos'); setTimeout(() => { const b = document.querySelector('.mm-row [data-act="edit"]'); if (b) b.click(); }, 800); }
       else if (t === 'restore') { setPanel(true); setTimeout(() => document.querySelector('[data-data="restore"]').click(), 300); }
@@ -275,7 +420,7 @@
     const c = e.target.closest('.chip');
     if (!c) return;
     filter = c.dataset.f;
-    confirmId = null;
+    confirmId = null; trashConfirm = null;
     render();
   });
 
@@ -302,8 +447,97 @@
         if (y) y.focus();
       } break;
       case 'cancel': confirmId = null; renderCards(); break;
-      case 'delete': confirmId = null; api.deleteNote(id); break;
+      case 'expand':
+        if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+        renderCards(); break;
+      case 'rdone': guard(api.notes2.doneItem(id, btn.dataset.rid)); break;
+      case 'rsnooze': guard(api.notes2.snoozeItem(id, btn.dataset.rid, 10), 'Hoãn 10 phút nha'); break;
+      case 'suggest':
+        suggs.set(id, 'loading'); renderCards();
+        Promise.resolve(api.alarms.insight(id)).then(v => {
+          const a = v && Array.isArray(v.suggestions) ? v.suggestions : [];
+          suggs.set(id, a.length ? a : 'none'); renderCards();
+        }).catch(() => { suggs.delete(id); renderCards(); toast('Chưa xem được gợi ý', true); });
+        break;
+      case 'apply':
+        Promise.resolve(api.alarms.applySuggestion(id, btn.dataset.sid)).then(r => {
+          toast((r && r.message) || (r && r.ok === false ? 'Chưa làm được' : 'Xong rồi nha'), !!(r && r.ok === false));
+          suggs.delete(id); renderCards();
+        }).catch(() => toast('Chưa làm được', true));
+        break;
+      case 'delete': {
+        confirmId = null;
+        const title = splitText((notes.find(n => n.id === id) || {}).text).title;
+        Promise.resolve(api.deleteNote(id)).then(() => {
+          if (hasTrash()) toast('Đã chuyển vào thùng rác', false, { label: 'Hoàn tác', run: () => guard(api.notes2.trashRestore(id), 'Đã khôi phục' + (title ? ' "' + title.slice(0, 30) + '"' : '')) });
+        }).catch(() => toast('Chưa làm được', true));
+        break;
+      }
     }
+  });
+
+  $('cards').addEventListener('click', e => {
+    if (filter !== 'trash') return;
+    const btn = e.target.closest('[data-act],[data-tact]');
+    if (!btn) return;
+    if (btn.dataset.tact === 'empty') {
+      if (trashConfirm !== 'all') { armTrashConfirm('all'); renderCards(); return; }
+      trashConfirm = null;
+      guard(api.notes2.trashEmpty(), 'Đã dọn sạch thùng rác').then(refreshTrash);
+      return;
+    }
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const id = card.dataset.id;
+    if (btn.dataset.act === 'trestore') {
+      guard(api.notes2.trashRestore(id), 'Đã khôi phục note').then(refreshTrash);
+    } else if (btn.dataset.act === 'tpurge') {
+      if (trashConfirm !== id) { armTrashConfirm(id); renderCards(); return; }
+      trashConfirm = null;
+      guard(api.notes2.trashPurge(id), 'Đã xoá hẳn').then(refreshTrash);
+    }
+  });
+
+  function guard(p, okMsg) {
+    return Promise.resolve(p).then(() => { if (okMsg) toast(okMsg); }).catch(() => toast('Chưa làm được', true));
+  }
+
+  // ---------- ghi nhanh ----------
+  const qc = $('qcIn'), qcPrev = $('qcPrev');
+  let qcTimer = 0, qcSeq = 0;
+  function clearPrev() { qcPrev.hidden = true; qcPrev.textContent = ''; }
+  function previewText(v) {
+    const its = (v && v.items || []).filter(i => i && i.due);
+    if (!its.length) return '';
+    const parts = its.slice(0, 3).map(i => (i.time ? i.time + ' ' : '') + (i.title || ''));
+    return 'Bé hiểu: ' + its.length + ' việc · ' + parts.join(' · ') + (its.length > 3 ? '…' : '');
+  }
+  qc.addEventListener('input', () => {
+    clearTimeout(qcTimer);
+    const v = qc.value.trim();
+    const seq = ++qcSeq;
+    if (!v || !(api.alarms && api.alarms.insight)) { clearPrev(); return; }
+    qcTimer = setTimeout(() => {
+      Promise.resolve(api.alarms.insight(v)).then(r => {
+        if (seq !== qcSeq) return;
+        const t = previewText(r);
+        qcPrev.textContent = t; qcPrev.hidden = !t;
+      }).catch(() => { if (seq === qcSeq) clearPrev(); });
+    }, 250);
+  });
+  qc.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); qc.value = ''; qcSeq++; clearTimeout(qcTimer); clearPrev(); return; }
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    const text = qc.value.trim();
+    if (!text) return;
+    qc.value = ''; qcSeq++; clearTimeout(qcTimer); clearPrev();
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const fallback = () => api.createNote({ html: text.split(/\r?\n/).map(l => '<div>' + esc(l) + '</div>').join('') });
+    if (api.alarms && api.alarms.quickCapture) {
+      Promise.resolve(api.alarms.quickCapture(text)).then(r => toast((r && r.reply) || 'Tớ ghi rồi nha'))
+        .catch(() => { fallback(); toast('Tớ ghi rồi nha'); });
+    } else { fallback(); toast('Tớ ghi rồi nha'); }
   });
 
   $('panel').addEventListener('click', e => {
@@ -330,6 +564,21 @@
     if (confirmId && !notes.some(n => n.id === confirmId)) confirmId = null;
     render();
   });
+  function setTrash(l) {
+    trash = Array.isArray(l) ? l : [];
+    if (filter === 'trash' && !hasTrash()) filter = 'all';
+    render();
+  }
+  function refreshTrash() {
+    if (!hasTrash()) return;
+    Promise.resolve(api.notes2.trashList()).then(setTrash).catch(() => {});
+  }
+  try {
+    if (hasTrash()) {
+      if (typeof api.notes2.onTrashChanged === 'function') api.notes2.onTrashChanged(setTrash);
+      refreshTrash();
+    }
+  } catch (e) { /* preload cũ */ }
   api.onSettingsChanged(s => { settings = s || {}; renderSettings(); });
 
   Promise.all([api.listNotes(), api.getSettings()]).then(([l, s]) => {
@@ -338,6 +587,10 @@
     render();
     renderSettings();
   }).catch(() => render());
+
+  try {
+    if (api.notes2 && typeof api.notes2.onListTab === 'function') api.notes2.onListTab(t => window.MochiList.setTab(t));
+  } catch (e) { /* preload cũ */ }
 
   setInterval(() => { if (curTab === 'note') render(); }, 30000);
 })();

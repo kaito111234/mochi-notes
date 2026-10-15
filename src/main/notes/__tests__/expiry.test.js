@@ -1,0 +1,45 @@
+'use strict';
+const assert = require('assert');
+const X = require('../expiry.js');
+
+let n = 0;
+const t = (name, fn) => { fn(); n++; console.log('ok', name); };
+const H = 3600000, M = 60000;
+const NOW = new Date(2026, 5, 10, 12, 0, 0).getTime();
+const note = o => Object.assign({ id: 'a', visible: true, text: 'x', updatedAt: NOW - 3 * H, reminders: [] }, o);
+const rem = o => Object.assign({ id: 'r', due: NOW - H, fired: false, done: false }, o);
+const cl = (done, total) => ({ checklist: { done, total, items: [] } });
+
+t('không nhắc, không checklist -> null', () => assert.strictEqual(X.expiredReason(note(), NOW), null));
+t('null/không phải object -> null', () => { assert.strictEqual(X.expiredReason(null, NOW), null); assert.strictEqual(X.expiredReason('x', NOW), null); });
+t('note ẩn (visible=false) -> null', () => assert.strictEqual(X.expiredReason(note({ visible: false, reminders: [rem({ done: true })] }), NOW), null));
+t('một nhắc done -> done', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true })] }), NOW), 'done'));
+t('nhiều nhắc đều done -> done', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true }), rem({ id: 'r2', done: true })] }), NOW), 'done'));
+t('một done một chưa -> null', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true }), rem({ id: 'r2', due: NOW + H })] }), NOW), null));
+t('done nhưng có repeat -> null', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true, repeat: { freq: 'daily' } })] }), NOW), null));
+t('done, một nhắc khác có repeat -> null', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true }), rem({ id: 'r2', done: true, repeat: { freq: 'weekly' } })] }), NOW), null));
+t('reminder đơn (không có reminders) done -> done', () => assert.strictEqual(X.expiredReason({ id: 'a', visible: true, updatedAt: 0, reminder: rem({ done: true }) }, NOW), 'done'));
+t('quá hạn 25h đã fired -> overdue', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ fired: true, due: NOW - 25 * H })] }), NOW), 'overdue'));
+t('quá hạn đúng 24h -> null (chưa vượt)', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ fired: true, due: NOW - 24 * H })] }), NOW), null));
+t('quá hạn 24h + 1ms -> overdue', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ fired: true, due: NOW - 24 * H - 1 })] }), NOW), 'overdue'));
+t('quá hạn 30h nhưng chưa fired -> null', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ fired: false, due: NOW - 30 * H })] }), NOW), null));
+t('quá hạn 30h fired nhưng done -> done (không overdue)', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ fired: true, done: true, due: NOW - 30 * H })] }), NOW), 'done'));
+t('overdue ưu tiên hơn done', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true }), rem({ id: 'r2', fired: true, due: NOW - 48 * H })] }), NOW), 'overdue'));
+t('overdue ưu tiên hơn checklist', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ fired: true, due: NOW - 48 * H })] }), NOW, cl(2, 2)), 'overdue'));
+t('done ưu tiên hơn checklist', () => assert.strictEqual(X.expiredReason(note({ reminders: [rem({ done: true })] }), NOW, cl(3, 3)), 'done'));
+t('checklist tick hết -> checklist', () => assert.strictEqual(X.expiredReason(note(), NOW, cl(3, 3)), 'checklist'));
+t('checklist chưa hết -> null', () => assert.strictEqual(X.expiredReason(note(), NOW, cl(2, 3)), null));
+t('checklist total 0 -> null', () => assert.strictEqual(X.expiredReason(note(), NOW, cl(0, 0)), null));
+t('checklist null -> null', () => assert.strictEqual(X.expiredReason(note(), NOW, { checklist: null }), null));
+t('checklist 1/1 -> checklist', () => assert.strictEqual(X.expiredReason(note(), NOW, cl(1, 1)), 'checklist'));
+t('mới sửa 5 phút trước -> null dù đã done', () => assert.strictEqual(X.expiredReason(note({ updatedAt: NOW - 5 * M, reminders: [rem({ done: true })] }), NOW), null));
+t('mới sửa 9 phút -> null', () => assert.strictEqual(X.expiredReason(note({ updatedAt: NOW - 9 * M, reminders: [rem({ done: true })] }), NOW, cl(1, 1)), null));
+t('sửa đúng 10 phút trước -> tính', () => assert.strictEqual(X.expiredReason(note({ updatedAt: NOW - 10 * M, reminders: [rem({ done: true })] }), NOW), 'done'));
+t('mới sửa chặn cả overdue', () => assert.strictEqual(X.expiredReason(note({ updatedAt: NOW - M, reminders: [rem({ fired: true, due: NOW - 48 * H })] }), NOW), null));
+t('updatedAt thiếu -> vẫn tính', () => assert.strictEqual(X.expiredReason({ id: 'a', visible: true, reminders: [rem({ done: true })] }), 'done'));
+t('phần tử reminders null không làm hỏng', () => assert.strictEqual(X.expiredReason(note({ reminders: [null, rem({ done: true })] }), NOW), 'done'));
+t('dayKey địa phương', () => assert.strictEqual(X.dayKey(new Date(2026, 0, 5, 23, 59).getTime()), '2026-01-05'));
+t('dayKey sang ngày', () => assert.strictEqual(X.dayKey(new Date(2026, 0, 6, 0, 0).getTime()), '2026-01-06'));
+t('hằng số', () => { assert.strictEqual(X.OVERDUE_MS, 86400000); assert.strictEqual(X.RECENT_EDIT_MS, 600000); });
+
+console.log(n + ' ca đạt');

@@ -91,6 +91,8 @@
     const sn = $('snooze');
     sn.hidden = !!current.test;
     sn.textContent = 'Hoãn ' + current.snoozeMin + ' phút';
+    $('line').textContent = current.line || '';
+    $('line').hidden = !current.line;
     $('status').hidden = !current.silenced;
     const more = $('more');
     more.hidden = queue.length < 2;
