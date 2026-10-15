@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -40 80 80" width="80" height="80">
+<!-- knock_a: vệt chấn nhỏ tại điểm va chạm (0,0), toả sang phải. Đặt bằng show x,y. -->
+<g stroke-linejoin="round" stroke-linecap="round" fill="none">
+<path d="M4 -22 L16 -34 M10 -10 L26 -16 M10 10 L26 16 M4 22 L16 34" stroke="#1F2A44" stroke-width="3.5"/>
+<path d="M8 -14 Q20 0 8 14" stroke="#1F2A44" stroke-width="3"/>
+<path d="M18 -20 Q34 0 18 20" stroke="#5B86D8" stroke-width="3"/>
+<path d="M26 -26 Q44 0 26 26" stroke="#8FB4E8" stroke-width="2.5"/>
+<path d="M12 -26 Q24 -12 22 -4 M12 26 Q24 12 22 4" stroke="#1F2A44" stroke-width="2.5"/>
+</g>
+</svg>

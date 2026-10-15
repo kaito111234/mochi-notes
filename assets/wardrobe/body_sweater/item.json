@@ -1,0 +1,25 @@
+{
+  "id": "body_sweater",
+  "slot": "body",
+  "name": "Áo len họa tiết",
+  "replaces": [
+    "forearm_l.svg",
+    "forearm_r.svg",
+    "neck.svg",
+    "shin_l.sit.svg",
+    "shin_l.svg",
+    "shin_r.sit.svg",
+    "shin_r.svg",
+    "thigh_l.sit.svg",
+    "thigh_l.svg",
+    "thigh_r.sit.svg",
+    "thigh_r.svg",
+    "torso.svg",
+    "upper_arm_l.svg",
+    "upper_arm_r.svg"
+  ],
+  "hides": [
+    "skirt"
+  ],
+  "notes": "Áo len cổ lọ trắng kem hoạ tiết bông tuyết xanh nhạt, quần dài trắng xám nhạt, bốt lông trắng. Có neck.svg riêng (cổ lọ che dải xanh cổ gốc). Ẩn skirt."
+}

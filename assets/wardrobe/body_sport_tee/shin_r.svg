@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<path d="M174 345 C174 341 198 341 198 345 L199 374 L173 374 Z" fill="#5B6270" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M189 345 L197 346 L198 374 L189 374 Z" fill="#444A58" opacity="0.9"/>
+<path d="M173.5 346 L173 374" stroke="#E9EEF8" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+<path d="M173 368 Q186 372 199 368 L199 375 Q186 379 173 375 Z" fill="#444A58" stroke="#1F2A44" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M174 392 L174 382 C174 374 177 371 181 370 L192 370 C197 371 198 375 198 382 L198 387 C198 391 197 392 194 392 Z" fill="#FFFFFF" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M187 371 L192 371 C197 372 198 376 198 382 L198 388 C198 391 196 392 194 392 L189 392 C191 386 191 376 187 371 Z" fill="#DDE5F2"/>
+<path d="M174.5 388 L197.5 388 L197.5 392 L174.5 392 Z" fill="#8FA0BE" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round"/>
+<path d="M178 379 L190 376" stroke="#8DB8EE" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M179 374 L190 381" stroke="#1F2A44" stroke-width="0" />
+</g>
+</svg>

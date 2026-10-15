@@ -1,0 +1,8 @@
+{
+  "id": "outer_black_white",
+  "slot": "outer",
+  "name": "Áo khoác đen viền trắng",
+  "replaces": ["outer_torso.svg", "outer_upper_arm_l.svg", "outer_upper_arm_r.svg", "outer_forearm_l.svg", "outer_forearm_r.svg"],
+  "hides": [],
+  "notes": "Áo khoác gốc của Mochi. Bản sao của các file outer_* trong art/rig/mochi/parts/ (build.js mặc định dùng bản đó). Che hẳn tay áo sơ mi (rig: covers)."
+}

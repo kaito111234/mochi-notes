@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<!-- cheer_confetti_a: hoa giấy rơi (toạ độ canvas, show bone:canvas). a→b→c: rơi dần. -->
+<g stroke="#1F2A44" stroke-width="1.5" stroke-linejoin="round">
+<g transform="translate(116.4 65.7) rotate(48)" fill="#3B6FD0"><rect x="-5.9" y="-2.9" width="11.8" height="5.9" /></g>
+<g transform="translate(337.3 141.1) rotate(308)" fill="#F2C94C"><path d="M0 -6.9 L6.3 5.2 L-6.3 5.2 Z"/></g>
+<g transform="translate(92.4 176.7) rotate(348)" fill="#F7B9B5"><circle r="3.1"/></g>
+<g transform="translate(304.6 131.6) rotate(54)" fill="#8FD3A8"><rect x="-5.1" y="-2.6" width="10.3" height="5.1" /></g>
+<g transform="translate(134.9 90.7) rotate(102)" fill="#FFFFFF"><path d="M0 -7.5 L6.9 5.6 L-6.9 5.6 Z"/></g>
+<g transform="translate(257.0 131.2) rotate(260)" fill="#FFE58A"><circle r="3.6"/></g>
+<g transform="translate(100.5 72.5) rotate(24)" fill="#8FB4E8"><rect x="-5.8" y="-2.9" width="11.6" height="5.8" /></g>
+<g transform="translate(347.9 168.2) rotate(42)" fill="#3B6FD0"><path d="M0 -6.7 L6.2 5.0 L-6.2 5.0 Z"/></g>
+<g transform="translate(93.8 80.4) rotate(186)" fill="#F2C94C"><circle r="3.6"/></g>
+<g transform="translate(331.2 157.0) rotate(161)" fill="#F7B9B5"><rect x="-5.1" y="-2.6" width="10.3" height="5.1" /></g>
+<g transform="translate(121.9 115.6) rotate(123)" fill="#8FD3A8"><path d="M0 -6.0 L5.5 4.5 L-5.5 4.5 Z"/></g>
+<g transform="translate(313.4 128.0) rotate(271)" fill="#FFFFFF"><circle r="3.6"/></g>
+<g transform="translate(85.0 86.4) rotate(176)" fill="#FFE58A"><rect x="-6.4" y="-3.2" width="12.9" height="6.4" /></g>
+<g transform="translate(313.2 50.6) rotate(327)" fill="#8FB4E8"><path d="M0 -7.3 L6.7 5.5 L-6.7 5.5 Z"/></g>
+<g transform="translate(138.3 159.7) rotate(163)" fill="#3B6FD0"><circle r="4.0"/></g>
+<g transform="translate(275.0 123.5) rotate(180)" fill="#F2C94C"><rect x="-5.2" y="-2.6" width="10.5" height="5.2" /></g>
+<g transform="translate(46.0 53.4) rotate(206)" fill="#F7B9B5"><path d="M0 -6.8 L6.2 5.1 L-6.2 5.1 Z"/></g>
+<g transform="translate(325.5 118.5) rotate(155)" fill="#8FD3A8"><circle r="3.9"/></g>
+<g transform="translate(56.0 175.8) rotate(336)" fill="#FFFFFF"><rect x="-5.3" y="-2.6" width="10.6" height="5.3" /></g>
+<g transform="translate(307.2 79.3) rotate(108)" fill="#FFE58A"><path d="M0 -5.5 L5.1 4.2 L-5.1 4.2 Z"/></g>
+<g transform="translate(137.2 162.9) rotate(134)" fill="#8FB4E8"><circle r="3.8"/></g>
+<g transform="translate(300.7 107.4) rotate(170)" fill="#3B6FD0"><rect x="-5.4" y="-2.7" width="10.8" height="5.4" /></g>
+</g>
+</svg>

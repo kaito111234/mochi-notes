@@ -1,0 +1,23 @@
+{
+  "id": "body_pajama_dino",
+  "slot": "body",
+  "name": "Áo ngủ khủng long",
+  "replaces": [
+    "torso.svg",
+    "skirt.svg",
+    "thigh_l.svg",
+    "thigh_r.svg",
+    "thigh_l.sit.svg",
+    "thigh_r.sit.svg",
+    "shin_l.svg",
+    "shin_r.svg",
+    "shin_l.sit.svg",
+    "shin_r.sit.svg",
+    "upper_arm_l.svg",
+    "upper_arm_r.svg",
+    "forearm_l.svg",
+    "forearm_r.svg"
+  ],
+  "hides": [],
+  "notes": "Pyjama hồng phấn–kem dài tay, cổ bẻ, quần dài rộng, hoạ tiết khủng long nhỏ, dép bông trắng. Không cà vạt. skirt.svg = cạp/phần trên quần; thigh/shin = ống quần (+ .sit)."
+}

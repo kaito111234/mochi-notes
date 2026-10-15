@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<!-- cheer_burst: tia sáng + sao quanh hai nắm tay giơ cao (toạ độ canvas). -->
+<g stroke="#8FB4E8" stroke-width="2" stroke-linejoin="round">
+<path d="M312 140 Q314 148 322 150 Q314 152 312 160 Q310 152 302 150 Q310 148 312 140Z" fill="#FFF3B0"/><path d="M92 139 Q93.8 146.2 101 148 Q93.8 149.8 92 157 Q90.2 149.8 83 148 Q90.2 146.2 92 139Z" fill="#FFFFFF"/><path d="M330 190 Q331.2 194.8 336 196 Q331.2 197.2 330 202 Q328.8 197.2 324 196 Q328.8 194.8 330 190Z" fill="#FFFFFF"/><path d="M76 190 Q77.2 194.8 82 196 Q77.2 197.2 76 202 Q74.8 197.2 70 196 Q74.8 194.8 76 190Z" fill="#FFF3B0"/><path d="M206 51 Q207.4 56.6 213 58 Q207.4 59.4 206 65 Q204.6 59.4 199 58 Q204.6 56.6 206 51Z" fill="#FFFFFF"/>
+</g>
+<g stroke="#1F2A44" stroke-width="3" stroke-linecap="round" fill="none">
+<path d="M300 120 L306 108 M318 128 L330 120 M104 120 L98 108 M84 128 L72 120"/>
+</g>
+</svg>

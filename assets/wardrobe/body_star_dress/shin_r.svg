@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<path d="M178 348 C178 342 194 342 194 348 L194 380 L179 380 Z" fill="#F7F9FD" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M188 346 L194 348 L194 380 L188 380 Z" fill="#DDE5F2" opacity="0.9" />
+<path d="M175 392 L175 385 C175 380 178 378 182 378 L192 378 C196 379 197 382 197 385 L197 389 C197 391 196 392 193 392 Z" fill="#1E2B5E" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M187 379 L192 379 C196 380 197 383 197 386 L197 389 C197 391 195 392 193 392 L189 392 C190 387 190 382 187 379 Z" fill="#131D45" />
+<path d="M178 383 Q186 380 195 383" stroke="#DCE4F0" stroke-width="1.5" fill="none" stroke-linecap="round" />
+<path d="M186.0 384.6 L186.6 386.1 L188.3 386.3 L187.0 387.3 L187.4 388.9 L186.0 388.1 L184.6 388.9 L185.0 387.3 L183.7 386.3 L185.4 386.1 Z" fill="#F2C94C" />
+<path d="M175.5 389.5 L196.5 389.5 L196.5 392 L175.5 392 Z" fill="#0B1230" />
+<path d="M175 392 L175 385 C175 380 178 378 182 378 L192 378 C196 379 197 382 197 385 L197 389 C197 391 196 392 193 392 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+</g>
+</svg>

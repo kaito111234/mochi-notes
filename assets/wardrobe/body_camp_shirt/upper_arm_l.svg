@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<defs><pattern id="pu" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#F4F8FF"/><rect x="0" width="5" height="12" fill="#3B6FD0" opacity="0.5"/><rect y="0" width="12" height="5" fill="#3B6FD0" opacity="0.5"/><rect x="5" width="1" height="12" fill="#274A96" opacity="0.5"/></pattern></defs><path d="M165 232 C174 232 178 240 178 250 L170 281 C168 290 146 289 143 280 L148 250 C149 240 156 232 165 232 Z" fill="url(#pu)" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M148 252 L143 280 C146 289 160 290 167 285 L158 264 Z" fill="#274A96" opacity="0.25"/>
+<path d="M165 232 C174 232 178 240 178 250 L170 281 C168 290 146 289 143 280 L148 250 C149 240 156 232 165 232 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

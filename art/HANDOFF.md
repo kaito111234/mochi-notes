@@ -151,6 +151,20 @@ Cũng là SVG 400 × 400. Đạo cụ gắn `hand_r` được đặt bằng đ�
 | `props/bell_shake.svg` | 214,247 – 283,344 | hand_r | ring |
 | `props/cat_plush.svg` | 151,250 – 268,349 | none (canvas+global) | sleep |
 
+### 4.3 Bổ sung lượt 3 (Đợt 2 hoàn thiện + action Đợt 3/2B)
+
+Biến thể mới (cùng pivot với bản thường; vùng bao xem bằng `node tools/rig/pose.js --keep-svg` hoặc mở file):
+| File | Khi nào |
+|---|---|
+| `hair_back.up.svg`, `sidelock_l.up.svg`, `sidelock_r.up.svg` | tóc hất lên/xoè ra: lifted, fall. Chóp không cao hơn y≈196 (tránh trông như tai). |
+| `thigh_l.sit.svg`, `thigh_r.sit.svg`, `shin_l.sit.svg`, `shin_r.sit.svg` | chân gập nhìn chính diện (đùi co phối cảnh): sit, sit_on_note |
+| `hand_l.grip.svg`, `hand_r.grip.svg` | nắm quanh vật, ngón trước vật: eat, play_cat |
+| `hand_r.point.svg` | nay đã dùng: point |
+
+Đạo cụ/hiệu ứng mới (tiền tố = nhóm action): `props/work_*` (laptop mở/hé/đóng, bút chì, giấy, nét chữ 1–4, sách, lật trang — work, write, read), `props/eat_*` (daifuku + 3 mức cắn), `props/clean_*` (tờ note, giấy vo, cục giấy — carry_note, crumple, throw; vẽ tâm tại (0,0), đặt bằng `show` x,y,s,r), `fx/emo_*` (mây buồn, vạch u ám, lệ, dấu gân, khói — sad, angry), `fx/shy_*` (hơi ngại, giọt mồ hôi), `fx/start_*` (vầng sáng, sao, lệ ngáp — startup, shutdown, yawn), `fx/knock_*` (vệt chấn; `knock_text.svg` KHÔNG dùng vì engine lật ảnh), `fx/cheer_*` (hoa giấy), `fx/eat_*` (vụn, má phồng).
+
+Action vẽ một hướng (PHẢI, engine lật khi cần): point, climb, knock, throw. Tham số căn chỉnh cho core nằm trong `pack.json.actions` (seatY, tip, gripX, edgeX/edgeY, wallX, release…).
+
 ## 5. Bộ mặt (`face/<khoá>.svg` + `face/<khoá>.over.svg`)
 
 - `<khoá>.svg` (z130): mắt, miệng, má hồng. Nằm **dưới** mái tóc, nên mái che mép trên mắt là đúng.

@@ -33,6 +33,58 @@
   "actions": {
     "walk": {
       "speed": 2.2
+    },
+    "sit": {
+      "seatY": 392,
+      "_ghichu": "mặt ngồi tại anchor"
+    },
+    "sit_on_note": {
+      "seatY": 338,
+      "_ghichu": "đặt mép trên cửa sổ note tại y canvas này"
+    },
+    "point": {
+      "tip": [
+        342,
+        237
+      ],
+      "dir": "right",
+      "_ghichu": "đầu ngón tay ở loop (±6px y); vẽ hướng phải, engine lật khi chỉ trái"
+    },
+    "climb": {
+      "gripX": 300,
+      "dir": "right",
+      "_ghichu": "x canvas trùng mép phải màn hình"
+    },
+    "peek_left": {
+      "edgeX": 0
+    },
+    "peek_right": {
+      "edgeX": 400
+    },
+    "peek_note": {
+      "edgeY": 232,
+      "_ghichu": "mép trên note; start/end có phần dưới mép, core cắt hoặc vẽ note đè"
+    },
+    "knock": {
+      "wallX": 315,
+      "dir": "right"
+    },
+    "throw": {
+      "dir": "right",
+      "releaseFrame": 5,
+      "releaseMs": 330,
+      "release": [
+        301,
+        181
+      ],
+      "velocity": [
+        0.4,
+        -0.3
+      ],
+      "_ghichu": "cục giấy rời tay; core vẽ tiếp đường bay (px canvas, px/ms)"
+    },
+    "carry_note": {
+      "speed": 2.2
     }
   },
   "note": {

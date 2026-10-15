@@ -14,7 +14,7 @@ for (let k = 0; k < N; k++) {
     global: { px: 200, py: 96, r: r1(A * s), y: r1(-8 - 2 * Math.abs(s)) },
     bones: {
       hips: { sy: r1(1.02 - 0.02 * Math.abs(s)), sx: r1(0.99 + 0.02 * Math.abs(s)) },
-      chest: { r: r1(-2 * s), sy: 1.02 },
+      chest: { r: r1(-2 * s), sy: 1.06 },
       head: { r: r1(-3 * s) },
       hair_back: { r: r1(-6 * sl), sy: 1.02 },
       sidelock_l: { r: r1(-7 * sl + 3) },
@@ -30,7 +30,7 @@ for (let k = 0; k < N; k++) {
       shin_l: { r: r1(4 + 9 * Math.sin(ph(k, 1.5))) },
       shin_r: { r: r1(-4 - 9 * Math.sin(ph(k, 1.5))) },
     },
-    swap: { hand_l: 'open', hand_r: 'open' },
+    swap: { hand_l: 'open', hand_r: 'open', hair_back: 'up', sidelock_l: 'up', sidelock_r: 'up' },
     ...(k === 2 ? { show: [{ id: 'lifted-sweat', file: 'fx/sweat.svg', bone: 'head', z: 210 }] } : {}),
   });
 }
