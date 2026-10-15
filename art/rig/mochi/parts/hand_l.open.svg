@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-<g transform="translate(152 309) scale(1.15) translate(-152 -309)"><path d="M147 306 L157 306 L158 314 L146 314 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<g transform="translate(152 309) scale(1.32) translate(-152 -309)"><path d="M147 306 L157 306 L158 314 L146 314 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
 <path d="M148 308 L156 308 L156 313 L148 313 Z" fill="#FFE6DA" />
 <path d="M142 318 Q138 312 141 309 Q144 308 146 314 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
 <path d="M146 314 Q141 322 143 329 Q146 331 148 326 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
@@ -8,5 +8,5 @@
 <path d="M159 317 Q166 318 166 313 Q163 311 157 313 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
 <path d="M145 315 C144 310 148 309 152 309 C157 309 160 312 160 317 C160 325 156 329 152 329 C148 329 145 324 145 315 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
 <path d="M154 311 C158 313 159 320 156 327 C155 328 154 329 152 329 C156 325 157 317 154 311 Z" fill="#F2C4B5" />
-<path d="M149 320 Q152 323 155 320" stroke="#F2C4B5" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" fill="none" /></g>
+<path d="M149 320 Q152 323 155 320" stroke="#F2C4B5" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" fill="none" /></g><path d="M144 305 L160 305 L160 312 Q152 315 144 312 Z" fill="#FFFFFF" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" /><path d="M153 306 L159.5 306 L159.5 312 L153 313.5 Z" fill="#DDE5F2" />
 </svg>

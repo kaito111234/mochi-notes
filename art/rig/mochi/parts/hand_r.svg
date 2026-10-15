@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
 <g transform="matrix(-1 0 0 1 400 0)">
-<g transform="translate(152 309) scale(1.15) translate(-152 -309)"><path d="M146 309 L158 309 L158 314 L146 314 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<g transform="translate(152 309) scale(1.32) translate(-152 -309)"><path d="M146 309 L158 309 L158 314 L146 314 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
 <path d="M146 310 L158 310 L158 313 L146 313 Z" fill="#FFE6DA" />
 <path d="M145 316 C145 310 148 309 152 309 C157 309 159 312 159 317 C159 324 156 328 152 328 C148 328 145 324 145 316 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
 <path d="M153 311 C157 312 158 318 156 325 C155 327 153 328 152 328 C156 324 156 316 153 311 Z" fill="#F2C4B5" />
 <path d="M148 317 Q151 320 150 325 M152 318 Q154 321 153 326" stroke="#F2C4B5" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" fill="none" />
 <path d="M145 316 C145 310 148 309 152 309 C157 309 159 312 159 317 C159 324 156 328 152 328 C148 328 145 324 145 316 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
-<path d="M159 315 Q162 316 161 319 Q160 321 158.5 320" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" /></g>
+<path d="M159 315 Q162 316 161 319 Q160 321 158.5 320" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" /></g><path d="M144 305 L160 305 L160 312 Q152 315 144 312 Z" fill="#FFFFFF" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" /><path d="M153 306 L159.5 306 L159.5 312 L153 313.5 Z" fill="#DDE5F2" />
 </g>
 </svg>
