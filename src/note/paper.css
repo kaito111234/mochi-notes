@@ -21,7 +21,7 @@
   content: ""; position: absolute; inset: 0; pointer-events: none;
   box-shadow: inset 1px 1px 0 rgba(255,255,255,.55), inset -1px -1px 0 rgba(0,0,0,.07);
   background:
-    radial-gradient(90px 70px at 100% 100%, rgba(0,0,0,.13), rgba(0,0,0,0) 72%),
+    radial-gradient(90px 70px at 100% 100%, rgba(0,0,0,.09), rgba(0,0,0,0) 72%),
     radial-gradient(60px 50px at 0 100%, rgba(0,0,0,.07), rgba(0,0,0,0) 72%),
     linear-gradient(to top, rgba(0,0,0,.05), rgba(0,0,0,0) 14px);
 }
@@ -104,3 +104,11 @@
 .ppthumb .ppt-ed { flex: 1; overflow: hidden; padding: 8px 12px; font-size: 15px; line-height: 1.5; height: 100%; color: var(--fg); }
 .ppthumb .ppt-in.has-paper .ppt-ed { font-family: var(--paper-font); }
 .ppthumb .ppt-in.ppt-plain .topbar { background: rgb(var(--head-rgb)); }
+
+/* trang trí góc dưới mờ đi khi thanh định dạng hiện (đang gõ / khoá) để không đè nút */
+.paper-layer [data-pos] { transition: opacity .15s; }
+body.editing .paper-layer [data-pos="bl"], body.editing .paper-layer [data-pos="br"], body.editing .paper-layer [data-pos="bottom"],
+body.locked .paper-layer [data-pos="bl"], body.locked .paper-layer [data-pos="br"], body.locked .paper-layer [data-pos="bottom"] { opacity: .18; }
+/* nút thanh trên nổi rõ khi đè lên trang trí */
+.has-paper .topbar .ib:hover { background: linear-gradient(rgba(var(--fg-rgb), .12), rgba(var(--fg-rgb), .12)), rgb(var(--head-rgb)); }
+.has-paper .topbar .ib[aria-expanded="true"] { background: linear-gradient(rgba(var(--fg-rgb), .2), rgba(var(--fg-rgb), .2)), rgb(var(--head-rgb)); }

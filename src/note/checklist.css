@@ -35,9 +35,9 @@ body.locked #editor > div[data-ck]::before { cursor: default; }
 .ck-count {
   display: inline-flex; align-items: center; height: 18px; padding: 0 7px; margin-left: 4px;
   border-radius: 9px; font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums;
-  background: rgba(var(--fg-rgb), .1); color: var(--fg); opacity: .8; -webkit-app-region: no-drag;
+  background: linear-gradient(rgba(var(--fg-rgb), .1), rgba(var(--fg-rgb), .1)), rgb(var(--head-rgb, 255,255,255)); color: rgba(var(--fg-rgb), .85); margin-right: 4px; position: relative; z-index: 2; -webkit-app-region: no-drag;
 }
-.ck-count.all { background: color-mix(in srgb, var(--ck-accent, #3d9b6e) 30%, transparent); }
+.ck-count.all { background: linear-gradient(color-mix(in srgb, var(--ck-accent, #3d9b6e) 30%, transparent), color-mix(in srgb, var(--ck-accent, #3d9b6e) 30%, transparent)), rgb(var(--head-rgb, 255,255,255)); }
 
 /* tay nắm kéo (phần tử nổi trong .body, ngoài #editor) */
 .ck-handle {

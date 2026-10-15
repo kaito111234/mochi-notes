@@ -192,6 +192,7 @@
     var s = el.style, tf = '';
     dx = +dx || 0; dy = +dy || 0;
     s.position = 'absolute';
+    el.setAttribute('data-pos', pos || 'tr');
     switch (pos) {
       case 'tl': s.left = dx + 'px'; s.top = dy + 'px'; break;
       case 'bl': s.left = dx + 'px'; s.bottom = dy + 'px'; break;
