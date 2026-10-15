@@ -6,7 +6,8 @@
 <path d="M187 369 L192 369 C196 370 197 374 197 380 L197 388 C197 391 195 392 193 392 L189 392 C190 386 190 374 187 369 Z" fill="#0F1013" />
 <path d="M175.5 387 L196.5 387 L196.5 392 L175.5 392 Z" fill="#0F1013" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" />
 <path d="M175 392 L175 380 C175 372 177 369 181 368 L192 368 C196 369 197 373 197 380 L197 387 C197 391 196 392 193 392 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M177 360 Q186 362 195 360" stroke="#3A3D47" stroke-width="1.2" fill="none" stroke-linecap="round" />
 <path d="M176 374 L196 374" stroke="#5A6070" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" fill="none" />
-<path d="M180 373 L191 381 M191 373 L180 381 M180 380 L191 387 M191 380 L180 387" fill="none" stroke="#5A6070" stroke-width="1.1" stroke-linecap="round" />
+<path d="M180 373 L191 381 M191 373 L180 381 M180 380 L191 387 M191 380 L180 387" fill="none" stroke="#5A6070" stroke-width="1.2" stroke-linecap="round" />
 <path d="M178 386 C178 383 180 382 183 383" stroke="#5A6070" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" fill="none" />
 </svg>
