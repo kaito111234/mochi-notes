@@ -1,0 +1,217 @@
+'use strict';
+// Phòng core — thân bé: ngăn dữ liệu 'pet', cửa sổ, thân (vị trí/vật lý), não (hành vi rảnh).
+// Đăng ký ctx.pet.{settings,setSettings,mode,actor,body}; xem docs/rooms/core/ARCH.md mục 4.
+const { app, screen } = require('electron');
+const { createWindow } = require('./window.js');
+const { createBody } = require('./body.js');
+const { createBrain } = require('./brain.js');
+
+const POSTURES = ['idle', 'walk', 'sit', 'sleep', 'lifted', 'peek', 'work'];
+const MODES = ['happy', 'normal', 'tired', 'sad'];
+
+function defaults() {
+  return { x: null, y: null, displayId: null, posture: 'idle', settings: { alwaysVisible: true, scale: 1, walkEnabled: true } };
+}
+function normalize(raw) {
+  const d = defaults();
+  if (!raw || typeof raw !== 'object') return d;
+  const num = v => (typeof v === 'number' && isFinite(v) ? v : null);
+  d.x = num(raw.x); d.y = num(raw.y); d.displayId = num(raw.displayId);
+  if (POSTURES.includes(raw.posture)) d.posture = raw.posture;
+  const s = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
+  if (typeof s.alwaysVisible === 'boolean') d.settings.alwaysVisible = s.alwaysVisible;
+  if (typeof s.walkEnabled === 'boolean') d.settings.walkEnabled = s.walkEnabled;
+  if (typeof s.scale === 'number' && isFinite(s.scale)) d.settings.scale = Math.min(2, Math.max(0.5, s.scale));
+  return d;
+}
+
+function init(ctx) {
+  const bus = ctx.bus;
+  const box = ctx.store.section('pet', defaults, normalize);
+
+  const core = {
+    ctx, box, pack: null, layout: null,
+    stage: false, shown: false, showSeq: 0, curPosture: 'idle', curMode: 'normal',
+    window: null, body: null, brain: null, actor: null,
+    posture: () => core.curPosture,
+    mode: () => core.curMode,
+    setPosture(p) {
+      if (!POSTURES.includes(p) || p === core.curPosture) return;
+      core.curPosture = p;
+      bus.emit('pet:posture', { posture: p });
+    },
+    toIdle() {
+      if (!core.shown) return;
+      core.setPosture('idle');
+      actor.play('idle', { loop: true });
+    },
+    onWindowClosed() { core.shown = false; core.body.unplace(); core.body.stopWatch(); }
+  };
+
+  core.window = createWindow(core);
+  core.body = createBody(core);
+  core.brain = createBrain(core);
+
+  // ---- play: Promise resolve khi animEnd cùng token (loop thì resolve ngay), an toàn 10s
+  let tokenSeq = 0;
+  const pending = new Map();           // token -> resolve
+  function settleAll() { for (const [, r] of pending) r(); pending.clear(); }
+  core.window.on('animEnd', d => {
+    const r = pending.get(d.token);
+    if (r) { pending.delete(d.token); r(); }
+  });
+
+  function play(action, opts) {
+    opts = opts || {};
+    const mood = MODES.includes(opts.mood) ? opts.mood : core.curMode;
+    settleAll();                                       // hình mới cắt ngang hình cũ
+    const token = ++tokenSeq;
+    core.window.cmd({ op: 'play', action, mood, loop: !!opts.loop, token });
+    if (opts.loop) return Promise.resolve();
+    return new Promise(resolve => {
+      const t = setTimeout(() => { pending.delete(token); resolve(); }, 10000);
+      pending.set(token, () => { clearTimeout(t); resolve(); });
+    });
+  }
+
+  async function show(opts) {
+    opts = opts || {};
+    const mySeq = ++core.showSeq;
+    const win = actor.ensure();
+    await Promise.race([core.window.whenReady(), new Promise(r => setTimeout(r, 5000))]);
+    if (mySeq !== core.showSeq || !core.window.win()) return false;
+    if (!core.window.isReady()) return false;
+    const wasShown = core.shown;
+    if (opts.corner) { core.body.placeCorner(); }
+    else if (!core.body.placedYet() || !wasShown) core.body.placeInitial();
+    core.shown = true;
+    core.window.setLevel(core.stage);
+    if (!win.isVisible()) {
+      core.window.cmd({ op: 'fade', to: 0, ms: 0 });
+      win.showInactive();
+      core.window.cmd({ op: 'fade', to: 1, ms: 250 });
+    }
+    core.body.startWatch();
+    core.brain.start();
+    if (!wasShown && (opts.startup || opts.corner)) {
+      core.setPosture('idle');
+      await Promise.race([play('startup', { mood: core.curMode }), new Promise(r => setTimeout(r, 3000))]);
+    }
+    if (mySeq === core.showSeq) core.toIdle();
+    return true;
+  }
+
+  function hide() {
+    core.showSeq++;
+    const win = core.window.win();
+    if (!win) { core.shown = false; return; }
+    core.body.cancel();
+    core.brain.onHidden();
+    core.shown = false;
+    core.body.stopWatch();
+    core.brain.stop();
+    core.setPosture('idle');
+    core.window.cmd({ op: 'fade', to: 0, ms: 200 });
+    setTimeout(() => {
+      const w = core.window.win();
+      if (w && !core.shown) w.hide();
+    }, 230);
+  }
+
+  function wantVisible() { return !!(box.settings.alwaysVisible && ctx.settings().mascotEnabled); }
+  function applyVisibility(opts) {
+    if (wantVisible()) { if (!core.shown) show(opts).catch(e => console.error('[petcore] show', e)); }
+    else if (!core.stage && core.shown) hide();
+  }
+
+  const actor = {
+    ensure: () => core.window.ensure(),
+    isReady: () => core.window.isReady(),
+    whenReady: () => core.window.whenReady(),
+    visible: () => core.shown && !!core.window.win() && core.window.win().isVisible(),
+    show, hide, applyVisibility,
+    cmd: c => core.window.cmd(c),
+    play,
+    say: (text, opts) => core.window.cmd(Object.assign({ op: 'say', text: String(text || '') }, opts || {})),
+    hush: () => core.window.cmd({ op: 'hush' }),
+    holdNote: note => core.window.cmd({ op: 'note', note: note || null }),
+    sound: name => core.window.cmd({ op: 'sound', name }),
+    shake: on => core.window.cmd({ op: 'shake', on: !!on }),
+    setStage(on) {
+      on = !!on;
+      if (core.stage === on) return;
+      core.stage = on;
+      core.window.setLevel(on);
+      core.brain.onStage(on);
+    },
+    goToCorner: () => core.body.goToCorner(),
+    on: (type, fn) => core.window.on(type, fn)
+  };
+  core.actor = actor;
+
+  function setSettings(patch) {
+    if (!patch || typeof patch !== 'object') return box.settings;
+    const s = box.settings, prev = Object.assign({}, s);
+    if (typeof patch.alwaysVisible === 'boolean') s.alwaysVisible = patch.alwaysVisible;
+    if (typeof patch.walkEnabled === 'boolean') s.walkEnabled = patch.walkEnabled;
+    if (typeof patch.scale === 'number' && isFinite(patch.scale)) s.scale = Math.min(2, Math.max(0.5, patch.scale));
+    ctx.store.save();
+    if (s.scale !== prev.scale) core.window.relayout();
+    if (!s.walkEnabled && prev.walkEnabled && !core.stage) core.body.stopWalk();
+    if (s.alwaysVisible !== prev.alwaysVisible) applyVisibility();
+    core.window.sendSettings();
+    return s;
+  }
+
+  Object.assign(ctx.pet, {
+    settings: () => box.settings,
+    setSettings,
+    mode: () => core.curMode,
+    actor,
+    body: { pos: () => core.body.pos(), posture: () => core.curPosture }
+  });
+
+  // ---- bus
+  let prevS = Object.assign({}, ctx.settings());
+  bus.on('game:mode', d => {
+    const m = d && (typeof d === 'string' ? d : d.mode);
+    if (MODES.includes(m) && m !== core.curMode) {
+      core.curMode = m;
+      if (core.shown && !core.stage && !core.body.busy() && !core.brain.isSleeping() && core.curPosture === 'idle') core.toIdle();
+    }
+  });
+  bus.on('settings:changed', d => {
+    const s = (d && d.settings) || ctx.settings();
+    if (s.mascotIdle !== prevS.mascotIdle) setSettings({ alwaysVisible: !!s.mascotIdle });
+    if (s.mascotEnabled !== prevS.mascotEnabled) applyVisibility();
+    if (s.sound !== prevS.sound) core.window.sendSettings();
+    prevS = Object.assign({}, s);
+  });
+  bus.on('app:startup', () => {
+    applyVisibility({ startup: true });
+    if (process.env.MOCHI_PET_DEMO) setTimeout(() => runDemo(process.env.MOCHI_PET_DEMO), 1500);
+  });
+
+  // Gỡ lỗi/nghiệm thu: MOCHI_PET_DEMO = lifted | sleep | walk | peek (chạy sau app:startup ~1.5s).
+  async function runDemo(what) {
+    try {
+      if (!core.shown) await show({ startup: false });
+      if (!core.shown) return;
+      await new Promise(r => setTimeout(r, 600));
+      if (what === 'lifted') core.body.demoLift();         // không bám chuột
+      else if (what === 'sleep') core.brain.sleep();
+      else if (what === 'walk') core.body.walk({ dir: 'left', dist: 400 });
+      else if (what === 'peek') core.body.peek('right');
+    } catch (e) { console.error('[petcore] demo', e); }
+  }
+
+  app.on('before-quit', () => {
+    try {
+      if (core.shown && core.body.placedYet()) core.body.save();
+      ctx.store.flushSync();
+    } catch (_) { /* bỏ qua */ }
+  });
+  void screen;
+}
+
+module.exports = { init, defaults, normalize };
