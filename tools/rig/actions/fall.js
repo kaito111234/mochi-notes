@@ -22,7 +22,8 @@ const frames = w.map((s, k) => ({
     shin_l: { r: -2 * s },
     shin_r: { r: 2 * s },
   },
-  swap: { hand_l: 'open', hand_r: 'open' },
+  z: { upper_arm_l: 162, upper_arm_r: 163, forearm_l: 164, forearm_r: 165, hand_l: 166, hand_r: 167 },
+  swap: { hand_l: 'open', hand_r: 'open', hair_back: 'up', sidelock_l: 'up', sidelock_r: 'up' },
   show: [{ id: 'fall-speed', file: 'fx/speed_lines.svg', bone: 'none', y: [0, 6, -6][k], z: 5 }],
 }));
 module.exports = { action: 'fall', moods: { normal: { loop: frames } } };
