@@ -14,7 +14,7 @@
   <img alt="Electron" src="https://img.shields.io/badge/built%20with-Electron-47848f?logo=electron&logoColor=white">
 </p>
 
-<img src="docs/images/demo-hero.gif" alt="Bé Mochi đứng trên tờ note trên desktop, vẫy tay chào" width="640">
+<img src="docs/images/demo-hero.webp" alt="Bé Mochi đứng trên tờ note trên desktop, vẫy tay chào" width="640">
 
 <p><a href="https://kaito111234.github.io/mochi-notes/"><img alt="Trang web Mochi Notes" src="https://img.shields.io/badge/Trang%20web-kaito111234.github.io%2Fmochi--notes-ee6a9a?style=for-the-badge&logo=githubpages&logoColor=white"></a></p>
 
@@ -57,11 +57,11 @@
 
 <table align="center">
 <tr>
-<td align="center" width="50%"><img src="docs/images/demo-remind.gif" alt="Tới giờ, bé Mochi bay ra giữa màn hình, đập tay lên kính cho tới khi bấm Xong rồi" width="100%"><br><sub><b>Nhắc việc:</b> tới giờ bé bay ra giữa màn hình, đập tay "bốp" tới khi bạn bấm "Xong rồi"</sub></td>
-<td align="center" width="50%"><img src="docs/images/demo-command.gif" alt="Gõ &quot;bé ơi, dọn dẹp&quot; trong note, bé chạy tới dọn note đã xong vào thùng rác" width="100%"><br><sub><b>Ra lệnh:</b> gõ "bé ơi, dọn dẹp", bé tự dọn note đã xong vào thùng rác</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-remind.webp" alt="Tới giờ, bé Mochi bay ra giữa màn hình, đập tay lên kính cho tới khi bấm Xong rồi" width="100%"><br><sub><b>Nhắc việc:</b> tới giờ bé bay ra giữa màn hình, đập tay "bốp" tới khi bạn bấm "Xong rồi"</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-command.webp" alt="Gõ &quot;bé ơi, dọn dẹp&quot; trong note, bé chạy tới dọn note đã xong vào thùng rác" width="100%"><br><sub><b>Ra lệnh:</b> gõ "bé ơi, dọn dẹp", bé tự dọn note đã xong vào thùng rác</sub></td>
 </tr>
 <tr>
-<td align="center" width="50%"><img src="docs/images/demo-life.gif" alt="Bé Mochi uống trà, đọc sách và ngủ trong giường" width="100%"><br><sub><b>Đời sống:</b> uống trà, đọc sách, ngủ trong giường đắp chăn</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-life.webp" alt="Bé Mochi uống trà, đọc sách và ngủ trong giường" width="100%"><br><sub><b>Đời sống:</b> uống trà, đọc sách, ngủ trong giường đắp chăn</sub></td>
 <td></td>
 </tr>
 </table>
@@ -178,7 +178,7 @@ src/alert/     màn nhắc to giữa màn hình
 src/game/      phòng game: tủ đồ, gacha, cửa hàng, nhiệm vụ, thống kê
 src/shared/    phân tích tiếng Việt (giờ, lệnh), hội thoại, đồ mặc
 assets/        hình bé Mochi, giấy, font, icon (xem ASSETS-NOTICE.md)
-tools/         test, kiểm gói hình, công cụ dựng ảnh (make-gif.js)
+tools/         test, kiểm gói hình, công cụ dựng ảnh động (record-demo.js)
 docs/          hướng dẫn phát hành, ký số, ảnh README
 .github/       workflow CI và phát hành, mẫu issue/PR
 ```
@@ -187,7 +187,7 @@ docs/          hướng dẫn phát hành, ký số, ảnh README
 
 Tăng version bằng `npm version X.Y.Z --no-git-tag-version`, commit, rồi đẩy tag `vX.Y.Z`. Workflow [release.yml](.github/workflows/release.yml) tự build trên GitHub Actions và đưa tệp lên Releases (kèm `latest.yml` cho tự cập nhật và `SHA256SUMS.txt`). Chi tiết: [docs/release.md](docs/release.md). CI chạy test mỗi lần push/PR ([ci.yml](.github/workflows/ci.yml)).
 
-Dựng lại ảnh động trong README: ghép khung PNG của từng cửa sổ app lên nền desktop giả rồi chạy `node tools/make-gif.js <thư-mục-khung> docs/images/demo-hero.gif --scene --size 640` (tên khung `NNNN_ms.png`).
+Dựng lại ảnh động trong README (WebP 30fps) và video trang web (WebM): thu khung từng cửa sổ app bằng `webContents.beginFrameSubscription` (`tools/record-demo-rec.js`), rồi ghép lên nền desktop giả và mã hoá bằng `node tools/record-demo.js build <thư-mục-khung> hero --seg 600-10600` (xem hướng dẫn đầu tệp `tools/record-demo.js`).
 
 ## Đóng góp
 
@@ -233,11 +233,11 @@ Cảm ơn [Electron](https://www.electronjs.org/), [electron-builder](https://ww
 
 <table align="center">
 <tr>
-<td align="center" width="50%"><img src="docs/images/demo-remind.gif" alt="At reminder time Mochi flies to the middle of the screen and slaps the glass until you tap Done" width="100%"><br><sub><b>Reminders:</b> she flies out, slaps the glass, and leaves once you tap "Done"</sub></td>
-<td align="center" width="50%"><img src="docs/images/demo-command.gif" alt="Typing a command in a note, Mochi runs over and tidies finished notes into the trash" width="100%"><br><sub><b>Commands:</b> type "bé ơi, dọn dẹp" ("Mochi, clean up") and she bins finished notes</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-remind.webp" alt="At reminder time Mochi flies to the middle of the screen and slaps the glass until you tap Done" width="100%"><br><sub><b>Reminders:</b> she flies out, slaps the glass, and leaves once you tap "Done"</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-command.webp" alt="Typing a command in a note, Mochi runs over and tidies finished notes into the trash" width="100%"><br><sub><b>Commands:</b> type "bé ơi, dọn dẹp" ("Mochi, clean up") and she bins finished notes</sub></td>
 </tr>
 <tr>
-<td align="center" width="50%"><img src="docs/images/demo-life.gif" alt="Mochi drinking tea, reading and sleeping in a bed" width="100%"><br><sub><b>Daily life:</b> tea, reading, sleeping under a blanket</sub></td>
+<td align="center" width="50%"><img src="docs/images/demo-life.webp" alt="Mochi drinking tea, reading and sleeping in a bed" width="100%"><br><sub><b>Daily life:</b> tea, reading, sleeping under a blanket</sub></td>
 <td></td>
 </tr>
 </table>

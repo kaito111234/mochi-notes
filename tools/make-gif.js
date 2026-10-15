@@ -3,6 +3,7 @@
 // Dựng GIF động từ một thư mục khung PNG (tên NNNN_ms.png, ms = thời lượng khung), không cần ffmpeg hay thư viện ngoài.
 // Dùng để làm ảnh cho README:
 //   node tools/make-gif.js assets/pet/mochi/walk_side/normal/loop docs/images/mochi-walk.gif --size 200
+//   (Clip demo README/trang web nay dựng bằng tools/record-demo.js, 30fps; chế độ --scene dưới đây chỉ còn để tương thích.)
 //   Khung hình chữ nhật đầy đủ (demo): node tools/make-gif.js <thư-mục-khung> <ra.gif> --scene --size 640 [--every 1] [--dither 10]
 //   node tools/make-gif.js <thư-mục-khung> <ra.gif> [--size 200] [--bg ffffff|transparent] [--no-crop]
 // Gồm: giải mã PNG (RGBA 8-bit, không xen kẽ) bằng zlib, thu nhỏ trung bình diện tích, cắt vừa nhân vật,
