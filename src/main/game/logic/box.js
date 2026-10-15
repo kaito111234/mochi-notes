@@ -3,16 +3,20 @@
 
 const VERSION = 1;
 const MAX_OUTFITS = 6, MAX_FOODLOG = 20, MAX_HISTORY = 50, MAX_LOG = 120, MAX_QUESTS = 20;
-const COUNTERS = ['done', 'onTime', 'longTerm', 'checkItems', 'pats', 'feeds', 'pulls', 'trashed', 'alarms', 'outfits'];
+const COUNTERS = ['done', 'onTime', 'longTerm', 'checkItems', 'pats', 'feeds', 'pulls', 'trashed', 'alarms', 'outfits', 'tidy', 'captures'];
+const MAX_FOOD = 99;
 
 function defaults() {
   return {
     version: VERSION,
     settings: { enabled: true },
     stats: { energy: 80, mood: 70, affection: 0, candy: 100, exp: 0, streak: { count: 0, lastDay: '' } },
-    inventory: { items: {}, shards: 0, worn: {}, outfits: [], foodLog: [] },
+    inventory: { items: {}, shards: 0, worn: {}, outfits: [], foodLog: [], food: {} },
     gacha: { pity: 0, total: 0, history: [] },
     quests: { day: '', daily: [], week: '', weekly: [] },
+    album: { claimed: {} },
+    checkin: { cycleDay: 0, lastDay: '', total: 0 },
+    flags: { captureSeen: false },
     achievements: {},
     counters: Object.fromEntries(COUNTERS.map(k => [k, 0])),
     firstUse: {},
@@ -59,6 +63,9 @@ function normalize(stored) {
   const q = isObj(stored.quests) ? stored.quests : {};
   const c = isObj(stored.counters) ? stored.counters : {};
   const t = isObj(stored.today) ? stored.today : {};
+  const ck = isObj(stored.checkin) ? stored.checkin : {};
+  const al = isObj(stored.album) ? stored.album : {};
+  const fl = isObj(stored.flags) ? stored.flags : {};
 
   const items = {};
   if (isObj(inv.items)) {
@@ -77,6 +84,14 @@ function normalize(stored) {
   const log = keepLast(arr(stored.log).filter(l => isObj(l) && /^\d{4}-\d{2}-\d{2}$/.test(l.day))
     .map(l => ({ day: l.day, done: int(l.done, 0, 0), coins: int(l.coins, 0, 0) })), MAX_LOG);
 
+  const food = {};
+  if (isObj(inv.food)) {
+    for (const id of Object.keys(inv.food)) {
+      const n = int(inv.food[id], 0, 0, MAX_FOOD);
+      if (n > 0) food[id] = n;
+    }
+  }
+
   const counters = {};
   for (const k of COUNTERS) counters[k] = int(c[k], 0, 0);
 
@@ -92,10 +107,13 @@ function normalize(stored) {
       streak: { count: int(st.count, 0, 0), lastDay: str(st.lastDay) }
     },
     inventory: {
-      items, shards: int(inv.shards, 0, 0), worn: strMap(inv.worn), outfits, foodLog
+      items, shards: int(inv.shards, 0, 0), worn: strMap(inv.worn), outfits, foodLog, food
     },
     gacha: { pity: int(g.pity, 0, 0), total: int(g.total, 0, 0), history },
     quests: { day: str(q.day), daily: normQuests(q.daily), week: str(q.week), weekly: normQuests(q.weekly) },
+    album: { claimed: numMap(al.claimed) },
+    checkin: { cycleDay: int(ck.cycleDay, 0, 0, 6), lastDay: str(ck.lastDay), total: int(ck.total, 0, 0) },
+    flags: { captureSeen: fl.captureSeen === true },
     achievements: numMap(stored.achievements),
     counters,
     firstUse: numMap(stored.firstUse),
@@ -105,4 +123,4 @@ function normalize(stored) {
   };
 }
 
-module.exports = { VERSION, defaults, normalize };
+module.exports = { VERSION, MAX_FOOD, defaults, normalize };

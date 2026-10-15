@@ -3,7 +3,7 @@
   'use strict';
   var BASE = (document.currentScript && document.currentScript.src) || location.href;
   var MODE_VI = { happy: 'Vui vẻ', normal: 'Bình thường', tired: 'Mệt', sad: 'Buồn' };
-  var ORDER = ['wardrobe', 'gacha', 'shop', 'quests', 'stats'];
+  var ORDER = ['wardrobe', 'gacha', 'shop', 'quests', 'stats', 'album'];
   var tabs = {};          // id -> { def, btn, panel, ok }
   var regOrder = [];
   var current = null, started = false, lastCoin = null;

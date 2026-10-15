@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<path d="M168 266 C169 284 169 298 167 311 L137 311 C139 298 140 284 142 266 C143 258 167 258 168 266 Z" fill="#1E2B5E" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M142 266 C140 284 139 298 137 311 L148 311 C150 298 151 284 152 266 Z" fill="#131D45" opacity="0.8" />
+<path d="M157.0 273.8 L157.6 275.2 L159.1 275.3 L157.9 276.3 L158.3 277.8 L157.0 277.0 L155.7 277.8 L156.1 276.3 L154.9 275.3 L156.4 275.2 Z" fill="#F2C94C" /><path d="M150.0 287.2 L150.5 288.3 L151.7 288.4 L150.8 289.3 L151.1 290.5 L150.0 289.8 L148.9 290.5 L149.2 289.3 L148.3 288.4 L149.5 288.3 Z" fill="#DCE4F0" />
+<path d="M138.5 299 L166.5 299 L167.3 309 Q164 313 161 309 Q157 313 153 309 Q149 313 145 309 Q141 313 137.5 309 Z" fill="#F7F9FD" stroke="#1F2A44" stroke-width="1.6" stroke-linejoin="round" />
+<path d="M139 303.5 Q152 307 166 303.5" fill="none" stroke="#8FA0BE" stroke-width="1" />
+<path d="M168 266 C169 284 169 298 167 311 L137 311 C139 298 140 284 142 266 C143 258 167 258 168 266 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+</svg>

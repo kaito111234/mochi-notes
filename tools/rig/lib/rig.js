@@ -59,6 +59,13 @@ function loadRig(rigPath, partsDirOverride) {
     return aroundPivot([px, py], g);
   }
 
+  const byId = {};
+  rig.layers.forEach(L => { byId[L.id] = L; });
+  rig.layers.forEach(L => {
+    if (L.follow && !byId[L.follow]) throw new Error('Lớp ' + L.id + ' bám lớp không tồn tại: ' + L.follow);
+    for (const c of L.covers || []) if (!byId[c]) throw new Error('Lớp ' + L.id + ' covers lớp không tồn tại: ' + c);
+  });
+
   // Trả danh sách lớp đã sắp z: [{id, z, svg}]
   function layersOf(frame) {
     frame = frame || {};
@@ -70,8 +77,14 @@ function loadRig(rigPath, partsDirOverride) {
     const opac = frame.opacity || {};
     const face = frame.face || 'normal';
     const items = [];
+    // "bám lớp": lớp có follow lấy z = z hiện tại của lớp chủ (kể cả frame.z ghi đè) + dz;
+    // ẩn/opacity của lớp chủ áp lên lớp bám (frame.z/opacity khai báo riêng cho lớp bám thì ưu tiên).
+    const zOf = (L, d = 0) => { if (d > 8) throw new Error('follow vòng: ' + L.id); return zov[L.id] != null ? zov[L.id] : (L.follow ? zOf(byId[L.follow], d + 1) + (L.dz || 0) : L.z); };
+    const hiddenOf = (L, d = 0) => { if (d > 8) throw new Error('follow vòng: ' + L.id); return hide.has(L.id) || (!!L.follow && hiddenOf(byId[L.follow], d + 1)); };
+    const opOf = (L, d = 0) => { if (d > 8) throw new Error('follow vòng: ' + L.id); return opac[L.id] != null ? opac[L.id] : (L.follow ? opOf(byId[L.follow], d + 1) : L.opacity); };
+    const covered = new Set();
     rig.layers.forEach((L, idx) => {
-      if (hide.has(L.id)) return;
+      if (hiddenOf(L)) return;
       let rel = L.file;
       if (rel.includes('{face}')) {
         rel = L.file.replace('{face}', face);
@@ -86,7 +99,8 @@ function loadRig(rigPath, partsDirOverride) {
       }
       const inner = readPart(rel);
       if (inner == null) { if (!L.optional) warn('thiếu file bộ phận: ' + rel); return; }
-      items.push({ id: L.id, z: zov[L.id] != null ? zov[L.id] : L.z, idx, inner, m: mats[L.bone], op: opac[L.id] != null ? opac[L.id] : L.opacity });
+      for (const c of L.covers || []) covered.add(c); // lớp này che hẳn lớp c (vd áo khoác che tay áo sơ mi) → bỏ c, khỏi lộ khe/đè sai thứ tự
+      items.push({ id: L.id, layer: true, z: zOf(L), idx, inner, m: mats[L.bone], op: opOf(L) });
     });
     (frame.show || []).forEach((s, k) => {
       const inner = readPart(s.file);
@@ -99,6 +113,7 @@ function loadRig(rigPath, partsDirOverride) {
       const local = mul(mul(T(s.x || 0, s.y || 0), R(s.r || 0)), S(s.s == null ? 1 : s.s, s.s == null ? 1 : s.s));
       items.push({ id, z: zov[id] != null ? zov[id] : (s.z == null ? 200 : s.z), idx: 1000 + k, inner, m: null, abs: mul(base, local), op: s.opacity });
     });
+    for (let k = items.length - 1; k >= 0; k--) if (items[k].layer && covered.has(items[k].id)) items.splice(k, 1);
     items.sort((a, b) => a.z - b.z || a.idx - b.idx);
     return items.map(it => {
       const m = it.abs || mul(G, it.m);

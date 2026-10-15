@@ -1,0 +1,16 @@
+{
+  "id": "outer_witch_cape",
+  "slot": "outer",
+  "name": "Áo choàng phù thủy nhỏ",
+  "replaces": [
+    "outer_torso.svg"
+  ],
+  "hides": [],
+  "keeps": [
+    "upper_arm_l",
+    "upper_arm_r",
+    "forearm_l",
+    "forearm_r"
+  ],
+  "notes": "Áo choàng tím đen ngắn ngang hông, cổ cao, dây buộc vàng có sao. Không tay áo riêng: tay body hiện nguyên."
+}

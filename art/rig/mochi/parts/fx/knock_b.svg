@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -40 80 80" width="80" height="80">
+<!-- knock_b: biến thể vệt chấn (gõ lần 2), nhỏ hơn và xoay nhẹ. -->
+<g stroke-linejoin="round" stroke-linecap="round" fill="none" transform="rotate(-10)">
+<path d="M6 -18 L14 -30 M12 -4 L28 -8 M12 8 L26 20 M2 24 L8 34" stroke="#1F2A44" stroke-width="3.5"/>
+<path d="M8 -12 Q18 0 8 12" stroke="#1F2A44" stroke-width="3"/>
+<path d="M17 -16 Q30 0 17 16" stroke="#5B86D8" stroke-width="3"/>
+<path d="M26 -26 Q44 0 26 26" stroke="#8FB4E8" stroke-width="2.5"/>
+<path d="M12 -26 Q24 -12 22 -4 M12 26 Q24 12 22 4" stroke="#1F2A44" stroke-width="2.5"/>
+</g>
+</svg>

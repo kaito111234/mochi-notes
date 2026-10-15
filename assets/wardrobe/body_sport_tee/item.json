@@ -1,0 +1,8 @@
+{
+  "id": "body_sport_tee",
+  "slot": "body",
+  "name": "Áo thể thao",
+  "replaces": ["torso.svg", "upper_arm_l.svg", "upper_arm_r.svg", "forearm_l.svg", "forearm_r.svg", "thigh_l.svg", "thigh_r.svg", "thigh_l.sit.svg", "thigh_r.sit.svg", "shin_l.svg", "shin_r.svg", "shin_l.sit.svg", "shin_r.sit.svg"],
+  "hides": ["skirt"],
+  "notes": "Áo phông trắng, cổ và tay ngắn đen, quần thể thao dài xám đậm có sọc trắng, giày thể thao trắng. Tay ngắn: cẳng tay trần có băng cổ tay trắng (che khớp với cổ tay áo của bàn tay gốc). Quần liền thân nên ẩn skirt."
+}

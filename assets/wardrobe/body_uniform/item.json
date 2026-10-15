@@ -1,0 +1,19 @@
+{
+  "id": "body_uniform",
+  "slot": "body",
+  "name": "Đồng phục đi học",
+  "replaces": [
+    "shin_l.sit.svg",
+    "shin_l.svg",
+    "shin_r.sit.svg",
+    "shin_r.svg",
+    "skirt.svg",
+    "thigh_l.sit.svg",
+    "thigh_l.svg",
+    "thigh_r.sit.svg",
+    "thigh_r.svg",
+    "torso.svg"
+  ],
+  "hides": [],
+  "notes": "Sơ mi trắng, cà vạt đỏ, váy xếp ly kẻ đen-đỏ dài ngang gối, tất trắng dài, giày búp bê đen. Tay áo sơ mi giữ nguyên bản gốc."
+}

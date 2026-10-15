@@ -72,7 +72,20 @@ test('ưu tiên câu khớp intent', () => {
   const lines = [L('g', 'due', 'chung {title}'), L('m', 'due', 'họp {title}', { cond: { intent: ['meet'] } })];
   for (let k = 0; k < 10; k++) assert.equal(D.pick(lines, 'due', { title: 't' }, { intent: 'meet' }, []).id, 'm');
   assert.equal(D.pick(lines, 'due', { title: 't' }, { intent: 'pay' }, []).id, 'g');
-  assert.equal(D.pick(lines, 'due', { title: 't' }, {}, [], () => 0.99).id, 'm'); // state không có intent: cond bị bỏ qua
+  // Intent nghiêm: state không có intent thì câu theo intent bị loại (không nhắc "uống thuốc" cho note thường).
+  for (let k = 0; k < 10; k++) assert.equal(D.pick(lines, 'due', { title: 't' }, {}, [], () => 0.99).id, 'g');
+  assert.equal(D.pick([lines[1]], 'due', { title: 't' }, {}, []), null);
+  assert.ok(!D.matches(lines[1], {}));
+  assert.ok(D.matches(lines[1], { intent: 'meet' }));
+  assert.ok(D.matches(L('x', 'due', 'x', { cond: { hour: [1, 2] } }), {})); // khoá khác vẫn bỏ qua khi state thiếu
+});
+
+test('event mới: due_again/knock cần {title}, expired_* tồn tại', () => {
+  for (const ev of ['due_again', 'knock', 'outfit', 'expired_done', 'expired_overdue', 'expired_checklist']) assert.ok(D.EVENTS.includes(ev), ev);
+  assert.ok(D.REMIND_EVENTS.includes('due_again') && D.REMIND_EVENTS.includes('knock'));
+  assert.ok(D.validate([L('a', 'due_again', 'lại nữa')]).some(e => e.includes('thiếu {title}')));
+  assert.ok(D.validate([L('b', 'knock', 'cốc cốc')]).some(e => e.includes('thiếu {title}')));
+  assert.deepEqual(D.validate([L('c', 'knock', 'cốc cốc {title}'), L('d', 'expired_done', 'vứt nè'), L('e', 'outfit', 'đẹp không')]), []);
 });
 
 test('face/anim/effects được trả về, thiếu thì undefined', () => {
@@ -95,7 +108,7 @@ test('validate bắt lỗi', () => {
     assert.ok(errs.some(e => e.includes(key)), 'thiếu lỗi: ' + key + '\n' + errs.join('\n'));
   }
   assert.deepEqual(D.validate([L('ok', 'due', 'Tới giờ {title}', { cond: { hour: [1, 2] } })]), []);
-  assert.equal(D.EVENTS.length, 31);
+  assert.equal(D.EVENTS.length, 44);
 });
 
 test('kho thoại assets/dialogue/vi.json hợp lệ', t => {
@@ -103,7 +116,65 @@ test('kho thoại assets/dialogue/vi.json hợp lệ', t => {
   if (!fs.existsSync(file)) return t.skip('chưa có vi.json');
   const lines = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.deepEqual(D.validate(lines), []);
-  for (const ev of D.EVENTS) {
+  // 6 event mới chưa bắt buộc có câu trong vi.json (phòng thoại sẽ bổ sung).
+  const NEW = ['due_again', 'knock', 'outfit', 'expired_done', 'expired_overdue', 'expired_checklist',
+    'capture', 'capture_many', 'checkin', 'quest_done', 'expire_ask', 'expire_keep', 'holiday'];
+  for (const ev of D.EVENTS.filter(e => !NEW.includes(e))) {
     assert.ok(lines.some(l => l.event === ev && !l.cond), 'event ' + ev + ' chưa có câu không cond');
   }
+});
+
+// ---- Đợt 3: cond date/lunar/item/rarity, ưu tiên nhóm ----
+const first = () => 0;
+test('cond.date: bao gồm hai đầu, vòng cuối năm, nghiêm khi thiếu state', () => {
+  const l = { id: 'x', event: 'holiday', text: 'a', cond: { date: ['12-30', '01-02'] } };
+  for (const d of ['12-30', '12-31', '01-01', '01-02']) assert.ok(D.matches(l, { date: d }), d);
+  for (const d of ['12-29', '01-03', '06-15']) assert.ok(!D.matches(l, { date: d }), d);
+  assert.ok(!D.matches(l, {}));
+  const m = { id: 'y', event: 'holiday', text: 'a', cond: { date: ['02-14', '02-14'] } };
+  assert.ok(D.matches(m, { date: '02-14' })); assert.ok(!D.matches(m, { date: '02-15' }));
+});
+test('cond.lunar tương tự, nghiêm', () => {
+  const l = { id: 'x', event: 'holiday', text: 'a', cond: { lunar: ['12-28', '01-03'] } };
+  assert.ok(D.matches(l, { lunar: '12-30' })); assert.ok(D.matches(l, { lunar: '01-01' }));
+  assert.ok(!D.matches(l, { lunar: '05-05' })); assert.ok(!D.matches(l, {}));
+});
+test('cond.item/rarity nghiêm, lọc theo danh sách', () => {
+  const l = { id: 'x', event: 'feed', text: 'a', cond: { item: ['f1', 'f2'] } };
+  assert.ok(D.matches(l, { item: 'f2' })); assert.ok(!D.matches(l, { item: 'f3' })); assert.ok(!D.matches(l, {}));
+  const r = { id: 'y', event: 'gacha_win', text: 'a', cond: { rarity: ['epic'] } };
+  assert.ok(D.matches(r, { rarity: 'epic' })); assert.ok(!D.matches(r, { rarity: 'rare' })); assert.ok(!D.matches(r, {}));
+});
+test('pick ưu tiên item > rarity/intent > chung, rơi nhóm kế khi chống lặp cạn', () => {
+  const lines = [
+    { id: 'gen', event: 'feed', text: 'g' },
+    { id: 'rar', event: 'feed', text: 'r', cond: { rarity: ['rare'] } },
+    { id: 'itm', event: 'feed', text: 'i', cond: { item: ['f1'] } }
+  ];
+  const st = { item: 'f1', rarity: 'rare' };
+  assert.equal(D.pick(lines, 'feed', {}, st, [], first).id, 'itm');
+  assert.equal(D.pick(lines, 'feed', {}, st, ['itm'], first).id, 'rar');
+  assert.equal(D.pick(lines, 'feed', {}, st, ['itm', 'rar'], first).id, 'gen');
+  assert.equal(D.pick(lines, 'feed', {}, {}, [], first).id, 'gen');
+  // Cạn hết: không kẹt, tránh câu cuối.
+  const only = [lines[2]];
+  assert.equal(D.pick(only, 'feed', {}, st, ['itm'], first).id, 'itm');
+});
+test('validate: khoá date/lunar/item/rarity', () => {
+  const ok = (cond, ev) => D.validate([{ id: 'a', event: ev || 'holiday', text: 'x', cond }]);
+  assert.deepEqual(ok({ date: ['12-30', '01-02'] }), []);
+  assert.deepEqual(ok({ lunar: ['01-01', '01-03'] }), []);
+  assert.deepEqual(ok({ item: ['a'], rarity: ['rare'] }, 'feed'), []);
+  assert.ok(ok({ date: ['1-1', '01-02'] }).length);
+  assert.ok(ok({ date: ['13-01', '01-02'] }).length);
+  assert.ok(ok({ lunar: ['01-01'] }).length);
+  assert.ok(ok({ item: [] }, 'feed').length);
+  assert.ok(ok({ rarity: 'rare' }, 'feed').length);
+  assert.ok(ok({ foo: [1] }).length);
+});
+test('event mới có trong EVENTS, không thuộc REMIND_EVENTS', () => {
+  for (const e of ['capture', 'capture_many', 'checkin', 'quest_done', 'expire_ask', 'expire_keep', 'holiday']) {
+    assert.ok(D.EVENTS.includes(e), e); assert.ok(!D.REMIND_EVENTS.includes(e), e);
+  }
+  assert.deepEqual(D.validate([{ id: 'c', event: 'capture', text: 'Ghi {title} nha' }]), []);
 });

@@ -1,0 +1,14 @@
+{
+  "id": "outer_puffer",
+  "slot": "outer",
+  "name": "Áo phao xanh",
+  "replaces": [
+    "outer_torso.svg",
+    "outer_upper_arm_l.svg",
+    "outer_upper_arm_r.svg",
+    "outer_forearm_l.svg",
+    "outer_forearm_r.svg"
+  ],
+  "hides": [],
+  "notes": "Áo phao xanh navy các múi phồng, cổ & cổ tay viền lông trắng, dài ngang đùi (y≈330), khoá kéo giữa. Che hẳn tay áo trong (covers)."
+}

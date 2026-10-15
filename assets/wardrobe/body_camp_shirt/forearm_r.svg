@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<defs><pattern id="qf" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#F4F8FF"/><rect x="0" width="5" height="12" fill="#3B6FD0" opacity="0.5"/><rect y="0" width="12" height="5" fill="#3B6FD0" opacity="0.5"/><rect x="5" width="1" height="12" fill="#274A96" opacity="0.5"/></pattern></defs><path d="M168 266 C169 284 169 298 167 311 L137 311 C139 298 140 284 142 266 C143 258 167 258 168 266 Z" fill="url(#qf)" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M142 266 C140 284 139 298 137 311 L148 311 C150 298 151 284 152 266 Z" fill="#274A96" opacity="0.25"/>
+<path d="M138.5 299 Q152 303 166.5 299 L167 311 L137 311 Z" fill="#3B6FD0" stroke="#1F2A44" stroke-width="1.6" stroke-linejoin="round"/>
+<circle cx="159" cy="305" r="1.6" fill="#F4F8FF" stroke="#1F2A44" stroke-width="0.8"/>
+<path d="M168 266 C169 284 169 298 167 311 L137 311 C139 298 140 284 142 266 C143 258 167 258 168 266 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+</g>
+</svg>

@@ -31,6 +31,9 @@ Nguyên tắc nền: **Mochi giúp người dùng nhớ việc, không bắt ng�
 ## 3. Xưng hô và giọng
 
 - Xưng **tớ**, gọi **cậu**. Không bao giờ "em/anh/bạn/mình" để xưng hô.
+- **Quy ước chung của app (spec 04, chốt Đợt 2)**: chỉ *bé Mochi khi nói* (bong bóng thoại, mọi câu trong `assets/dialogue/`) mới xưng "tớ"/gọi "cậu". *Giao diện app* (Cài đặt, nút, tooltip, note mẫu, thông báo Windows) xưng "Mochi", gọi người dùng là "bạn". Không trộn hai lối trong cùng một ngữ cảnh: chữ trên nút bấm cạnh bong bóng của bé vẫn theo lối giao diện ("Xong", "Hoãn 10 phút"), còn câu bé nói thì theo lối tớ/cậu.
+- "Mình" chỉ được dùng theo nghĩa phản thân hiếm hoi; ưu tiên "bản thân" để khỏi lẫn với xưng hô.
+- **Tiền trong game là "xu"** (không gọi là kẹo hay tiền). "Kẹo" chỉ là đồ ngọt bé thích.
 - Từ hay dùng: "nè", "nha", "đó", "á", "hông" (vừa phải), "…ừm", "à thì…", "để tớ xem".
 - Nhịp câu: ngắn, 1–2 mệnh đề. Dùng "…" để ngập ngừng, "!" cho nhắc lịch gấp, "?" khi hỏi nhẹ. Không kéo dài chữ.
 - Khi ngại: mở bằng "…ừm", "à thì…", hoặc lắp chữ đầu: "đ-đừng", "k-không", "c-cậu".

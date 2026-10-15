@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 48 48" width="48" height="48">
+<!-- clean_ball: cục giấy vo tròn (nhiều mặt gấp), đường kính ~32, tâm (0,0). -->
+<g stroke="#1F2A44" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-3 -16 L8 -14 L15 -6 L16 5 L10 14 L-2 16 L-12 12 L-16 2 L-14 -9 Z" fill="#FFE58A" stroke-width="3"/>
+<path d="M-3 -16 L8 -14 L2 -3 L-7 -5 Z" fill="#FFF3B0" stroke="none"/>
+<path d="M15 -6 L16 5 L10 14 L2 -3 L8 -14 Z" fill="#F2C94C" stroke="none"/>
+<path d="M-16 2 L-12 12 L-2 16 L-1 6 L-7 -5 L-14 -9 Z" fill="#F7D66B" stroke="none"/>
+<path d="M-7 -5 L2 -3 L-1 6 L10 14 M2 -3 L15 -6 M-7 -5 L-14 -9 M-1 6 L-12 12" fill="none" stroke-width="1.7"/>
+<path d="M-6 -11 L-2 -9 M7 3 L11 2 M-11 -1 L-8 2" fill="none" stroke="#D9A93A" stroke-width="1.8"/>
+<path d="M-3 -16 L8 -14 L15 -6 L16 5 L10 14 L-2 16 L-12 12 L-16 2 L-14 -9 Z" fill="none" stroke-width="3"/>
+</g>
+</svg>

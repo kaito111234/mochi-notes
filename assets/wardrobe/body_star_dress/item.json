@@ -1,0 +1,23 @@
+{
+  "id": "body_star_dress",
+  "slot": "body",
+  "name": "Váy đêm đầy sao",
+  "replaces": [
+    "forearm_l.svg",
+    "forearm_r.svg",
+    "shin_l.sit.svg",
+    "shin_l.svg",
+    "shin_r.sit.svg",
+    "shin_r.svg",
+    "skirt.svg",
+    "thigh_l.sit.svg",
+    "thigh_l.svg",
+    "thigh_r.sit.svg",
+    "thigh_r.svg",
+    "torso.svg",
+    "upper_arm_l.svg",
+    "upper_arm_r.svg"
+  ],
+  "hides": [],
+  "notes": "Váy liền xanh đêm có sao vàng/bạc, cổ ren trắng, gấu ren, tay dài cổ tay ren, tất trắng, giày búp bê. Kín cổ, gấu dài hơn váy gốc (y≈328)."
+}

@@ -175,9 +175,10 @@ function init(ctx) {
       const upcoming = remindersOf(note).filter(r => !r.done && r.due > now).sort((a, b) => a.due - b.due)
         .map(r => ({ title: r.title, due: r.due }));
       const title = S.noteTitle(note.text) || 'ghi chú';
-      const def = L.buildReply(title, upcoming, now);
+      const past = remindersOf(note).filter(r => r.past && !r.done).map(r => ({ title: r.title, due: r.due }));
+      const def = !upcoming.length && past.length ? L.buildPastReply(title, past, now) : L.buildReply(title, upcoming, now);
       // Có nhắc: luôn đọc lại giờ cụ thể (câu persona chung chung dễ làm mất thông tin giờ).
-      const reply = upcoming.length ? def : pickLine({ title, time: '', count: 0 }, def);
+      const reply = (upcoming.length || past.length) ? def : pickLine({ title, time: '', count: 0 }, def);
       const ins = understandText(note.text, now);
       return { ok: true, note, insight: ins ? L.buildView(ins, note, now) : null, reply };
     } catch (e) { console.error('[notes] quickCapture', e); return { ok: false, message: 'Không ghi được note' }; }

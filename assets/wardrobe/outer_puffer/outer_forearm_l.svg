@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<path d="M172 268 C174 286 174 298 171 311 L133 311 C134 298 137 286 139 268 C140 256 171 256 172 268 Z" fill="#2A4380" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M139 268 C137 286 134 298 133 311 L148 311 C149 298 152 286 153 268 Z" fill="#1D3162"/>
+<path d="M142 270 Q154 275 170 270 L171 282 Q154 288 141 282 Z" fill="#4466B0" opacity="0.5"/>
+<path d="M140 285 Q154 291 172 285" stroke="#14214A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+<path d="M132 296 Q152 303 172 296 L172 311 Q168 318 162 313 Q157 319 151 314 Q145 319 140 313 Q134 318 132 311 Z" fill="#FBFBFD" stroke="#1F2A44" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M134 306 Q152 312 171 306 L172 311 Q168 318 162 313 Q157 319 151 314 Q145 319 140 313 Q134 318 132 311 Z" fill="#D9DFEA" opacity="0.8"/>
+<path d="M172 268 C174 286 174 298 171 311 L133 311 C134 298 137 286 139 268 C140 256 171 256 172 268 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M132 296 Q152 303 172 296 L172 311 Q168 318 162 313 Q157 319 151 314 Q145 319 140 313 Q134 318 132 311 Z" fill="none" stroke="#1F2A44" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

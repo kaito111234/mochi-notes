@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -48 100 96" width="100" height="96">
+<!-- clean_note: tờ note vàng to, tâm tại (0,0), 84x80, góc dưới phải gập. Đặt bằng show x,y. -->
+<g stroke="#1F2A44" stroke-linejoin="round" stroke-linecap="round">
+<path d="M-42 -40 L42 -40 L42 23 L25 40 L-42 40 Z" fill="#FFE58A" stroke-width="3"/>
+<path d="M-42 -40 L42 -40 L42 -29 L-42 -29 Z" fill="#F7D66B" stroke="none"/>
+<path d="M33 -29 L42 -29 L42 23 L33 32 Z" fill="#F2C94C" stroke="none" opacity="0.7"/>
+<path d="M-42 -40 L42 -40 L42 23 L25 40 L-42 40 Z" fill="none" stroke-width="3"/>
+<path d="M42 23 L27 25 L25 40 Z" fill="#F2C94C" stroke-width="2"/>
+<path d="M-30 -15 L28 -15 M-30 -2 L18 -2 M-30 11 L22 11 M-30 24 L2 24" fill="none" stroke="#D9A93A" stroke-width="2.6"/>
+<path d="M-36 -35 L-20 -35" fill="none" stroke="#FFF6C8" stroke-width="2.5" opacity="0.9"/>
+</g>
+</svg>

@@ -63,18 +63,24 @@
   const PK = { 'sáng': 'sang', 'trưa': 'trua', 'chiều': 'chieu', 'tối': 'toi', 'đêm': 'dem', khuya: 'khuya' };
   const PERIOD_DEFAULT = { sang: [8, 0], trua: [12, 0], chieu: [15, 0], toi: [20, 0], dem: [22, 0], khuya: [23, 0] };
   const CLOCK = /(?<![a-z0-9\/.]|\d,|\d:)(\d{1,2})\s*(?:(?:h|g)(?![a-z])(\d{2}(?!\d))?|gio(?![a-z])(?:\s*(\d{2})(?!\d))?|:(\d{2})(?!\d))/g;
-  const REL = /(?<![a-z0-9])(\d+)\s*(giay|phut|ph|p|tieng|gio|h|ngay|tuan)\s*(nua|sau|toi)(?![a-z])/;
+  const REL = /(?<![a-z0-9])(?<!thu\s*)(\d+)\s*(giay|phut|ph|p|tieng|gio|h|ngay|tuan)\s*(nua|sau|toi)(?![a-z])/;
+  const SPECIAL = /(?<![a-z])nua\s*(?:tieng|gio)\s*nua|(?<![a-z0-9.,:\/])\d{1,2}\s*(?:h|g|gio)\s*\d{2}\s*nua|(?<![a-z])trong\s*\d+\s*(?:giay|phut|ph|p)|(?<![a-z])nua\s*dem(?![a-z])|(?<![a-z0-9.,:\/])\d{1,2}\.\d{2}(?![\d]|[.,]\d)|(?<![a-z0-9.,:\/\-])\d{1,2}\s*-\s*\d{1,2}(?:\s*-\s*\d{2,4})?\s+(?:luc\s+|vao\s+)?\d{1,2}\s*(?:h|g|gio|:)/;
+  const SLASH = /(?<![\d\/.])\d{1,2}\s*\/\s*\d{1,2}(?![\d\/])/;
   const HOURLY = /(?<![a-z])moi\s*(?:\d+\s*)?(?:tieng|gio)(?![a-z])/;
 
+  /* từ thường chứa chữ chỉ buổi: "tối ưu", "tối đa", "sáng tạo", "chiều dài/rộng/cao/sâu" */
+  const PER_EXCL = { toi: /^\s+(?:uu|da|thieu)(?![a-z])/, sang: /^\s+(?:tao|kien|loc)(?![a-z])/, chieu: /^\s+(?:cao|dai|rong|sau)(?![a-z])/ };
+  const perExcluded = (key, f, b) => !!(PER_EXCL[key] && PER_EXCL[key].test(f.slice(b, b + 12)));
   function findPeriods(lo, f, asc) {
     const res = [];
     let m;
     PER_ACC.lastIndex = 0;
-    while ((m = PER_ACC.exec(lo))) res.push({ key: PK[m[1]], a: m.index, b: m.index + m[0].length });
+    while ((m = PER_ACC.exec(lo))) { if (!perExcluded(PK[m[1]], f, m.index + m[0].length)) res.push({ key: PK[m[1]], a: m.index, b: m.index + m[0].length }); }
     if (asc) {
       PER_ASC.lastIndex = 0;
       while ((m = PER_ASC.exec(f))) {
         const a = m.index, pre = f.slice(Math.max(0, a - 12), a);
+        if (perExcluded(m[1], f, a + m[0].length)) continue;
         if (m[1] === 'toi' && /(?:nhac|bao|goi|cho|giup|de|nho|nghe|bao) $/.test(pre)) continue;
         if (m[1] === 'dem' && !/\d\s*(?:h|g|gio)(?:\d{2})?\s*$/.test(pre)) continue;
         res.push({ key: m[1], a, b: a + m[0].length });
@@ -98,6 +104,7 @@
     }
     if (h === null) {
       if (!key) return null;
+      if (key === 'dem' && !/(?<![a-z])(?:nay|mai)(?![a-z])/.test(f)) return null; // "đêm" một mình (2 đêm, thức đêm, đêm qua) không phải giờ
       return { h: PERIOD_DEFAULT[key][0], mi: PERIOD_DEFAULT[key][1], per: key, clock: false };
     }
     if (key === 'chieu' || key === 'toi') { if (h < 12) h += 12; }
@@ -197,7 +204,7 @@
   function allSpans(clause, withRecur) {
     const sp = ownSpans(clause, withRecur);
     const P = deps().P;
-    if (!sp.length && P && typeof P.whenSpans === 'function') { // bản của parse chỉ dùng khi cụm của mình không thấy gì (đỡ tốn)
+    if (P && typeof P.whenSpans === 'function' && (!sp.length || SPECIAL.test(fold1(clause)))) { // gộp thêm cụm parse.js nhận ra (nửa đêm, 9.30, 20-10 ...)
       const r = tryDo(() => P.whenSpans(clause));
       if (Array.isArray(r)) for (const s of r) sp.push(s);
     }
@@ -323,12 +330,28 @@
     const { now, nowD, header } = ctx;
     const lo = lower1(clause), norm = nz(clause), f = fold1(norm);
     const wake = isWake(lo, f);
+    if (/(?<![a-z])mai\s*mot(?![a-z])/.test(f)) return null; // "mai mốt": hạn mềm, không có giờ
+    if (SLASH.test(f)) { // a/b: để parse.js phân xử (30/2 vô lý, 3/4 là phân số...)
+      const P1 = deps().P;
+      const w1 = P1 && typeof P1.parseWhen === 'function' ? tryDo(() => P1.parseWhen(norm, nowD)) : null;
+      return w1 && w1.timed && w1.date && Number.isFinite(w1.date.getTime()) ? { due: w1.date.getTime(), wake } : null;
+    }
+    if (SPECIAL.test(f)) { // các cách nói mà bộ nhận dạng của parse.js hiểu (nửa tiếng nữa, 1h30 nữa, trong 5 phút, nửa đêm, 9.30, 20-10 9h)
+      const P0 = deps().P;
+      const w0 = P0 && typeof P0.parseWhen === 'function' ? tryDo(() => P0.parseWhen(norm, nowD)) : null;
+      if (w0 && w0.timed && w0.date && Number.isFinite(w0.date.getTime())) return { due: w0.date.getTime(), wake };
+    }
     const m = REL.exec(f);
     if (m) {
       const accTui = lo.slice(m.index + m[0].length - 3, m.index + m[0].length) === 'tới';
       const okToi = m[3] !== 'toi' || accTui || (!hasNonAscii(lo) && !/^(?:h|gio)$/.test(m[2]));
       if (okToi) {
-        if (!/^(?:giay|phut|ph|p|tieng|gio|h)$/.test(m[2])) return null; // "3 ngày nữa": không có giờ
+        if (!/^(?:giay|phut|ph|p|tieng|gio|h)$/.test(m[2])) { // "3 ngày nữa": không có giờ trừ khi kèm giờ ("3 ngày nữa 9h")
+          const T0 = ownTime(clause);
+          if (!T0) return null;
+          const dd = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate() + (+m[1]) * (m[2] === 'tuan' ? 7 : 1), T0.h, T0.mi, 0, 0);
+          return { due: dd.getTime(), wake };
+        }
         const k = { giay: 1e3, phut: MIN, ph: MIN, p: MIN, tieng: HOUR, gio: HOUR, h: HOUR }[m[2]];
         return { due: now + (+m[1]) * k, wake };
       }
@@ -346,7 +369,7 @@
       let t = today.getTime();
       if (t <= now) {
         if (wake && !T.per) { const d2 = new Date(today); d2.setDate(d2.getDate() + 1); t = d2.getTime(); }
-        else if (!T.per && T.h < 12 && t + 12 * HOUR > now) t += 12 * HOUR;
+        else if (!T.per && T.h > 0 && T.h < 12 && t + 12 * HOUR > now) t += 12 * HOUR;
         else { const d2 = new Date(today); d2.setDate(d2.getDate() + 1); t = d2.getTime(); }
       }
       return { due: t, wake };
@@ -405,7 +428,8 @@
     if (typeof text !== 'string' || !text.trim()) return out;
     const now = Number.isFinite(nowIn) ? nowIn : Date.now();
     const nowD = new Date(now);
-    const { R, E } = deps();
+    const { R, E, P: PP } = deps();
+    const NN = PP && typeof PP.normNum === 'function' ? PP.normNum : null;
     const src = (text.length > MAX_TEXT ? text.slice(0, MAX_TEXT) : text).normalize('NFC');
     const lines = src.split(/\r?\n/).slice(0, MAX_LINES);
 
@@ -434,9 +458,10 @@
     for (let i = 0; i < lines.length && items.length < MAX_ITEMS; i++) {
       const ln = lines[i];
       const mk = markerOf(ln);
-      const body = mk ? ln.slice(mk.len) : ln;
-      if (!body.trim()) continue;
-      if (!titleSet) { out.title = clip(body.trim().replace(/[\s:]+$/, '') || body.trim(), 80); titleSet = true; }
+      const body0 = mk ? ln.slice(mk.len) : ln;
+      if (!body0.trim()) continue;
+      const body = NN ? (tryDo(() => NN(body0)) || body0) : body0; // số bằng chữ -> chữ số (cùng độ dài) để nhận ra giờ
+      if (!titleSet) { out.title = clip(body0.trim().replace(/[\s:]+$/, '') || body.trim(), 80); titleSet = true; }
       if (mk) { clItems.push({ line: i, text: body.trim(), done: mk.done }); if (mk.box) hasBox = true; }
       const hd = headerDate(body, nowD);
       if (hd) { header = hd; continue; }

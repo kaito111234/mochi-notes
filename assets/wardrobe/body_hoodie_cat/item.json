@@ -1,0 +1,8 @@
+{
+  "id": "body_hoodie_cat",
+  "slot": "body",
+  "name": "Áo hoodie tai mèo",
+  "replaces": ["torso.svg", "upper_arm_l.svg", "upper_arm_r.svg", "forearm_l.svg", "forearm_r.svg"],
+  "hides": [],
+  "notes": "Hoodie xám xanh nhạt dài tay, mũ trùm nằm sau cổ có hai tai mèo nhỏ, túi kangaroo, hình mèo trước ngực. Dùng váy/tất/bốt gốc. Mặc được cùng outer_black_white (tay áo hoodie nằm gọn trong tay áo khoác)."
+}

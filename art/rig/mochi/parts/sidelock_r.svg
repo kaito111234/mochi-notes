@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-<g transform="matrix(-1 0 0 .97 400 5)"><path id="sidelock_r-mass" d="M150 166C130 186 118 216 124 246C128 270 118 290 120 314C134 292 150 268 148 246C146 232 140 226 138 214C132 200 136 184 150 166Z" fill="#A9C4EE" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M124 256C116 274 110 288 106 304C118 294 126 282 130 268Z" fill="#A9C4EE" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M140 214C146 230 150 244 146 258C142 274 130 296 122 312C136 292 150 268 148 246C146 232 140 226 138 214Z" fill="#7F9FD6" opacity=".6"/>
-<path d="M144 180C132 200 128 222 132 244 M136 232C140 252 136 276 128 300" fill="none" stroke="#D5E4FA" stroke-width="2.2" stroke-linecap="round"/>
-<path d="M140 190C130 214 130 236 134 258" fill="none" stroke="#6F8FC8" stroke-width="1.3" stroke-linecap="round"/>
-</g>
+
+<path id="sidelock_r-mass" d="M256 164C274 180 286 206 281 236C278 256 286 274 284 298C279 292 274 288 270 286C272 294 272 304 270 312C258 298 250 280 252 262C253 246 260 236 262 222C266 206 262 184 256 164Z" fill="#A9C4EE" stroke="#1F2A44" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M262 222C256 238 252 252 253 266C254 282 262 298 270 312C260 296 250 280 252 262C253 246 260 236 262 222Z" fill="#7F9FD6" opacity=".55"/>
+<path d="M258 180C268 198 272 218 270 240 M272 252C274 264 276 274 276 284" fill="none" stroke="#EEF5FF" stroke-width="2" stroke-linecap="round"/>
+<path d="M260 194C268 214 270 238 266 258" fill="none" stroke="#5F82C4" stroke-width="1.1" stroke-linecap="round"/>
 </svg>

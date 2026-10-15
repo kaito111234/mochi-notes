@@ -9,7 +9,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   sound: true,
   glass: true,
   startup: false,
-  allHidden: false
+  allHidden: false,
+  noteTransparent: false
 });
 const COLORS = ['yellow', 'green', 'pink', 'purple', 'blue', 'gray', 'charcoal'];
 const SAVE_DELAY = 300;
@@ -36,6 +37,7 @@ function normalizeReminder(r) {
     done: !!r.done
   };
   if (rep) out.repeat = rep;
+  for (const k of Object.keys(r)) if (!(k in out) && k !== 'repeat' && k !== '__proto__' && k !== 'constructor' && k !== 'prototype') out[k] = r[k];
   return out;
 }
 
@@ -59,7 +61,10 @@ function normalizeNote(n) {
   if (Array.isArray(n.remindMuted)) {
     for (const k of n.remindMuted) if (typeof k === 'string' && k && !remindMuted.includes(k)) remindMuted.push(k);
   }
-  return {
+  const NOTE_KNOWN = ['id', 'html', 'text', 'color', 'bounds', 'visible', 'alwaysOnTop', 'reminder', 'reminders', 'remindMuted', 'createdAt', 'updatedAt'];
+  const extra = {};
+  for (const k of Object.keys(n)) if (!NOTE_KNOWN.includes(k) && k !== '__proto__' && k !== 'constructor' && k !== 'prototype') extra[k] = n[k];   // giữ trường lạ (BUG-031)
+  return Object.assign(extra, {
     id: n.id,
     html: typeof n.html === 'string' ? n.html : '',
     text: typeof n.text === 'string' ? n.text : '',
@@ -77,7 +82,7 @@ function normalizeNote(n) {
     remindMuted: remindMuted.slice(-50),
     createdAt: isNum(n.createdAt) ? n.createdAt : now,
     updatedAt: isNum(n.updatedAt) ? n.updatedAt : now
-  };
+  });
 }
 
 function createStore(dir) {

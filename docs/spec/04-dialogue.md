@@ -44,3 +44,10 @@ Xưng "tớ", gọi "cậu". Ngại ngùng, dịu dàng, hơi bướng, thích m
 - **Giao diện app** (Cài đặt, nút, tooltip, note mẫu, thông báo hệ thống): app xưng "Mochi", gọi người dùng là "bạn".
 - **Bé Mochi khi nói** (bong bóng thoại, câu của persona): xưng "tớ", gọi người dùng là "cậu".
 - Không trộn "mình/bạn/cậu/tớ" trong cùng một ngữ cảnh.
+
+## Bổ sung (điều hành chốt Đợt 3)
+- Event mới của persona: `due_again`, `knock`, `outfit`, `expired_done`, `expired_overdue`, `expired_checklist`, `expire_ask`, `expire_keep`, `capture`, `capture_many`, `checkin`, `quest_done`, `holiday`.
+- Khoá `cond` mới: `date`, `lunar`, `item`, `rarity` (nghiêm như `intent`: có khoá mà không khớp thì loại).
+- Thứ tự ưu tiên: câu khớp `item` > khớp `rarity`/`intent` > câu chung.
+- `{count}` của `reward` là số xu (không phải "kẹo"); giao diện game gọi tiền là "xu".
+- Chạy test riêng: `npm run test:persona`.

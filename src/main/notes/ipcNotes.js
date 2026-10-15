@@ -11,10 +11,15 @@ function init(ctx) {
   function applySettings(patch) {
     const prev = Object.assign({}, settings());
     const s = settings();
-    for (const k of Object.keys(DEFAULT_SETTINGS)) if (typeof patch[k] === 'boolean') s[k] = patch[k];
+    for (const k of Object.keys(DEFAULT_SETTINGS).concat(['noteTransparent'])) if (typeof patch[k] === 'boolean') s[k] = patch[k];   // noteTransparent: khoá của phòng notes (thử nghiệm, mặc định tắt)
     ctx.store.save();
     if (s.startup !== prev.startup) {
       try { app.setLoginItemSettings({ openAtLogin: !!s.startup }); } catch (_) { /* bỏ qua */ }
+    }
+    if (!!s.noteTransparent !== !!prev.noteTransparent) {   // dựng lại cửa sổ note theo kiểu mới
+      const ids = Array.from(noteWins.keys());
+      for (const id of ids) ctx.notes.closeNoteWin(id);
+      for (const id of ids) ctx.notes.openNote(id, { focus: false });
     }
     if (s.glass !== prev.glass) {
       const ids = Array.from(noteWins.keys());

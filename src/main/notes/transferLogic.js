@@ -123,6 +123,11 @@ function sanitizeHtml(html) {
       out += '<' + t.name + (bg ? ' style="background-color: ' + bg + '"' : '') + '>';
       continue;
     }
+    if (t.name === 'div' || t.name === 'li') {   // ô tick checklist của paper: chỉ giữ data-ck="0|1"
+      const ck = (attr(t.attrs, 'data-ck') || '').trim();
+      out += '<' + t.name + (ck === '0' || ck === '1' ? ' data-ck="' + ck + '"' : '') + '>';
+      continue;
+    }
     out += t.name === 'br' ? '<br>' : '<' + t.name + '>';
   }
   return out;

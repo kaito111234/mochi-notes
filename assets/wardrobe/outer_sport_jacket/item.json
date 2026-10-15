@@ -1,0 +1,8 @@
+{
+  "id": "outer_sport_jacket",
+  "slot": "outer",
+  "name": "Áo khoác thể thao",
+  "replaces": ["outer_torso.svg", "outer_upper_arm_l.svg", "outer_upper_arm_r.svg", "outer_forearm_l.svg", "outer_forearm_r.svg"],
+  "hides": [],
+  "notes": "Áo khoác thể thao đen-trắng, điểm xanh nhạt, dài tay, mở khoá ở giữa (khoá kéo + khoá kéo nhỏ ở gấu áo), viền gấu và bo cổ tay trắng-xanh nhạt. Che hẳn tay áo trong."
+}

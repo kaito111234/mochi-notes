@@ -1,14 +1,21 @@
 /* Mochi Notes — bộ chọn thoại (spec 04). Thuần JS, dùng chung main + test (require) và renderer (global MochiDialogue). */
 (function (root) {
-  // 31 event theo spec 04.
+  // 31 event theo spec 04 + 6 event Đợt 2B/3 (due_again, knock, outfit, expired_*).
   const EVENTS = ['click', 'pat_head', 'pat_body', 'lift', 'drop', 'idle', 'sleepy', 'wake', 'startup', 'shutdown',
     'morning', 'noon', 'evening', 'late_night', 'pre', 'due', 'done', 'done_late', 'snooze', 'nag', 'alarm',
-    'alarm_stop', 'alarm_snooze', 'memo', 'reward', 'levelup', 'feed', 'hungry', 'gacha_win', 'gacha_dup', 'note_created'];
-  const REMIND_EVENTS = ['pre', 'due', 'nag', 'alarm', 'memo', 'snooze', 'alarm_snooze'];
-  const NEED_TITLE = ['pre', 'due', 'nag', 'snooze', 'memo'];
+    'alarm_stop', 'alarm_snooze', 'memo', 'reward', 'levelup', 'feed', 'hungry', 'gacha_win', 'gacha_dup', 'note_created',
+    'due_again', 'knock', 'outfit', 'expired_done', 'expired_overdue', 'expired_checklist',
+    // Đợt 3: ghi nhanh, điểm danh, nhiệm vụ, hỏi trước khi dọn note, lễ/mùa.
+    'capture', 'capture_many', 'checkin', 'quest_done', 'expire_ask', 'expire_keep', 'holiday'];
+  const REMIND_EVENTS = ['pre', 'due', 'nag', 'alarm', 'memo', 'snooze', 'alarm_snooze', 'due_again', 'knock'];
+  const NEED_TITLE = ['pre', 'due', 'nag', 'snooze', 'memo', 'due_again', 'knock'];
   const NEED_LABEL = ['alarm', 'alarm_snooze'];
   const RANGE_KEYS = ['hour', 'energy', 'mood', 'level', 'overdue'];
   const LIST_KEYS = ['mode', 'intent', 'weekday'];
+  // Khoá NGHIÊM: câu có khoá này mà state không có giá trị thì loại (xem matches).
+  const DATE_KEYS = ['date', 'lunar'];            // ["MM-DD","MM-DD"]
+  const ID_KEYS = ['item', 'rarity'];             // danh sách id
+  const MD_RE = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
   const VAR_RE = /\{([a-z]+)\}/g;
 
   const has = v => v !== undefined && v !== null;
@@ -26,7 +33,7 @@
     return out;
   }
 
-  /** Câu có khớp state không (khoá state không có thì bỏ qua). */
+  /** Câu có khớp state không (khoá state không có thì bỏ qua, riêng intent thì nghiêm). */
   function matches(line, state) {
     const cond = line && line.cond;
     state = state || {};
@@ -38,8 +45,26 @@
       if (!(state[k] >= r[0] && state[k] <= r[1])) return false;
     }
     for (const k of LIST_KEYS) {
-      if (!has(cond[k]) || !has(state[k])) continue;
+      if (!has(cond[k])) continue;
+      // Intent nghiêm: câu theo intent chỉ dành cho note có intent đó; state không có intent (note thường)
+      // thì loại, tránh câu kiểu "nhắc uống thuốc" cho một note bình thường.
+      if (k === 'intent' && !has(state[k])) return false;
+      if (!has(state[k])) continue;
       if (!Array.isArray(cond[k]) || !cond[k].includes(state[k])) return false;
+    }
+    // Các khoá date/lunar/item/rarity đều NGHIÊM như intent: câu "Tết", "món bánh", "hiếm" mà thiếu dữ liệu
+    // (không phải dịp, không có món) thì không được rơi xuống nói chung chung ở ngày thường.
+    for (const k of DATE_KEYS) {
+      if (!has(cond[k])) continue;
+      const r = cond[k], v = state[k];
+      if (!Array.isArray(r) || r.length !== 2 || !has(v)) return false;
+      // So chuỗi "MM-DD"; từ > đến nghĩa là vòng qua cuối năm. Âm lịch: tháng nhuận coi như tháng thường.
+      const ok = r[0] <= r[1] ? (v >= r[0] && v <= r[1]) : (v >= r[0] || v <= r[1]);
+      if (!ok) return false;
+    }
+    for (const k of ID_KEYS) {
+      if (!has(cond[k])) continue;
+      if (!has(state[k]) || !Array.isArray(cond[k]) || !cond[k].includes(state[k])) return false;
     }
     return true;
   }
@@ -56,18 +81,28 @@
     let cands = lines.filter(l => l && l.event === event && weightOf(l) > 0 && matches(l, state)
       && varsOf(l.text).every(k => !blank(vars[k])));
     if (!cands.length) return null;
-    // Ưu tiên câu cụ thể theo intent.
-    if (has(state.intent)) {
-      const spec = cands.filter(l => l.cond && Array.isArray(l.cond.intent) && l.cond.intent.includes(state.intent));
-      if (spec.length) cands = spec;
-    }
-    // Chống lặp: bỏ 5 id gần nhất; cạn thì cho lặp nhưng tránh câu cuối.
+    // Ưu tiên tuyệt đối theo nhóm: cond.item > cond.rarity/cond.intent > câu khác.
+    // (matches đã loại câu không khớp nên câu có cond.item/rarity/intent ở đây đều khớp state.)
+    const tiers = [
+      cands.filter(l => l.cond && has(l.cond.item)),
+      cands.filter(l => l.cond && !has(l.cond.item) && (has(l.cond.rarity) || has(l.cond.intent))),
+      cands.filter(l => !(l.cond && (has(l.cond.item) || has(l.cond.rarity) || has(l.cond.intent))))
+    ];
+    // Chống lặp: bỏ 5 id gần nhất; nhóm ưu tiên hết câu do chống lặp thì rơi xuống nhóm kế.
     const last5 = new Set(recent.slice(-5));
-    let pool = cands.filter(l => !last5.has(l.id));
-    if (!pool.length) {
+    let pool = null;
+    for (const t of tiers) {
+      const p = t.filter(l => !last5.has(l.id));
+      if (p.length) { pool = p; break; }
+    }
+    if (!pool) {
+      // Cạn hết: cho lặp nhưng tránh câu cuối; vẫn theo thứ tự nhóm ưu tiên.
       const lastId = recent[recent.length - 1];
-      pool = cands.filter(l => l.id !== lastId);
-      if (!pool.length) pool = cands;
+      for (const t of tiers) {
+        const p = t.filter(l => l.id !== lastId);
+        if (p.length) { pool = p; break; }
+      }
+      if (!pool) pool = tiers.find(t => t.length) || cands;
     }
     const total = pool.reduce((s, l) => s + weightOf(l), 0);
     let r = rng() * total, chosen = pool[pool.length - 1];
@@ -101,6 +136,10 @@
             if (!Array.isArray(v) || v.length !== 2 || !v.every(Number.isFinite) || v[0] > v[1]) e('khoảng sai ở cond.' + k);
           } else if (LIST_KEYS.includes(k)) {
             if (!Array.isArray(v) || !v.length) e('danh sách sai ở cond.' + k);
+          } else if (DATE_KEYS.includes(k)) {
+            if (!Array.isArray(v) || v.length !== 2 || !v.every(x => typeof x === 'string' && MD_RE.test(x))) e('ngày sai ở cond.' + k + ' (cần ["MM-DD","MM-DD"])');
+          } else if (ID_KEYS.includes(k)) {
+            if (!Array.isArray(v) || !v.length || !v.every(x => typeof x === 'string' && x)) e('danh sách sai ở cond.' + k);
           } else e('cond khoá lạ: ' + k);
         }
       }

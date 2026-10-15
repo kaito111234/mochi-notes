@@ -282,3 +282,60 @@ test('lên level phát game:levelup', () => {
   s.bus.emit('reminder:done', { noteId: 'a' });
   assert.deepEqual(s.ev['game:levelup'], [{ level: 2 }]);
 });
+
+// ---- Đợt 2: nhiều nhắc / game:fed / ctx.game.setEnabled ----
+test('hai nhắc r1,r2 cùng note: mỗi cái thưởng 1 lần', () => {
+  const s = setup();
+  s.notes.a = { id: 'a', createdAt: T0 - 5 * MIN, reminder: { id: 'r1', due: 100 },
+    reminders: [{ id: 'r1', due: 100 }, { id: 'r2', due: 200 }] };
+  s.bus.emit('reminder:done', { noteId: 'a', reminderId: 'r1', onTime: true });
+  assert.equal(s.game.box.counters.done, 1);
+  s.bus.emit('reminder:done', { noteId: 'a', reminderId: 'r2', onTime: true });
+  assert.equal(s.game.box.counters.done, 2);
+  s.bus.emit('reminder:done', { noteId: 'a', reminderId: 'r1', onTime: true });
+  assert.equal(s.game.box.counters.done, 2);
+  assert.ok(s.game.box.rewarded['done:a:r1:100']);
+  assert.ok(s.game.box.rewarded['done:a:r2:200']);
+});
+
+test('thiếu reminderId: khoá cũ done:<noteId>:<due>', () => {
+  const s = setup();
+  s.notes.a = { id: 'a', createdAt: T0 - 5 * MIN, reminder: { due: 7 } };
+  s.bus.emit('reminder:done', { noteId: 'a', onTime: true });
+  s.bus.emit('reminder:done', { noteId: 'a', onTime: true });
+  assert.equal(s.game.box.counters.done, 1);
+  assert.ok(s.game.box.rewarded['done:a:7']);
+});
+
+test('note lặp: due đổi thì thưởng lần mới', () => {
+  const s = setup();
+  s.notes.a = { id: 'a', createdAt: T0 - 5 * MIN, reminder: { id: 'r1', due: 100 }, reminders: [{ id: 'r1', due: 100 }] };
+  s.bus.emit('reminder:done', { noteId: 'a', reminderId: 'r1', onTime: true });
+  s.notes.a.reminder = { id: 'r1', due: 200 }; s.notes.a.reminders = [{ id: 'r1', due: 200 }];
+  s.bus.emit('reminder:done', { noteId: 'a', reminderId: 'r1', onTime: true });
+  assert.equal(s.game.box.counters.done, 2);
+});
+
+test('reminderId rác không ném lỗi', () => {
+  const s = setup();
+  s.notes.a = { id: 'a', createdAt: T0 - 5 * MIN, reminder: { due: 1 }, reminders: [{ id: 'r1', due: 1 }] };
+  for (const bad of [5, 'x'.repeat(1000), { a: 1 }, null, [], true]) {
+    assert.doesNotThrow(() => s.bus.emit('reminder:done', { noteId: 'a', reminderId: bad, onTime: true }));
+  }
+  assert.equal(s.game.box.counters.done, 1);   // đều rơi về khoá cũ -> chỉ 1 lần
+});
+
+test('feed phát game:fed; tắt game hoặc thất bại thì không phát', () => {
+  const s = setup();
+  const fed = [];
+  s.bus.on('game:fed', p => fed.push(p));
+  const food = loadCatalog().foods[0];
+  s.game.box.stats.candy = 1000;
+  assert.equal(s.game.actions.feed(food.id).ok, true);
+  assert.deepEqual(fed, [{ foodId: food.id, name: food.name }]);
+  s.game.actions.feed('nope');
+  assert.equal(fed.length, 1);
+  s.game.actions.setEnabled(false);
+  s.game.actions.feed(food.id);
+  assert.equal(fed.length, 1);
+});

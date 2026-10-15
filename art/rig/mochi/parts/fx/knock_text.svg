@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-34 -30 68 60" width="68" height="60">
+<!-- knock_text: chữ "cộc" vẽ bằng nét (không dùng text). Tâm (0,0). LƯU Ý: bị lật gương khi engine lật sprite. -->
+<g id="knock_text-g" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<g stroke="#FFFFFF" stroke-width="9">
+<path d="M-16 -6 A8 8 0 1 0 -16 6 M0 -8 A8 8 0 1 0 0 8 A8 8 0 1 0 0 -8 M-5 -17 L0 -22 L5 -17 M0 15 L0 15.1 M28 -6 A8 8 0 1 0 28 6"/>
+</g>
+<g stroke="#1F2A44" stroke-width="4.5">
+<path d="M-16 -6 A8 8 0 1 0 -16 6 M0 -8 A8 8 0 1 0 0 8 A8 8 0 1 0 0 -8 M-5 -17 L0 -22 L5 -17 M0 15 L0 15.1 M28 -6 A8 8 0 1 0 28 6"/>
+</g>
+</g>
+</svg>

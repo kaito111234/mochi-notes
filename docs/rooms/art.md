@@ -23,32 +23,40 @@ Tóc dài màu xanh da trời nhạt có ánh, sợi tóc dựng trên đỉnh, 
 - `art/HANDOFF.md`: hướng dẫn họa sĩ người thật vẽ lại từng lớp đúng kích thước/pivot để thay thế.
 
 ## Trạng thái
-_Cập nhật 2026-10-15, hết lượt Đợt 2._
+_Cập nhật 2026-10-15, lượt Đợt 3 (theo tin phòng điều hành)._
 
-**Đã xong**
-- Rig rối giấy vector: `art/rig/mochi/RIG-SPEC.md` (hệ toạ độ 400×400, mốc giải phẫu, màu, 19 xương, 24 lớp, khe đồ), `rig.json`, bộ phận `art/rig/mochi/parts/` (đầu, tóc sau/mái/mai/ahoge, kẹp X, nơ, thân, cổ, váy, tay 2 đốt + 5 kiểu bàn tay, chân 2 đốt + bốt, biến thể `hair_back.sit`), **26 bộ mặt** (18 khoá bảng gốc + blink, closed_happy, sleep, shout, wince, o, yawn, talk; mỗi khoá `.svg` + `.over.svg`), đạo cụ (chuông, mèo bông) và 17 hiệu ứng.
-- Trình dựng `tools/rig/` (chỉ Node + Electron offscreen có sẵn, không thêm thư viện): `build.js`, `pose.js`, `faces.js`, `sheet.js`, `svg2png.js`; action keyframe `tools/rig/actions/*.js` (inherit, tween, $ref mood). README đầy đủ.
-- Gói `assets/pet/mochi` (thay gói tạm 288×344): 10 action Đợt 2 — idle (normal/happy/tired/sad), walk (normal/tired), lifted, fall, land, pat_head (normal/happy), sleep, hold_note, ring, happy — 110 khung + 18 ảnh `faces/` 256×256. `validate.js`: OK, chỉ cảnh báo thiếu 13 action Đợt 3 (engine rơi về idle).
-- Duyệt: đầu/tóc 4 vòng, thân 2 vòng, mặt 1 vòng + tổng duyệt, walk/land/sleep/pat_head/ring 2 vòng, các action khác trưởng phòng duyệt từng khung ở 400px.
-- Chạy app thật dưới xvfb: gói tải OK, không lỗi console; ảnh `art/review/app_0*.png`.
-- `art/HANDOFF.md`: hướng dẫn họa sĩ người thật vẽ lại từng lớp (pivot, z, vùng bao, biến thể, cách nhúng PNG vào SVG).
+**Đã xong (tính cả lượt 3 trước đó)**
+1. **13 action còn lại** của hợp đồng 03 và **14 action core Đợt 2B** (knock, carry_note, crumple, throw, point, climb, sit_on_note, peek_note, read, write, cheer, yawn, stretch, play_cat), đúng tên thư mục. Bảng hành động (mood, phase, số khung, tham số căn chỉnh) ở **`art/ACTIONS.md`** — điều hành chốt vào 03. Gói `assets/pet/mochi`: 37 action, 479 khung, validate OK 0 cảnh báo.
+2. **Nén PNG bảng màu** thuần Node (`tools/rig/lib/quant.js`, 128 màu, không dither, ảnh ≤128 màu giữ nguyên): gói **46 MB → 12 MB**; `build.js` mặc định nén (`--no-quantize` để tắt); `node tools/rig/quantize.js <thư mục>` nén tại chỗ. Ảnh `art/review/quantize_compare.png`.
+3. **Tủ đồ**: tách áo khoác khỏi thân → lớp `outer_torso`, `outer_upper_arm_*`, `outer_forearm_*` bám lớp tay/thân (`follow`, `covers`, `keeps`, `hides` trong `lib/rig.js`); thân gốc = sơ mi + cà vạt. Định dạng `assets/wardrobe/<itemId>/` (SVG thay bộ phận + `item.json`), hướng dẫn họa sĩ `art/rig/mochi/WARDROBE.md`. Dựng một tổ hợp: `node tools/rig/outfit.js --body <id> --outer <id|none> --out <dir>` (đủ 37 action ≈56 s, ≈12 MB). Gói mặc định dựng lại qua outfit.js khớp pixel bản cũ (472/479 khung ≤30 px viền; startup/shutdown lệch nhẹ ở khung mờ dần vì opacity áp hai lớp).
+4. **14 món trang phục** khớp id catalog (8 bộ của bảng nhân vật): thường `body_default`*+`outer_black_white`, `body_hoodie_cat`; ngủ `body_pajama_dino`; thể thao `body_sport_tee`+`outer_sport_jacket`; đi học `body_uniform`+`outer_blazer`; cosplay `body_star_dress`+`outer_witch_cape`/`outer_moon_cloak`; dự tiệc `body_party_blouse`; mùa đông `body_sweater`+`outer_puffer`; cắm trại `body_camp_shirt`*+`outer_raincoat` (*id đề xuất, chưa có trong catalog). Mọi món có biến thể `.sit` khi đổi chân. Đã thử đủ 37 action với sport tee+jacket: validate OK.
+5. Vòng hoàn thiện nhân vật: tóc bất đối xứng + lọn bay + `hair_back.up`/`sidelock_*.up` cho lifted/fall; áo khoác có túi, khoá, đường may, huy hiệu mèo.
 
-**Ảnh so sánh** (`art/review/`): `compare_full.png`, `compare_faces_18.png`, `compare_face_closeup.png`, `faces.png`, `contact_<action>.png` (10 action), `round*_head|body|faces|props.png` (các vòng sửa), `app_*.png`; ảnh tham chiếu cắt từ bảng gốc ở `art/review/ref/`.
+**Ảnh so sánh** (`art/review/`): `wardrobe_lineup.png` (10 tổ hợp, đứng + ngồi), `outfit_<bộ>.png` (bảng gốc | idle | walk | sit | hold_note | fall), `wardrobe_split.png`, `quantize_compare.png`, `round4_hair.png`, `round4_outfit.png`, `compare_full.png`, `contact_<action>.png` ×37.
 
-**Cách dựng lại**: `npm install` → `node tools/rig/build.js --faces` (≈3 giây, tự gọi xvfb-run nếu không có DISPLAY) → `node tools/anim/validate.js assets/pet/mochi` → `node tools/rig/sheet.js --contact <action>`. Xem nhanh tư thế: `node tools/rig/pose.js --out x.png --face happy --scale 2 --bg white`.
+**Cách dựng lại**: `npm install` → `node tools/rig/build.js --faces` (gói mặc định, ~60 s có nén) → `node tools/anim/validate.js assets/pet/mochi`. Bộ đồ: `node tools/rig/outfit.js --body body_uniform --outer outer_blazer --out /tmp/x`.
 
-**Đang dở / còn yếu**
-- Nhân vật nhìn chính diện (rig 2D): walk là bước tại chỗ nghiêng người, chưa có góc 3/4; tóc là mảng cứng xoay/co.
-- Tóc còn đối xứng hơn bảng gốc, thiếu lọn bay; áo khoác đen ít tương phản chi tiết (túi, khoá); huy hiệu mèo nhỏ.
-- fall: tay giơ ±120° (giơ cao hơn thì khuất sau tóc); chưa có `hair_back.up` (tóc hất lên) và cổ áo bị kéo ở lifted.
-- Gói PNG RGBA ≈12 MB (128 ảnh) — có thể nén bảng màu sau.
-- `hand_*.point`, `fx/question` chưa dùng.
+**Còn yếu / đang dở**
+- Tóc dài che phần lớn thân nên chi tiết áo (huy hiệu, hoạ tiết) ít thấy ở cỡ thật; mũ trùm (hoodie, áo mưa) gần như khuất.
+- Một số món theo id catalog nên lệch bảng gốc: áo phao (gốc là áo khoác dài + khăn), cắm trại (gốc áo khoác đen), cosplay (gốc váy đen + choàng trắng).
+- Áo choàng cosplay chỉ có `outer_torso` (không phủ vai). Quần thể thao chưa rộng như gốc.
+- Thiếu khoá mặt `talk_tired`, `talk_sad`, `puff`, mắt liếc. Rig vẫn chính diện.
+- Chưa vẽ icon catalog `assets/game/icons/` (thuộc phòng game).
 
-**Việc tiếp theo (Đợt 3)**: 13 action còn lại (sit, pat_body, wave, say, peek_left/right, startup, shutdown, sad, shy, angry, eat, work) bằng cùng rig — mỗi action một file `tools/rig/actions/*.js`; vẽ `hair_back.up`, `sidelock_*.up`, tay biến thể "grip"; thêm mood happy/tired cho hold_note? (không — nhắc lịch phải nhất quán); 8 bộ trang phục thành lớp `assets/wardrobe/<id>/` (thay torso/arms/skirt/legs theo khe `body`/`outer`).
+**Việc tiếp theo**: Đợt 4 — các khe còn lại (hat, hairclip, glasses, neck, hand, back: 42 món catalog) thành lớp gắn khe theo `rig.json.slots` (lớp chồng, không cần thay bộ phận); thêm 4 khoá mặt; sửa opacity hai lớp ở startup/shutdown (nhóm opacity theo thân); phòng core nối đổi đồ theo đề xuất 6.
 
-**Vướng mắc**: tờ note do app vẽ đang lệch khỏi tay (xem đề xuất 1).
+**Vướng mắc**: không có.
 
 ## Đề xuất cho phòng điều hành
-1. **Gửi phòng core — đặt tờ note vào giữa hai tay** (đã xác minh trong `src/pet/pet.js` `placeNote()` và ảnh `art/review/app_03_giu_note.png`): hiện góc DƯỚI-TRÁI tờ note 120×110 đặt tại `pack.hand`, nên note lệch ~56 px phải / 62 px lên và che mặt bé. Theo ART-BRIEF 4.8, `hand` là **tâm** tờ note. Gói mochi mới thêm `pack.json.note = {anchor:"center", center:[200,262], size:[84,84]}` (px canvas). Đề nghị: nếu `pack.note.anchor === "center"` thì đặt tâm note tại `note.center` và co tờ note về `note.size × pack.scale` (hiện chỉ tiêu đề; nội dung đầy đủ đã có trong bong bóng). Gói tạm của core giữ cách cũ.
-2. Gửi core: gói `mochi` giờ là 400×400 (scale 0.6) còn gói tạm là 288×344 — khi engine lấy action thiếu từ `assets/pet/placeholder/`, cần căn theo anchor/scale riêng của từng gói (không giả định cùng canvas).
-3. `hitbox` gói mới: head [126,70,148,160], body [146,230,108,162] (khác số mẫu trong brief vì đầu chibi to hơn) — engine đọc từ pack.json nên không cần đổi code.
+1. **Gửi core — đặt tờ note vào giữa hai tay**: nếu `pack.note.anchor === "center"` thì đặt tâm note tại `note.center` [200,262] và co về `note.size` [84,84] × `pack.scale` (điều hành báo đã chuyển).
+2. Gói `mochi` 400×400 scale 0.6 — giờ đủ 23 action hợp đồng + 14 action 2B, không còn cần gói tạm.
+3. `hitbox`: head [126,70,148,160], body [146,230,108,162].
+4. **Tham số action cho core** trong `pack.json.actions` (xem `art/ACTIONS.md`): `sit_on_note.seatY=338`, `point.tip=[342,237]`, `climb.gripX=300`, `peek_note.edgeY=232`, `peek_left/right.edgeX=0/400`, `knock.wallX=315`, `throw.release=[301,181]` ở khung 5 (330 ms) vận tốc ≈(0.4,−0.3) px/ms, `carry_note.speed=2.2`. point/climb/knock/throw vẽ hướng phải.
+5. **Chốt bảng hành động** `art/ACTIONS.md` vào `docs/spec/03-animation.md`.
+6. **Cách đổi đồ (đề xuất art, cần điều hành chốt với core/game)** — chọn *dựng gói theo bộ đồ tại máy người dùng, lưu cache*:
+   - Khi người dùng mặc tổ hợp (body, outer) chưa có, core dựng gói `userData/pets/mochi@<body>+<outer>/` từ `art/rig/mochi` + `assets/wardrobe` bằng chính Electron của app (cửa sổ offscreen như `tools/rig/svg2png.js`; phần ghép SVG là thuần JS trong `tools/rig/lib/rig.js` + `action.js`, nén bằng `lib/quant.js`) — ≈1 phút/tổ hợp, chạy nền ở mức ưu tiên thấp, trong lúc đó bé vẫn mặc bộ cũ; xong thì đổi gói (hiệu ứng "thay đồ" ngắn). Cache tối đa ~6 tổ hợp (≈12 MB mỗi cái), xoá cái ít dùng.
+   - Lý do: hỗ trợ mọi tổ hợp 8 body × 9 outer mà bộ cài không phình (dựng sẵn 8 bộ ≈ +96 MB); chất lượng y hệt gói chính; không cần chồng lớp thời gian thực (thứ tự lớp xen kẽ tóc–tay–áo nên một ảnh chồng không đúng).
+   - Cần: đóng gói kèm `art/rig/mochi/**`, `assets/wardrobe/**`, `tools/rig/lib/**`, `tools/rig/actions/**` (≈2 MB SVG/JS). Art có thể tách `tools/rig/lib/pack-builder.js` (API `buildPack({rigDir, wardrobe:[body,outer], out, render})`, `render` do core cung cấp) nếu điều hành chốt — đề nghị giao art làm ở lượt sau.
+   - Phương án dự phòng nếu chưa làm kịp: dựng sẵn chỉ `idle, walk, sit, hold_note` cho 8 bộ (≈1,5 MB/bộ) và các action khác dùng gói mặc định.
+   - Khe `hat/hairclip/glasses/neck/hand/back` (Đợt 4) là lớp gắn khe — cùng cơ chế dựng nên không cần thêm gì.
+7. **Gửi game**: thêm vào catalog `body_default` (slot body, set daily — đồ gốc: sơ mi trắng, cà vạt xanh, váy đen, tất đen, bốt; nên là đồ mặc định có sẵn) và `body_camp_shirt` (slot body, set camping — sơ mi ca-rô, short kaki, bốt nâu). `outer_black_white` là áo khoác mặc định.

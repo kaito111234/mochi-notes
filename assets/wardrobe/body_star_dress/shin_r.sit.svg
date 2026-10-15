@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<g id="shin_l_sit" transform="translate(0,-58)">
+<path d="M174 394 L174 389 C174 383 177 381 182 381 L192 381 C197 382 199 385 199 389 L199 392 C199 394 198 394 195 394 Z" fill="#1E2B5E" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M189 382 L192 382 C197 383 198 386 198 389 L198 392 C198 393 196 393 194 393 L190 393 C191 389 191 385 189 382Z" fill="#131D45"/>
+<path d="M176 385.5 Q186 383 197 385.5" stroke="#DCE4F0" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+<path d="M186.0 386.8 L186.6 388.2 L188.1 388.3 L186.9 389.3 L187.3 390.8 L186.0 390.0 L184.7 390.8 L185.1 389.3 L183.9 388.3 L185.4 388.2 Z" fill="#F2C94C" />
+<path d="M174.5 391.5 L198.5 391.5 L198.5 394 L174.5 394 Z" fill="#0B1230" />
+</g>
+</g>
+</svg>

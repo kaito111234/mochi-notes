@@ -1,0 +1,9 @@
+{
+  "id": "body_camp_shirt",
+  "slot": "body",
+  "proposed": true,
+  "name": "Áo sơ mi ca-rô đi trại",
+  "replaces": ["torso.svg", "skirt.svg", "upper_arm_l.svg", "upper_arm_r.svg", "forearm_l.svg", "forearm_r.svg", "thigh_l.svg", "thigh_r.svg", "thigh_l.sit.svg", "thigh_r.sit.svg", "shin_l.svg", "shin_r.svg", "shin_l.sit.svg", "shin_r.sit.svg"],
+  "hides": [],
+  "notes": "ID ĐỀ XUẤT cho phòng game (chưa có trong catalog; set camping). Sơ mi kẻ ca-rô xanh-trắng dài tay, quần short kaki ngang gối (lớp skirt), quần tất đen, bốt leo núi nâu. Mặc được cùng outer_raincoat."
+}

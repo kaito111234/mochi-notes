@@ -52,5 +52,7 @@ module.exports = {
   moods: {
     normal: mood({ ...base }),
     tired: mood({ ...base, ms: 150, face: 'tired', blink: 'sleepy', legA: 2, lift: 7, bob: 3, lean: 5, headR: 5, headY: 3, ua: 6, fa: 12, armSwing: 8, hair: 0.7, ahoge: 6, handV: 'open' }),
+    happy: mood({ ...base, ms: 100, face: 'happy', blink: 'closed_happy', legA: 3.5, lift: 11, bob: 5.5, hipX: 2, hipR: 2, lean: 2, headR: 2.5, headY: -1, ua: 14, fa: 22, armSwing: 16, hair: 1.3, ahoge: -5, handV: 'open' }),
+    sad: mood({ ...base, ms: 160, face: 'sad', blink: 'blink', legA: 2, lift: 6, bob: 2.5, hipX: 1, hipR: 0.8, lean: 6, headR: 6, headY: 4, ua: 5, fa: 14, armSwing: 5, hair: 0.6, ahoge: 8, handV: 'hold' }),
   },
 };
