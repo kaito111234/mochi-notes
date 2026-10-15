@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<path d="M150 256 L173 256 L170 281 C168 291 150 291 148 281 Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M148 270 L149 281 C150 290 163 291 168 286 L160 270 Z" fill="#F2C4B5" opacity="0.85"/>
+<path d="M165 231 C175 231 180 240 180 250 L177 268 L144 268 L147 250 C148 240 155 231 165 231 Z" fill="#23262E" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M147 252 L144.5 262 L152 262 L156 252 Z" fill="#14161B" opacity="0.6"/>
+<path d="M144.5 262 L177.5 262 L177 268 L144 268 Z" fill="#FFFFFF" stroke="#1F2A44" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M144.2 265.2 L177.2 265.2" stroke="#8DB8EE" stroke-width="1.6"/>
+</g>
+</svg>

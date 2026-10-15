@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g id="thigh_l_sit" transform="translate(0,-58)">
+<path d="M172 386 C171 368 176 360 185 360 C194 360 198 368 198 386 Z" fill="#F7F9FD" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M191 362 C195 366 197 374 197 385 L192 385 C193 374 193 367 191 362Z" fill="#DDE5F2" opacity="0.9"/>
+<path d="M172.5 378 Q185 381 197.5 378" stroke="#B9C6DC" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+</g>
+</svg>

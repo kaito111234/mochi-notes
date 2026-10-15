@@ -1,0 +1,14 @@
+{
+  "id": "outer_blazer",
+  "slot": "outer",
+  "name": "Áo vest học đường",
+  "replaces": [
+    "outer_forearm_l.svg",
+    "outer_forearm_r.svg",
+    "outer_torso.svg",
+    "outer_upper_arm_l.svg",
+    "outer_upper_arm_r.svg"
+  ],
+  "hides": [],
+  "notes": "Vest xanh navy đậm, dài tay, viền kem, huy hiệu đỏ-vàng ở ngực (bên trái nhân vật nhìn từ người xem: phải màn hình). Che hẳn tay áo sơ mi."
+}

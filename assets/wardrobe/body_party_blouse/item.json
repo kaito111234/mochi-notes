@@ -1,0 +1,23 @@
+{
+  "id": "body_party_blouse",
+  "slot": "body",
+  "name": "Áo blouse đi tiệc",
+  "replaces": [
+    "torso.svg",
+    "skirt.svg",
+    "upper_arm_l.svg",
+    "upper_arm_r.svg",
+    "forearm_l.svg",
+    "forearm_r.svg",
+    "thigh_l.svg",
+    "thigh_r.svg",
+    "thigh_l.sit.svg",
+    "thigh_r.sit.svg",
+    "shin_l.svg",
+    "shin_r.svg",
+    "shin_l.sit.svg",
+    "shin_r.sit.svg"
+  ],
+  "hides": [],
+  "notes": "Blouse trắng cổ bèo nhún, nơ xanh nhạt, tay phồng dài; váy xoè trắng–bạc hà có ren dài ngang gối; tất trắng, giày búp bê xanh nhạt. Theo bảng gốc 'Đồ dự tiệc'."
+}

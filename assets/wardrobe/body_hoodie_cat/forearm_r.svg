@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<g transform="matrix(-1 0 0 1 400 0)">
+<path d="M168 266 C169 284 169 298 167 311 L137 311 C139 298 140 284 142 266 C143 258 167 258 168 266 Z" fill="#C6CFDC" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M142 266 C140 284 139 298 137 311 L148 311 C150 298 151 284 152 266 Z" fill="#B0BBCC" />
+<path d="M168 266 C169 284 169 298 167 311 L137 311 C139 298 140 284 142 266 C143 258 167 258 168 266 Z" fill="none" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+<path d="M137.5 302 Q152 306 166.5 302 L167 311 L137 311 Z" fill="#9FAABD" stroke="#1F2A44" stroke-width="1.8" stroke-linejoin="round" />
+<path d="M143 303.5 L143 310 M149 304.5 L149 310.5 M155 304.5 L155 310.5 M161 304 L161 310" stroke="#7F92AE" stroke-width="1" stroke-linecap="round" />
+</g></svg>

@@ -1,0 +1,16 @@
+{
+  "id": "outer_moon_cloak",
+  "slot": "outer",
+  "name": "Áo choàng ánh trăng",
+  "replaces": [
+    "outer_torso.svg"
+  ],
+  "hides": [],
+  "keeps": [
+    "upper_arm_l",
+    "upper_arm_r",
+    "forearm_l",
+    "forearm_r"
+  ],
+  "notes": "Áo choàng trắng bạc–xanh nhạt, hoạ tiết trăng lưỡi liềm, dài ngang đùi (y≈346), mở giữa; tay body hiện nguyên."
+}

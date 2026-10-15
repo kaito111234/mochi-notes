@@ -1,0 +1,8 @@
+{
+  "id": "outer_raincoat",
+  "slot": "outer",
+  "name": "Áo mưa vàng",
+  "replaces": ["outer_torso.svg", "outer_upper_arm_l.svg", "outer_upper_arm_r.svg", "outer_forearm_l.svg", "outer_forearm_r.svg"],
+  "hides": [],
+  "notes": "Áo mưa vàng tươi dài tay, dài ngang đùi, khuy bấm, mũ trùm xếp sau gáy (vẽ như cổ áo dày, rủ hai bên). Che hẳn tay áo trong."
+}
