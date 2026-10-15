@@ -57,12 +57,30 @@ function init(ctx) {
   ipcMain.handle('list:open', () => { ctx.list.open(); return true; });
   ipcMain.handle('settings:get', () => Object.assign({}, settings()));
   ipcMain.handle('settings:set', (_e, patch) => applySettings(patch && typeof patch === 'object' ? patch : {}));
+  // ---- Đợt 2: nhắc theo từng mục (notes2:*). Kiểm tham số, không ném lỗi ra IPC.
+  const okId = v => typeof v === 'string' && v.length > 0 && v.length <= 100;
+  const okRid = v => v == null || (typeof v === 'string' && v.length <= 100);
+  const guard = (ch, fn) => ipcMain.handle(ch, (_e, ...a) => { try { return fn(...a); } catch (e) { console.error('[notes] ' + ch, e); return null; } });
+  guard('notes2:setReminderItem', (id, rid, r) => {
+    if (!okId(id) || !okRid(rid) || !r || typeof r !== 'object' || !Number.isFinite(Number(r.due))) return null;
+    return N.setReminderItem(id, rid || null, r);
+  });
+  guard('notes2:removeReminderItem', (id, rid) => (okId(id) && okId(rid)) ? N.removeReminderItem(id, rid) : null);
+  guard('notes2:doneItem', (id, rid) => (okId(id) && okRid(rid)) ? N.completeNote(id, rid || undefined) : null);
+  guard('notes2:snoozeItem', (id, rid, minutes) => {
+    const m = Number(minutes);
+    if (!okId(id) || !okRid(rid) || !Number.isFinite(m)) return null;
+    return N.snoozeNote(id, Math.min(Math.max(Math.round(m), 1), 7 * 24 * 60), rid || undefined);
+  });
   ipcMain.handle('win:close', e => {
     for (const [id, w] of noteWins) if (alive(w) && w.webContents === e.sender) { N.hideNote(id); return true; }
     const lw = ctx.windows.list;
     if (alive(lw) && lw.webContents === e.sender) { lw.close(); return true; }
     return false;
   });
+
+  // Đợt 2: hiểu note / gợi ý / ghi nhanh (main.js không nạp riêng nên nạp ở đây)
+  require('./insightService.js').init(ctx);
 }
 
 module.exports = { init };

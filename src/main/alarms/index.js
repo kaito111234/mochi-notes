@@ -5,6 +5,7 @@ const { ipcMain } = require('electron');
 const { getBox } = require('./box.js');
 
 const PARTS = [
+  './toast.js',                 // toast Windows có nút Tắt/Hoãn (nạp trước để các phần sau dùng ctx.alarms.toast)
   './alarmService.js',          // báo thức: CRUD, hẹn giờ, chuông, hoãn, bù khi máy ngủ dậy
   './memoService.js',           // dặn dò: startup / sáng / trưa / tối / trước khi tắt máy
   '../notes/noteRepeat.js',     // nhắc lặp cho note (reminder.repeat)

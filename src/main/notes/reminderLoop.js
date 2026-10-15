@@ -16,13 +16,15 @@ function init(ctx) {
     }
     if (r.events.length) {
       for (const ev of r.events) {
-        if (ev.type === 'pre' || ev.type === 'due') ctx.bus.emit('reminder:' + ev.type, { noteId: ev.noteId });
+        if (ev.type === 'pre' || ev.type === 'due') ctx.bus.emit('reminder:' + ev.type, { noteId: ev.noteId, reminderId: ev.reminderId, title: ev.title });
         const st = ctx.pet.stage;
         if (st && typeof st.request === 'function') {
           const payload = { noteId: ev.noteId };
+          if (ev.reminderId != null) payload.reminderId = ev.reminderId;
+          if (ev.title != null) payload.title = ev.title;
           if (ev.overdueCount != null) payload.overdueCount = ev.overdueCount;
           st.request({ kind: ev.type, priority: { due: 90, pre: 70, nag: 40 }[ev.type], payload });
-        } else ctx.pet.enqueue({ type: ev.type, noteId: ev.noteId, overdueCount: ev.overdueCount });
+        } else ctx.pet.enqueue({ type: ev.type, noteId: ev.noteId, reminderId: ev.reminderId, title: ev.title, overdueCount: ev.overdueCount });
       }
     } else if (typeof ctx.pet.pump === 'function') ctx.pet.pump();
   }

@@ -27,8 +27,10 @@ function init(ctx) {
   const meta = box().noteMeta;
   for (const n of ctx.store.data.notes) {
     const m = meta[n.id];
-    if (n.reminder && m && m.repeat && !n.reminder.repeat) n.reminder.repeat = Object.assign({}, m.repeat);
-    else if (!n.reminder && m && m.repeat) { delete m.repeat; if (!Object.keys(m).length) delete meta[n.id]; dirty = true; }
+    const list = Array.isArray(n.reminders) ? n.reminders : (n.reminder ? [n.reminder] : []);
+    // chỉ khôi phục khi chưa nhắc nào có repeat (store mới đã giữ repeat trong reminders[])
+    if (n.reminder && m && m.repeat && !list.some(r => r && r.repeat)) n.reminder.repeat = Object.assign({}, m.repeat);
+    else if (!n.reminder && !list.length && m && m.repeat) { delete m.repeat; if (!Object.keys(m).length) delete meta[n.id]; dirty = true; }
   }
   if (dirty) ctx.store.save();
 
@@ -43,12 +45,12 @@ function init(ctx) {
     }
   });
 
-  function setNoteRepeat(id, repeat) {
+  function setNoteRepeat(id, repeat, reminderId) {
     const n = ctx.findNote(id);
     if (!n) return null;
     const rep = repeat ? normRepeat(repeat) : null;
     if (repeat && !rep) return n;                      // repeat hỏng: không đổi
-    if (S.setRepeat(n, rep, Date.now())) {
+    if (S.setRepeat(n, rep, Date.now(), typeof reminderId === 'string' && reminderId ? reminderId : undefined)) {
       n.updatedAt = Date.now();
       syncNote(n);
       ctx.store.save();
@@ -58,7 +60,7 @@ function init(ctx) {
   }
 
   ctx.notes.setNoteRepeat = setNoteRepeat;
-  ipcMain.handle('notes2:setRepeat', (_e, id, repeat) => setNoteRepeat(String(id), repeat));
+  ipcMain.handle('notes2:setRepeat', (_e, id, repeat, rid) => setNoteRepeat(String(id), repeat, typeof rid === 'string' ? rid : undefined));
 }
 
 module.exports = { init };

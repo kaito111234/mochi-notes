@@ -4,6 +4,11 @@ const { screen } = require('electron');
 const S = require('./scheduler.js');
 const { COLORS: COLOR_LIST } = require('../store.js');
 
+// scheduler mới có ensureReminders; bản cũ thì bỏ qua (note 0.1 vẫn chạy)
+const ens = n => { if (n && typeof S.ensureReminders === 'function') S.ensureReminders(n); return n; };
+const remindersOf = n => (n && Array.isArray(n.reminders)) ? n.reminders : (n && n.reminder ? [n.reminder] : []);
+const findReminder = (n, rid) => (typeof rid === 'string' && rid) ? (remindersOf(n).find(r => r.id === rid) || null) : (n ? n.reminder : null);
+
 function init(ctx) {
   const { bus, alive } = ctx;
   const noteWins = ctx.windows.notes;
@@ -43,10 +48,11 @@ function init(ctx) {
       id: newId(), html, text,
       color: COLOR_LIST.includes(o.color) ? o.color : 'yellow',
       bounds: o.bounds || ctx.notes.newNoteBounds(o.nearId),
-      visible: true, alwaysOnTop: false, reminder: null,
+      visible: true, alwaysOnTop: false, reminder: null, reminders: [], remindMuted: [],
       createdAt: now, updatedAt: now
     };
     if (o.autoReminder !== false) S.applyText(n, now);
+    ens(n);
     return n;
   }
   function createNote(opts = {}) {
@@ -145,33 +151,61 @@ function init(ctx) {
     store().save(); noteChanged(n);
     return n;
   }
-  function completeNote(id) {
-    const n = ctx.findNote(id);
+  function completeNote(id, reminderId) {
+    const n = ens(ctx.findNote(id));
     if (!n) return n;
-    const now = Date.now(), r = n.reminder;
-    const wasDone = !!(r && r.done);
+    const now = Date.now(), r = findReminder(n, reminderId);
+    if (!r) return n;
+    const rid = r.id, title = r.title || undefined;
+    const wasDone = !!r.done;
     // đúng hạn = chưa quá hạn tới mức bị nhắc dai
-    const onTime = !!r && !(r.fired && now - r.due > S.NAG_AFTER);
-    if (S.markDone(n)) {
+    const onTime = !(r.fired && now - r.due > S.NAG_AFTER);
+    const payload = () => ({ noteId: id, onTime, reminderId: rid, title });
+    if (S.markDone(n, rid)) {
       if (r.repeat && !wasDone) {
         // note lặp: báo xong lần này rồi chuyển sang lần kế (không ở trạng thái done vĩnh viễn)
-        bus.emit('reminder:done', { noteId: id, onTime });
-        S.rollRepeat(n, now);
+        bus.emit('reminder:done', payload());
+        S.rollRepeat(n, now, rid);
         n.updatedAt = now; store().save(); noteChanged(n);
         return n;
       }
       n.updatedAt = now; store().save(); noteChanged(n);
-      if (!wasDone) bus.emit('reminder:done', { noteId: id, onTime });
+      if (!wasDone) bus.emit('reminder:done', payload());
     }
     return n;
   }
-  function snoozeNote(id, minutes) {
-    const n = ctx.findNote(id);
+  function snoozeNote(id, minutes, reminderId) {
+    const n = ens(ctx.findNote(id));
     const m = Number(minutes) || 10;
-    if (n && S.snooze(n, m)) {
+    if (!n) return n;
+    const r = findReminder(n, reminderId);
+    const rid = r ? r.id : undefined;
+    if (r && S.snooze(n, m, Date.now(), rid)) {
       n.updatedAt = Date.now(); store().save(); noteChanged(n);
-      bus.emit('reminder:snoozed', { noteId: id, minutes: m });
+      bus.emit('reminder:snoozed', { noteId: id, minutes: m, reminderId: rid });
     }
+    return n;
+  }
+  /** Thêm/sửa một nhắc của note. reminderId null = thêm mới. r: {due, lead?, repeat?, title?, key?, auto?} -> Note */
+  function setReminderItem(id, reminderId, r) {
+    const n = ens(ctx.findNote(id));
+    if (!n || !r || typeof r !== 'object' || !Number.isFinite(Number(r.due))) return n;
+    const now = Date.now();
+    const o = { due: Number(r.due) };
+    if (Number.isFinite(Number(r.lead))) o.lead = Number(r.lead);
+    if (r.repeat !== undefined) o.repeat = r.repeat;
+    if (typeof r.title === 'string') o.title = r.title.slice(0, 200);
+    if (typeof r.key === 'string') o.key = r.key.slice(0, 100);
+    if (typeof r.auto === 'boolean') o.auto = r.auto;
+    if (typeof S.upsertReminder !== 'function') return n;
+    S.upsertReminder(n, typeof reminderId === 'string' && reminderId ? reminderId : null, o, now);
+    n.updatedAt = now; store().save(); noteChanged(n);
+    return n;
+  }
+  function removeReminderItem(id, reminderId) {
+    const n = ens(ctx.findNote(id));
+    if (!n || typeof reminderId !== 'string' || typeof S.removeReminder !== 'function') return n;
+    if (S.removeReminder(n, reminderId)) { n.updatedAt = Date.now(); store().save(); noteChanged(n); }
     return n;
   }
 
@@ -193,7 +227,7 @@ function init(ctx) {
   Object.assign(ctx.notes, {
     notifyList, noteChanged, broadcastSettings, makeNote,
     createNote, updateNote, showNote, hideNote, deleteNote, hideAll, showAll, toggleAll,
-    setNoteReminder, completeNote, snoozeNote, seed
+    setNoteReminder, completeNote, snoozeNote, setReminderItem, removeReminderItem, seed
   });
 }
 

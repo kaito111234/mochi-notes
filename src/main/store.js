@@ -19,7 +19,11 @@ const isNum = v => typeof v === 'number' && Number.isFinite(v);
 let normRepeat = null;
 try { normRepeat = require('./alarms/box.js').normRepeat; } catch (_) { /* thiếu module alarms: bỏ qua lặp */ }
 
+let RM = null;
+try { RM = require('./notes/reminders.js'); } catch (_) { /* thiếu reminders.js: dùng bản đơn */ }
+
 function normalizeReminder(r) {
+  if (RM) return RM.normItem(r);
   if (!r || typeof r !== 'object' || !isNum(r.due)) return null;
   const rep = normRepeat ? normRepeat(r.repeat) : null;
   const out = {
@@ -39,6 +43,22 @@ function normalizeNote(n) {
   if (!n || typeof n !== 'object' || typeof n.id !== 'string' || !n.id) return null;
   const now = Date.now();
   const b = n.bounds && typeof n.bounds === 'object' ? n.bounds : {};
+  // Nhiều nhắc: reminders là nguồn sự thật; reminder = primary (cùng tham chiếu). Migrate từ reminder đơn (id 'r1').
+  let reminders = [];
+  if (Array.isArray(n.reminders)) reminders = n.reminders.map(normalizeReminder).filter(Boolean);
+  if (!reminders.length) {
+    const one = normalizeReminder(n.reminder);
+    if (one) { one.id = 'r1'; reminders = [one]; }
+  }
+  if (RM) {
+    RM.sortList(reminders);
+    reminders = reminders.slice(0, RM.MAX);
+    RM.ensureIds(reminders);
+  }
+  const remindMuted = [];
+  if (Array.isArray(n.remindMuted)) {
+    for (const k of n.remindMuted) if (typeof k === 'string' && k && !remindMuted.includes(k)) remindMuted.push(k);
+  }
   return {
     id: n.id,
     html: typeof n.html === 'string' ? n.html : '',
@@ -52,7 +72,9 @@ function normalizeNote(n) {
     },
     visible: n.visible !== false,
     alwaysOnTop: !!n.alwaysOnTop,
-    reminder: normalizeReminder(n.reminder),
+    reminder: RM ? RM.pickPrimary(reminders) : (reminders[0] || null),
+    reminders,
+    remindMuted: remindMuted.slice(-50),
     createdAt: isNum(n.createdAt) ? n.createdAt : now,
     updatedAt: isNum(n.updatedAt) ? n.updatedAt : now
   };

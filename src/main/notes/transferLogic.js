@@ -221,6 +221,10 @@ function sanitizeReminder(r, now, pastDone) {
   };
   const rep = normRepeat(r.repeat);
   if (rep) o.repeat = rep;
+  if (typeof r.id === 'string' && r.id && r.id.length <= 40 && !BAD_IDS.has(r.id)) o.id = r.id;
+  if (typeof r.title === 'string' && r.title) o.title = r.title.slice(0, 200);
+  if (typeof r.key === 'string' && r.key) o.key = r.key.slice(0, 100);
+  if (isNum(r.line) && r.line >= 0) o.line = Math.floor(r.line);
   if (isNum(now) && o.due < now && !o.done) {
     // Quyết định: nhập note có hạn nhắc đã quá mà chưa xong -> đánh dấu xong (không để bé nhắc dai đồ cũ).
     // Note nhắc lặp thì giữ chưa xong (scheduler sẽ lăn sang lần kế). Khôi phục (pastDone=false) chỉ đặt fired.
@@ -229,6 +233,40 @@ function sanitizeReminder(r, now, pastDone) {
   }
   return o;
 }
+
+const MAX_REMINDERS = 20, MAX_MUTED = 50;
+
+/** primary: đã kêu chưa xong sớm nhất -> chưa xong sớm nhất -> due lớn nhất -> null. (Bản thuần cho nhập/khôi phục.) */
+function pickPrimary(list) {
+  if (!list.length) return null;
+  const byDue = (a, b) => a.due - b.due;
+  const fired = list.filter(r => r.fired && !r.done).sort(byDue);
+  if (fired.length) return fired[0];
+  const open = list.filter(r => !r.done).sort(byDue);
+  if (open.length) return open[0];
+  return list.slice().sort((a, b) => b.due - a.due)[0];
+}
+
+/** Dựng reminders[] (nguồn sự thật) + reminder (= primary, cùng tham chiếu) từ note thô; note 0.1 chỉ có reminder vẫn nhập được. */
+function sanitizeReminderList(n, now, pastDone) {
+  let src = Array.isArray(n.reminders) ? n.reminders.slice(0, MAX_REMINDERS * 2) : null;
+  if (!src || !src.length) src = n.reminder && typeof n.reminder === 'object' ? [n.reminder] : [];
+  const list = [], ids = new Set();
+  for (const raw of src) {
+    const r = sanitizeReminder(raw, now, pastDone);
+    if (!r) continue;
+    if (!r.id || ids.has(r.id)) { let k = list.length + 1, id; do { id = 'r' + (k++); } while (ids.has(id)); r.id = id; }
+    ids.add(r.id);
+    list.push(r);
+    if (list.length >= MAX_REMINDERS) break;
+  }
+  list.sort((a, b) => a.due - b.due);
+  return { reminders: list, reminder: pickPrimary(list) };
+}
+const sanitizeMuted = m => Array.isArray(m) ? m.filter(x => typeof x === 'string' && x).map(x => x.slice(0, 100)).slice(0, MAX_MUTED) : [];
+
+/** Danh sách nhắc của một note đã có (0.1 hoặc Đợt 2). */
+const remindersOf = n => (n && Array.isArray(n.reminders) && n.reminders.length) ? n.reminders : (n && n.reminder ? [n.reminder] : []);
 
 /** Tương đương normalizeNote của store + lọc HTML. Trả null nếu không phải note. opts: {now, forcePast}. */
 function sanitizeNote(n, opts = {}) {
@@ -240,6 +278,7 @@ function sanitizeNote(n, opts = {}) {
     html = html.replace(/<img src="[^"]*">/g, '');
     if (html.length > MAX_HTML) return null;
   }
+  const rl = sanitizeReminderList(n, opts.now, opts.pastDone);
   return {
     id: n.id, html, text: htmlToText(html),
     color: COLORS.includes(n.color) ? n.color : 'yellow',
@@ -249,7 +288,7 @@ function sanitizeNote(n, opts = {}) {
       height: isNum(b.height) && b.height > 0 ? b.height : 320
     },
     visible: n.visible !== false, alwaysOnTop: !!n.alwaysOnTop,
-    reminder: sanitizeReminder(n.reminder, opts.now, opts.pastDone),
+    reminder: rl.reminder, reminders: rl.reminders, remindMuted: sanitizeMuted(n.remindMuted),
     createdAt: isNum(n.createdAt) ? n.createdAt : now,
     updatedAt: isNum(n.updatedAt) ? n.updatedAt : now
   };
@@ -257,8 +296,8 @@ function sanitizeNote(n, opts = {}) {
 
 function sameContent(a, b) {
   if (!a || !b) return false;
-  const ra = a.reminder, rb = b.reminder;
-  const remSame = (!ra && !rb) || (!!ra && !!rb && ra.due === rb.due);
+  const dues = n => remindersOf(n).map(r => r && r.due).filter(isNum).sort((x, y) => x - y).join(',');
+  const remSame = dues(a) === dues(b);
   return a.html === b.html && a.color === b.color && remSame;
 }
 
@@ -351,7 +390,8 @@ function applyNoteMeta(boxMeta, metaIn, idMap, addedNotes) {
     if (m.locked) o.locked = true;
     const n = byId.get(newIdv);
     if (o.repeat) {
-      if (n && n.reminder && !n.reminder.repeat) n.reminder.repeat = Object.assign({}, o.repeat);
+      // chỉ khôi phục khi chưa nhắc nào của note có repeat (không đè repeat của nhắc khác)
+      if (n && n.reminder && !remindersOf(n).some(r => r && r.repeat)) n.reminder.repeat = Object.assign({}, o.repeat);
       if (!n || !n.reminder) delete o.repeat;      // repeat không có reminder thì vô nghĩa
     }
     if (!Object.keys(o).length) continue;
@@ -378,9 +418,11 @@ function noteToText(n, fmt) {
     head = '## ' + title.replace(/^[#\s]+/, '') + '\n\n';
   } else body = htmlToText(n.html || '') || (n.text || '');
   let rem = '';
-  if (n.reminder && isNum(n.reminder.due)) {
-    rem = md ? '\n\n> Nhắc lúc ' + dueStr(n.reminder.due) + (n.reminder.done ? ' (đã xong)' : '')
-      : '\n[Nhắc lúc ' + dueStr(n.reminder.due) + (n.reminder.done ? ' - đã xong' : '') + ']';
+  const rs = remindersOf(n).filter(r => r && isNum(r.due)).sort((x, y) => x.due - y.due);
+  for (const r of rs) {
+    const what = r.title && rs.length > 1 ? ' ' + r.title : '';
+    rem += md ? '\n\n> Nhắc lúc ' + dueStr(r.due) + what + (r.done ? ' (đã xong)' : '')
+      : '\n[Nhắc lúc ' + dueStr(r.due) + what + (r.done ? ' - đã xong' : '') + ']';
   }
   return head + body + rem;
 }
@@ -392,6 +434,7 @@ function notesToText(notes, fmt) {
 
 function buildExportJson(notes, alarmBox, now) {
   const b = alarmBox || {};
+  notes = (notes || []).map(n => (n && !Array.isArray(n.reminders) && n.reminder) ? Object.assign({}, n, { reminders: [n.reminder] }) : n);
   return {
     app: 'mochi-notes', kind: 'export', version: 2,
     exportedAt: new Date(isNum(now) ? now : Date.now()).toISOString(),
@@ -435,9 +478,14 @@ function planRestore(backupNotes, currentNotes, ids, now) {
     const c = cur.get(n.id);
     if (!c) plan.add.push(n);
     else if (!sameContent(c, n)) {
-      const rem = n.reminder;
-      if (rem && !rem.repeat && c.reminder && c.reminder.repeat) rem.repeat = Object.assign({}, c.reminder.repeat);
-      plan.overwrite.push({ id: n.id, patch: { html: n.html, text: n.text, color: n.color, reminder: rem } });
+      // bản sao lưu cũ có thể thiếu repeat: giữ repeat của nhắc hiện tại cùng id (hoặc primary)
+      const curList = remindersOf(c);
+      for (const r of n.reminders) {
+        if (r.repeat) continue;
+        const m = curList.find(x => x && x.id && x.id === r.id) || (r === n.reminder && c.reminder && curList.length === 1 ? c.reminder : null);
+        if (m && m.repeat) r.repeat = Object.assign({}, m.repeat);
+      }
+      plan.overwrite.push({ id: n.id, patch: { html: n.html, text: n.text, color: n.color, reminder: n.reminder, reminders: n.reminders, remindMuted: n.remindMuted } });
     }
   }
   return plan;
@@ -445,7 +493,7 @@ function planRestore(backupNotes, currentNotes, ids, now) {
 
 module.exports = {
   COLORS, MAX_FILE, sanitizeHtml, htmlToMarkdown, markdownToHtml, textToHtml,
-  sanitizeNote, sameContent, mergeImported, parseImportJson, mergeAlarmBox, applyNoteMeta, MAX_HTML, MAX_NOTES,
+  sanitizeNote, sanitizeReminderList, sameContent, mergeImported, parseImportJson, mergeAlarmBox, applyNoteMeta, MAX_HTML, MAX_NOTES,
   noteToText, notesToText, buildExportJson, isBackupName, backupDay, summarizeBackup, planRestore,
   dayStr, stampStr, dueStr
 };

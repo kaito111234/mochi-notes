@@ -9,8 +9,9 @@ const { app, BrowserWindow, Notification, screen, ipcMain, powerMonitor } = requ
 const path = require('path');
 const { getBox, normMemo } = require('./box.js');
 const L = require('./memoLogic.js');
+const { placeAvoiding, needsMove } = require('./placement.js');
 
-const POPUP_W = 360, POPUP_H = 300, RING_OFFSET = 250, QUIT_AUTO_MS = 60000;
+const POPUP_W = 360, POPUP_H = 320, QUIT_AUTO_MS = 60000;
 
 function init(ctx) {
   const box = () => getBox(ctx);
@@ -29,6 +30,13 @@ function init(ctx) {
 
   // ---- hiện nhắc ----
   function notify(items) {
+    if (ctx.alarms && typeof ctx.alarms.toast === 'function' && items.length) {
+      const nt = ctx.alarms.toast({
+        kind: 'memo', refId: items[0].memoId, title: L.titleFor(items), body: items.map(i => i.text).join('\n').slice(0, 250),
+        buttons: [{ id: 'done', label: 'Nhớ rồi' }]
+      });
+      if (nt) return;
+    }
     if (!Notification.isSupported()) return;
     try {
       const nt = new Notification({ title: L.titleFor(items), body: items.map(i => i.text).join('\n').slice(0, 250) });
@@ -38,12 +46,32 @@ function init(ctx) {
     } catch (_) { /* bỏ qua */ }
   }
 
+  const petRect = () => {
+    try { return ctx.pet && typeof ctx.pet.occupiedRect === 'function' ? ctx.pet.occupiedRect() : null; } catch (_) { return null; }
+  };
+  const ringRect = () => {
+    try { return ctx.alarms && typeof ctx.alarms.ringBounds === 'function' ? ctx.alarms.ringBounds() : null; } catch (_) { return null; }
+  };
+  const avoidList = () => [petRect(), ringRect()].filter(Boolean);
   function position(win) {
     const wa = screen.getPrimaryDisplay().workArea;
-    const x = wa.x + wa.width - POPUP_W - 16;
-    const y = Math.max(wa.y + 8, wa.y + wa.height - POPUP_H - 16 - RING_OFFSET);
-    win.setBounds({ x, y, width: POPUP_W, height: POPUP_H });
+    const p = placeAvoiding(wa, { width: POPUP_W, height: POPUP_H }, avoidList(), 16);
+    win.setBounds({ x: p.x, y: p.y, width: POPUP_W, height: POPUP_H });
   }
+  function reposition(force) {
+    if (!ctx.alive(popup) || !popup.isVisible()) return;
+    if (force || needsMove(popup.getBounds(), avoidList())) position(popup);
+  }
+  let moveTimer = null;
+  const onLayout = () => {
+    if (moveTimer) return;
+    moveTimer = setTimeout(() => { moveTimer = null; try { reposition(false); } catch (_) { /* bỏ qua */ } }, 300);
+    if (moveTimer.unref) moveTimer.unref();
+  };
+  bus.on('pet:moved', onLayout);
+  bus.on('alarms:layout', onLayout);
+  bus.on('alarm:stopped', onLayout);
+  bus.on('alarm:snoozed', onLayout);
 
   function showPopup(payload) {
     if (pending && !pending.quitting && !payload.quitting && ctx.alive(popup)) { // gộp vào popup đang mở
@@ -51,8 +79,14 @@ function init(ctx) {
       payload = { ...payload, items: pending.items.concat(payload.items.filter(i => !seen.has(i.memoId))) };
       payload.title = L.titleFor(payload.items);
     }
+    try {
+      const ln = ctx.persona && typeof ctx.persona.pick === 'function'
+        ? ctx.persona.pick('memo', { title: payload.items.map(i => i.text).join('; ').slice(0, 80) }) : null;
+      if (ln && typeof ln.text === 'string' && ln.text.trim()) payload = { ...payload, line: ln.text.trim().slice(0, 140) };
+    } catch (_) { /* câu thoại không ảnh hưởng dặn dò */ }
     pending = payload;
     if (ctx.alive(popup)) {
+      position(popup);
       if (popupReady) ctx.send(popup, 'memo:show', pending);
       if (!popup.isVisible()) popup.showInactive();
       return;
