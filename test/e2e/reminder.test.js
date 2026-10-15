@@ -219,3 +219,85 @@ test('6. hai nhắc cùng lúc: xếp hàng, bấm Xong lần lượt, không m�
     await waitFor(async () => (await H.getNote(app, second)).reminder.done, { timeout: 8000, msg: 'xong cái 2' });
   });
 });
+
+// ---------------------------------------------------------------- 7. (lượt 2) một note có 2 giờ -> 2 nhắc độc lập
+const remsOf = async (app, id) => (await H.getNote(app, id)).reminders || [];
+test('7. note "họp 1 phút nữa / gọi khách 3 phút nữa": đủ 2 nhắc, bấm Xong từng cái độc lập', { timeout: 150000 }, async () => {
+  await run('l2-reminder-2gio', 6, async app => {
+    const { id, page } = await H.newNoteViaShortcut(app);
+    await H.typeInto(page, 'họp 1 phút nữa');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('gọi khách 3 phút nữa');
+    await H.sleep(1200);
+    let rs = await remsOf(app, id);
+    console.log('# 7: reminders=' + JSON.stringify(rs.map(r => ({ id: r.id, title: r.title, in: Math.round((r.due - Date.now()) / 1000) + 's' }))));
+    assert.strictEqual(rs.length, 2, 'cần 2 nhắc cho 2 giờ trong note, có ' + rs.length);
+    assert.notStrictEqual(rs[0].id, rs[1].id, 'id nhắc trùng');
+    const n0 = await H.getNote(app, id);
+    assert.strictEqual(n0.reminder.id, rs[0].id, 'note.reminder phải là nhắc gần nhất (primary)');
+    // rút ngắn: nhắc 1 sau 3s, nhắc 2 sau 12s (vẫn tách rời nhau)
+    const [ra, rb] = rs.map(r => r.id);
+    await app.main((c, e, a) => {
+      const x = c.findNote(a.id); const now = Date.now();
+      x.reminders.find(r => r.id === a.ra).due = now + 3000; x.reminders.find(r => r.id === a.rb).due = now + 12000;
+      for (const r of x.reminders) { r.preFired = true; r.fired = false; r.done = false; }
+      c.store.save(); return true;
+    }, { id, ra, rb });
+    await waitFor(async () => { const s = await H.stageNow(app); return s && s.kind === 'due' && s.payload.noteId === id && s.payload.reminderId === ra; }, { timeout: 15000, msg: 'nhắc 1 lên sân khấu' });
+    await H.sleep(2500);
+    await app.shot('l2-reminder-2gio-nhac1');
+    await H.clickPetButton(app, 'done');
+    await waitFor(async () => (await remsOf(app, id)).find(r => r.id === ra).done === true, { timeout: 8000, msg: 'nhắc 1 done' });
+    rs = await remsOf(app, id);
+    assert.strictEqual(rs.find(r => r.id === rb).done, false, 'Xong nhắc 1 không được đánh dấu xong nhắc 2');
+    await waitFor(async () => { const s = await H.stageNow(app); return s && s.payload && s.payload.noteId === id && s.payload.reminderId === rb; }, { timeout: 20000, msg: 'nhắc 2 lên sân khấu' });
+    await H.sleep(2500);
+    await app.shot('l2-reminder-2gio-nhac2');
+    await H.clickPetButton(app, 'done');
+    await waitFor(async () => (await remsOf(app, id)).every(r => r.done), { timeout: 8000, msg: 'cả hai done' });
+    // lưu xuống đĩa đủ 2 nhắc
+    await app.flush();
+    const saved = app.readData().notes.find(n => n.id === id);
+    assert.strictEqual(saved.reminders.length, 2, 'file dữ liệu thiếu reminders[]');
+  });
+});
+
+test('7b. note bị cất (visible=false) có 2 giờ: cả hai nhắc vẫn kêu đúng hạn', { timeout: 120000 }, async () => {
+  await run('l2-reminder-2gio-an', 6, async app => {
+    const { id, page } = await H.newNoteViaShortcut(app);
+    await H.typeInto(page, 'họp 1 phút nữa');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('gọi khách 3 phút nữa');
+    await H.sleep(1200);
+    const rs = await remsOf(app, id);
+    assert.strictEqual(rs.length, 2, 'cần 2 nhắc, có ' + rs.length);
+    await app.main((c, e, a) => {
+      c.notes.hideNote(a.id);
+      const x = c.findNote(a.id); const now = Date.now();
+      x.reminders[0].due = now + 3000; x.reminders[1].due = now + 5000;
+      for (const r of x.reminders) { r.preFired = true; r.fired = false; r.done = false; }
+      c.store.save(); return true;
+    }, { id });
+    assert.strictEqual((await H.getNote(app, id)).visible, false);
+    await waitFor(async () => (await remsOf(app, id)).every(r => r.fired), { timeout: 20000, msg: 'cả hai nhắc fired khi note ẩn' });
+    await waitFor(async () => { const s = await H.stageNow(app); return s && s.payload && s.payload.noteId === id; }, { timeout: 10000, msg: 'bé nhắc dù note ẩn' });
+    await H.sleep(2000); await app.shot('l2-reminder-2gio-an');
+    assert.strictEqual((await H.getNote(app, id)).visible, false, 'nhắc không được tự bật note lên');
+  });
+});
+
+// ---------------------------------------------------------------- 8. BUG-025: chip không được nói "báo trước 5 phút" khi hạn chỉ còn 2 phút
+test('8. "gọi khách 2 phút nữa": chip không ghi "báo trước" dài hơn thời gian còn lại', { timeout: 60000 }, async () => {
+  await run('l2-reminder-chip-lead', 6, async app => {
+    const { id, page } = await H.newNoteViaShortcut(app);
+    await H.typeInto(page, 'gọi khách 2 phút nữa');
+    await H.sleep(900);
+    const note = await H.getNote(app, id);
+    const chip = await page.evaluate(() => document.getElementById('chipText').textContent);
+    console.log('# 8: lead=' + (note.reminder && note.reminder.lead) + ' chip=' + chip);
+    assert.ok(note.reminder, 'không có nhắc');
+    assert.ok(note.reminder.lead <= note.reminder.due - Date.now() + 1000, 'lead ' + note.reminder.lead / 60000 + ' phút > thời gian còn lại; chip="' + chip + '"');
+    const m = /báo trước (\d+) phút/.exec(chip);
+    if (m) assert.ok(+m[1] * 60000 <= note.reminder.due - Date.now() + 1000, 'chip "' + chip + '" hứa báo trước quá thời gian còn lại');
+  });
+});

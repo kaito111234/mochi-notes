@@ -295,3 +295,23 @@ test('5b. mở lại trễ >30 phút -> mục "Đã lỡ", không kêu', { timeo
     await waitFor(async () => (await box(app)).missed.length === 0, { msg: 'xoá mục lỡ' });
   });
 });
+
+// ---------------------------------------------------------------- lượt 2: BUG-014 tờ "Dặn dò" bé cầm không được hiện NaN/undefined
+test('6. (BUG-014) bé cầm tờ Dặn dò: tờ và bong bóng không có "NaN"/"undefined"', { timeout: 90000 }, async () => {
+  await withApp('l2-alarm-tomemo', { waitNotes: 1 }, async app => {
+    await sleep(2000);
+    for (const when of ['startup', 'evening']) {
+      await app.main((c, e, w) => { c.pet.stage.request({ kind: 'memo', priority: 60, payload: { memoId: 'm_' + w, text: 'Nhớ uống nước nha', when: w } }); return true; }, when);
+      const pet = await app.page('pet.html');
+      await waitFor(async () => !(await pet.evaluate(() => document.getElementById('note').hidden)), { timeout: 20000, msg: 'tờ dặn dò hiện (' + when + ')' });
+      await sleep(1500);
+      const t = await pet.evaluate(() => ({ big: document.getElementById('nBig').textContent, title: document.getElementById('nTitle').textContent, meta: document.getElementById('nMeta').textContent, bubble: document.getElementById('bText').textContent }));
+      console.log('# BUG-014 when=' + when + ': ' + JSON.stringify(t));
+      await app.shot('l2-alarm-tomemo-' + when);
+      const all = [t.big, t.title, t.meta, t.bubble].join(' | ');
+      assert.ok(!/NaN|undefined|null/.test(all), 'tờ dặn dò (when=' + when + ') hiện chữ lỗi: ' + all);
+      await app.main(c => { const cur = c.pet.stage.current(); if (cur) c.pet.stage.cancel(cur.id); return true; });
+      await sleep(1500);
+    }
+  });
+});

@@ -100,7 +100,14 @@ test('1. xuất JSON -> nhập vào hồ sơ mới: note/báo thức/dặn dò g
     for (const o of seed.notes) {
       const g = got.find(x => x.id === o.id);
       assert.ok(g, 'thiếu note ' + o.id);
-      assert.deepStrictEqual(pick(g, ['html', 'text', 'color', 'reminder', 'createdAt']), pick(o, ['html', 'text', 'color', 'reminder', 'createdAt']), 'note ' + o.id + ' khác bản gốc');
+      // Đợt 2 (docs/rooms/notes/API2.md mục 3): migrate thêm reminder.id ('r1') + mảng reminders[] -> có chủ ý; so phần còn lại.
+      const noId = r => { if (!r) return r; const c = Object.assign({}, r); delete c.id; return c; };
+      const view = n => Object.assign(pick(n, ['html', 'text', 'color', 'createdAt']), { reminder: noId(n.reminder) });
+      assert.deepStrictEqual(view(g), view(o), 'note ' + o.id + ' khác bản gốc');
+      if (o.reminder) {
+        assert.ok(Array.isArray(g.reminders) && g.reminders.length === 1, 'note ' + o.id + ' thiếu reminders[] sau migrate');
+        assert.deepStrictEqual(noId(g.reminders[0]), noId(o.reminder), 'reminders[0] khác reminder gốc');
+      }
     }
     const data = app.readData();
     assert.deepStrictEqual(data.alarms.list.map(strip).sort((a, b) => a.id < b.id ? -1 : 1), seed.alarms.list.map(strip).sort((a, b) => a.id < b.id ? -1 : 1), 'báo thức khác');
@@ -246,6 +253,10 @@ test('3b. file hỏng + có bản sao lưu gần nhất: app có dùng lại b�
     const ids = (await app.notes()).map(n => n.id);
     console.log('[data-3b] sau khi file hỏng, note hiện có:', JSON.stringify(ids), '(bản sao lưu có b1,b2)');
     await app.shot('data-3b-hong-co-backup');
+    const rec = await app.main(c => ({ from: c.store.recoveredFrom || null, corrupt: c.store.corruptCopy || null }));
+    console.log('[data-3b] recoveredFrom=' + rec.from + ' corruptCopy=' + rec.corrupt);
+    assert.ok(rec.from && rec.corrupt, 'store.recoveredFrom/corruptCopy phải có để báo người dùng (01-data.md)');
+    assert.ok(fs.readdirSync(udir(home)).some(f => /^mochi-data\.corrupt-\d{8}-\d{6}/.test(f)), 'thiếu bản hỏng mochi-data.corrupt-*.json');
     assert.ok(ids.includes('b1') && ids.includes('b2'),
       'file chính hỏng nhưng app khởi động với ' + ids.length + ' note, không dùng bản sao lưu gần nhất (người dùng thấy mất sạch note)');
   } finally { await app.close(); }
@@ -277,10 +288,13 @@ test('3d. JSON hợp lệ nhưng ngăn alarms sai kiểu: dữ liệu báo thứ
   try {
     await app.main(c => { c.store.save(); c.store.flushSync(); return 1; });
     const d = app.readData();
-    const preserved = JSON.stringify(d).includes('hỏng') || fs.readdirSync(udir(home)).some(x => /\.bak/.test(x));
-    console.log('[data-3d] alarms sau ghi:', JSON.stringify(d.alarms).slice(0, 80), '| giữ bản gốc:', preserved);
+    // Đặc tả mới (store.js section(), commit 70ebdd3): ngăn sai kiểu được cất NGUYÊN BẢN vào mochi-data.section-<tên>-*.json.
+    const kept = fs.readdirSync(udir(home)).filter(x => /^mochi-data\.section-alarms-.*\.json$/.test(x));
+    const preserved = JSON.stringify(d).includes('hỏng') || kept.some(x => fs.readFileSync(path.join(udir(home), x), 'utf8').includes('hỏng'));
+    console.log('[data-3d] alarms sau ghi:', JSON.stringify(d.alarms).slice(0, 80), '| file cất:', kept.join(','), '| giữ bản gốc:', preserved);
     assert.ok(d.notes.find(n => n.id === 'k1'), 'mất note');
-    assert.deepStrictEqual(d.game, seed.game, 'ngăn game bị mất');
+    assert.strictEqual(d.game.stats.candy, 5, 'ngăn game bị mất candy (game được phép thêm khoá mặc định)');
+    assert.ok(preserved, 'ngăn alarms sai kiểu bị thay bằng mặc định mà không giữ bản gốc ở đâu cả');
   } finally { await app.close(); }
 });
 
@@ -384,5 +398,23 @@ test('6. dữ liệu cũ (version 1, thiếu khoá, ngăn lạ): migrate, ngăn 
     const app2 = await launch({ configHome: home });
     try { await app2.main(c => { c.store.save(); c.store.flushSync(); return 1; }); assert.deepStrictEqual(app2.readData().phongChuaCo, seed.phongChuaCo); }
     finally { await app2.close(); }
+  } finally { await app.close(); }
+});
+
+// ---------------------------------------------------------------- 6b. (BUG-031) khoá lạ trên note/reminder/settings sống sót sau nạp + ghi lại
+test('6b. khoá lạ trên note, reminder và settings không bị bỏ khi nạp rồi ghi lại', { timeout: 90000 }, async () => {
+  const home = tmp('unknown-keys');
+  const n = note('u1', { xyzNote: { a: 1 }, reminder: { due: Date.now() + DAY, lead: 0, intent: 'task', auto: false, preFired: false, fired: false, done: false, xyzRem: 'giu' } });
+  const seed = { version: 2, notes: [n], settings: { mascotEnabled: true, xyzSetting: 7 } };
+  const app = await launch({ configHome: home, seed });
+  try {
+    await sleep(1500);
+    await app.main(c => { c.store.save(); c.store.flushSync(); return 1; });
+    const d = app.readData();
+    const g = d.notes.find(x => x.id === 'u1');
+    console.log('[data-6b] note keys=' + Object.keys(g).join(',') + ' | settings.xyzSetting=' + d.settings.xyzSetting + ' | reminder.xyzRem=' + (g.reminder && g.reminder.xyzRem));
+    assert.deepStrictEqual(d.settings.xyzSetting, 7, 'khoá lạ của settings bị bỏ (spec 01-data.md: được giữ)');
+    assert.deepStrictEqual(g.xyzNote, { a: 1 }, 'khoá lạ trên note bị bỏ');
+    assert.strictEqual(g.reminder && g.reminder.xyzRem, 'giu', 'khoá lạ trên reminder bị bỏ');
   } finally { await app.close(); }
 });
