@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-<defs><clipPath id="head-face"><path id="head-facepath" d="M200 98C160 98 138 132 138 172C138 198 146 214 166 220C182 226 218 226 234 220C254 214 262 198 262 172C262 132 240 98 200 98Z"/></clipPath></defs>
-<g id="head-ear_l"><ellipse cx="139" cy="189" rx="8" ry="11" fill="#FFE6DA" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M138 183Q142 189 138 195" fill="none" stroke="#F2C4B5" stroke-width="2" stroke-linecap="round"/></g>
-<g id="head-ear_r"><ellipse cx="261" cy="189" rx="8" ry="11" fill="#FFE6DA" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M262 183Q258 189 262 195" fill="none" stroke="#F2C4B5" stroke-width="2" stroke-linecap="round"/></g>
-<path d="M200 98C160 98 138 132 138 172C138 198 146 214 166 220C182 226 218 226 234 220C254 214 262 198 262 172C262 132 240 98 200 98Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<defs><clipPath id="head-face"><path d="M200 98C160 98 138 132 137 172C134 190 131 206 147 216C164 227 184 224 200 224C216 224 236 227 253 216C269 206 266 190 263 172C262 132 240 98 200 98Z"/></clipPath></defs>
+<g id="head-ear_l"><ellipse cx="139" cy="189" rx="8" ry="11" fill="#FFE6DA" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g id="head-ear_r"><ellipse cx="261" cy="189" rx="8" ry="11" fill="#FFE6DA" stroke="#1F2A44" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></g>
+<path d="M200 98C160 98 138 132 137 172C134 190 131 206 147 216C164 227 184 224 200 224C216 224 236 227 253 216C269 206 266 190 263 172C262 132 240 98 200 98Z" fill="#FFE6DA" stroke="#1F2A44" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
 <g clip-path="url(#head-face)">
-<path d="M130 140L270 140L270 172L252 176L236 172L222 164L210 176L200 190L190 176L176 168L160 172L146 168L130 176Z" fill="#F2C4B5" opacity=".75"/>
-<path d="M130 204Q146 224 170 226L230 226Q254 224 270 204L270 240L130 240Z" fill="#F2C4B5" opacity=".55"/>
-<path d="M140 176Q138 196 150 208" fill="none" stroke="#F2C4B5" stroke-width="5" stroke-linecap="round" opacity=".6"/>
+<path d="M130 140L270 140L270 172L250 176L232 172L218 166L208 178L200 192L190 176L172 170L152 174L130 180Z" fill="#F2C4B5" opacity=".7"/>
+<path d="M130 208Q150 230 176 227L224 227Q252 230 270 208L270 240L130 240Z" fill="#F2C4B5" opacity=".5"/>
+<path d="M139 182Q134 200 146 212" fill="none" stroke="#F2C4B5" stroke-width="5" stroke-linecap="round" opacity=".6"/>
 </g>
-<path d="M168 214Q182 220 196 220" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+<path d="M170 218Q184 222 196 221" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
 </svg>
