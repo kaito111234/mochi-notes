@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- google-site-verification: dán thẻ meta xác minh vào đây -->
+<title>Mochi Notes – Free sticky notes for Windows with a desktop pet reminder</title>
+<meta name="description" content="Mochi Notes is a free, open-source sticky notes app for Windows 10/11 with Mochi, a cute desktop pet that reminds you of tasks. Understands natural Vietnamese times.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#fff0f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d1824" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://kaito111234.github.io/mochi-notes/en/">
+<link rel="alternate" hreflang="vi" href="https://kaito111234.github.io/mochi-notes/">
+<link rel="alternate" hreflang="en" href="https://kaito111234.github.io/mochi-notes/en/">
+<link rel="alternate" hreflang="x-default" href="https://kaito111234.github.io/mochi-notes/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mochi Notes">
+<meta property="og:title" content="Mochi Notes – Free sticky notes for Windows with a desktop pet reminder">
+<meta property="og:description" content="Desktop sticky notes with a tiny pet assistant who reminds you on time. Free, open source, and your data stays on your PC.">
+<meta property="og:url" content="https://kaito111234.github.io/mochi-notes/en/">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="vi_VN">
+<meta property="og:image" content="https://kaito111234.github.io/mochi-notes/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mochi, the desktop pet, walking">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mochi Notes – Free sticky notes for Windows with a desktop pet reminder">
+<meta name="twitter:description" content="Desktop sticky notes with a tiny pet assistant who reminds you on time. Free, open source, and your data stays on your PC.">
+<meta name="twitter:image" content="https://kaito111234.github.io/mochi-notes/images/og.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap">
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "SoftwareApplication",
+ "name": "Mochi Notes",
+ "alternateName": [
+  "Mochi Notes sticky notes",
+  "Ghi chú dán Mochi"
+ ],
+ "description": "Free sticky notes app for Windows with Mochi, a desktop pet that reminds you of tasks in natural Vietnamese.",
+ "operatingSystem": "Windows 10, Windows 11",
+ "applicationCategory": "ProductivityApplication",
+ "softwareVersion": "0.10.0",
+ "downloadUrl": "https://github.com/kaito111234/mochi-notes/releases/latest",
+ "installUrl": "https://github.com/kaito111234/mochi-notes/releases/latest",
+ "url": "https://kaito111234.github.io/mochi-notes/en/",
+ "license": "https://opensource.org/licenses/MIT",
+ "isAccessibleForFree": true,
+ "inLanguage": [
+  "vi",
+  "en"
+ ],
+ "image": "https://kaito111234.github.io/mochi-notes/images/og.png",
+ "screenshot": [
+  "https://kaito111234.github.io/mochi-notes/images/screenshot-notes.webp",
+  "https://kaito111234.github.io/mochi-notes/images/screenshot-alert.webp",
+  "https://kaito111234.github.io/mochi-notes/images/screenshot-onboarding.webp",
+  "https://kaito111234.github.io/mochi-notes/images/screenshot-wardrobe.webp"
+ ],
+ "offers": {
+  "@type": "Offer",
+  "price": "0",
+  "priceCurrency": "USD"
+ },
+ "author": {
+  "@type": "Organization",
+  "name": "Joiha",
+  "url": "https://github.com/kaito111234"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "Joiha"
+ },
+ "codeRepository": "https://github.com/kaito111234/mochi-notes",
+ "sameAs": [
+  "https://github.com/kaito111234/mochi-notes"
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "inLanguage": "en",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is Mochi Notes free?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Mochi Notes is completely free and open-source software under the MIT license. No ads, no account. Note that the Mochi character artwork is copyright Joiha and is not covered by the MIT license (see ASSETS-NOTICE)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Where is my data stored, and is anything sent online?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "All notes, settings and game progress stay on your PC in %APPDATA%\\Mochi Notes. There is no account and no tracking. The only network use is checking for updates through GitHub Releases. You can back up to OneDrive or Google Drive yourself if you like."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does uninstalling delete my notes?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Uninstalling keeps your notes. Your data stays in %APPDATA%\\Mochi Notes, so reinstalling picks up where you left off."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does it work on Windows 10?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. Mochi Notes runs on Windows 10 and Windows 11, with builds for Intel/AMD (x64) and ARM (ARM64)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does Windows show a SmartScreen warning?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The installer is not code-signed yet, so SmartScreen may warn you the first time, which is common for new software. Click More info, then Run anyway, and compare the SHA256 with SHA256SUMS.txt to be sure the file is intact."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do reminders work in English?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Mochi currently parses times typed in Vietnamese (\"9h sáng mai họp\", \"nhắc 15 phút nữa\"), including without diacritics. The app is Vietnamese-first."
+   }
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+ <div class="wrap bar">
+  <a class="brand" href="./"><img src="../favicon-32.png" width="32" height="32" alt=""><span>Mochi Notes</span></a>
+  <nav aria-label="Menu">
+   <a href="#features">Features</a>
+   <a href="#screenshots">Screenshots</a>
+   <a href="#install">Install</a>
+   <a href="#faq">FAQ</a>
+  </nav>
+  <a class="lang" href="../" hreflang="vi" lang="vi" title="Đọc bằng tiếng Việt">Tiếng Việt</a>
+ </div>
+</header>
+<main id="main">
+<section class="hero">
+ <div class="wrap hero-grid">
+  <div>
+   <h1>Mochi Notes<span> – free sticky notes for Windows with a desktop pet</span></h1>
+   <p class="lead">A <strong>desktop sticky notes app</strong> with <strong>Mochi</strong>, a tiny pet assistant. Type a time in natural Vietnamese like "họp 9h sáng mai" (meeting 9am tomorrow) and Mochi runs out to remind you. <strong>Free</strong> and <strong>open source</strong>.</p>
+   <div class="cta">
+    <a class="btn primary" href="https://github.com/kaito111234/mochi-notes/releases/latest"><span>Download for Windows</span><small>Windows 10/11 · free · v0.10.0</small></a>
+    <a class="btn ghost" href="https://github.com/kaito111234/mochi-notes"><span>View on GitHub</span></a>
+   </div>
+   <ul class="chips"><li>Free</li><li>MIT open source</li><li>No account needed</li><li>Data stays on your PC</li></ul>
+  </div>
+  <div class="hero-art">
+   <div class="note n1" aria-hidden="true">Họp team<br>9h sáng mai</div>
+   <img class="pet" src="../images/mochi-walk.gif" width="200" height="200" alt="Mochi, the desktop pet, walking">
+   <div class="note n2" aria-hidden="true">☐ Mua sữa<br>☑ Gửi báo cáo</div>
+  </div>
+ </div>
+</section>
+
+<section id="features" class="sec">
+ <div class="wrap">
+  <h2>Features of Mochi Notes sticky notes</h2>
+  <p class="sub">Notes pinned to your screen and a desktop pet who reminds you, politely.</p>
+  <div class="grid">
+   <article class="card"><div class="ico" aria-hidden="true">📌</div><h3>Desktop sticky notes</h3><p>Many colors and paper styles (lined paper, chalkboard, index card), pins, clips, tape, checklists, a note list and a recoverable trash.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">⏰</div><h3>Natural-language reminders</h3><p>Type &quot;9h sáng mai họp&quot;, &quot;nhắc 15 phút nữa&quot; or &quot;15h gọi khách&quot; in Vietnamese, with or without diacritics. Repeats, lead time and snooze included.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">💥</div><h3>Big center-screen alert</h3><p>If you miss a reminder, Mochi jumps to the middle of the screen and slams her hands. The longer you wait, the angrier she gets (5 levels).</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">🌙</div><h3>Considerate by design</h3><p>Quiet hours (22:00 to 07:00 by default). During meetings, screen sharing or fullscreen apps (Zoom, Teams, Meet...) she only nudges you in a corner.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">💬</div><h3>Talk to Mochi</h3><p>Type &quot;bé ơi, dọn dẹp&quot; (clean up) or &quot;bé ơi, tập trung 25 phút&quot; (focus 25 min) in a note, or press Ctrl+Alt+B for a quick command box.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">🐾</div><h3>A lively pet</h3><p>Walks, runs, sleeps in a bed, reads, drinks tea, dances, gets picked up, tossed or patted. Tidies expired notes into the trash.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">👗</div><h3>Wardrobe, gacha, quests</h3><p>Earn coins by using notes, roll gacha, dress Mochi, take quests. Turn gamification off and notes and reminders keep working.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">🎯</div><h3>Focus and daily summary</h3><p>25-minute Focus mode, a daily repeating checklist and an end-of-day summary.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">☁️</div><h3>Automatic backup</h3><p>Back up to a folder you choose (ideal inside OneDrive or Google Drive), keep the last 30 copies, restore from the tray menu.</p></article>
+   <article class="card"><div class="ico" aria-hidden="true">🔄</div><h3>Auto-update</h3><p>Updates itself through GitHub Releases, plus a 6-step first-run tour for newcomers.</p></article>
+  </div>
+ </div>
+</section>
+
+<section id="screenshots" class="sec alt">
+ <div class="wrap">
+  <h2>App screenshots</h2>
+  <p class="sub">Notes on your desktop, the big alert, the first-run tour and Mochi's room.</p>
+  <div class="shots">
+   <figure><img src="../images/screenshot-notes.webp" width="1280" height="720" alt="Sticky notes on a Windows desktop with Mochi and the toolbar" loading="lazy" decoding="async"><figcaption>Sticky notes on a Windows desktop with Mochi and the toolbar</figcaption></figure>
+   <figure><img src="../images/screenshot-alert.webp" width="1280" height="720" alt="Big center-screen reminder alert from Mochi" loading="lazy" decoding="async"><figcaption>Big center-screen reminder alert from Mochi</figcaption></figure>
+   <figure><img src="../images/screenshot-onboarding.webp" width="1280" height="520" alt="The 6-step first-run tour of Mochi Notes" loading="lazy" decoding="async"><figcaption>The 6-step first-run tour of Mochi Notes</figcaption></figure>
+   <figure><img src="../images/screenshot-wardrobe.webp" width="1280" height="720" alt="Mochi's room: wardrobe to dress up your desktop pet" loading="lazy" decoding="async"><figcaption>Mochi's room: wardrobe to dress up your desktop pet</figcaption></figure>
+  </div>
+ </div>
+</section>
+
+<section class="sec">
+ <div class="wrap two">
+  <div>
+   <h2>Mochi has plenty of moves</h2>
+   <p>Mochi is a reminder assistant and a lovable desktop pet: walking, running, sleeping, reading, drinking tea, dancing. Try typing &quot;bé ơi, múa&quot; (dance).</p>
+   <img class="run" src="../images/mochi-run.gif" width="140" height="140" alt="Mochi running" loading="lazy">
+   <h3>Reminder examples</h3>
+   <p>Type these in a note and Mochi understands the time:</p>
+   <ul class="ex"><li><code>9h sáng mai họp</code></li><li><code>nhắc 15 phút nữa</code></li><li><code>họp 3h chiều nay</code></li><li><code>15h gọi khách</code></li></ul>
+  </div>
+  <div>
+   <img class="poses" src="../images/mochi-poses.webp" width="1280" height="1170" alt="Poses of Mochi, the Windows desktop pet" loading="lazy" decoding="async">
+  </div>
+ </div>
+ <div class="wrap">
+  <h3 class="keys-h">Global shortcuts</h3>
+  <ul class="keys"><li><kbd>Ctrl+Alt+N</kbd><span>New note</span></li><li><kbd>Ctrl+Alt+H</kbd><span>Hide/show all notes</span></li><li><kbd>Ctrl+Alt+L</kbd><span>Open the note list</span></li><li><kbd>Ctrl+Alt+M</kbd><span>Call Mochi out</span></li><li><kbd>Ctrl+Alt+G</kbd><span>Open the game room</span></li><li><kbd>Ctrl+Alt+B</kbd><span>Quick command box</span></li></ul>
+ </div>
+</section>
+
+<section id="install" class="sec alt">
+ <div class="wrap">
+  <h2>Install Mochi Notes on Windows</h2>
+  <p class="sub">Download from the Releases page (Windows 10/11). Latest version: v0.10.0.</p>
+  <div class="grid files">
+   <a class="card file rec" href="https://github.com/kaito111234/mochi-notes/releases/latest"><em>Recommended</em><h3>Setup x64</h3><code>MochiNotes-Setup-0.10.0-x64.exe</code><p>Intel/AMD Windows. One click, no admin rights, shortcuts, auto-update.</p></a>
+   <a class="card file" href="https://github.com/kaito111234/mochi-notes/releases/latest"><h3>Setup ARM64</h3><code>MochiNotes-Setup-0.10.0-arm64.exe</code><p>Windows on ARM.</p></a>
+   <a class="card file" href="https://github.com/kaito111234/mochi-notes/releases/latest"><h3>Portable</h3><code>MochiNotes-Portable-0.10.0.exe</code><p>Run without installing (x64).</p></a>
+   <a class="card file" href="https://github.com/kaito111234/mochi-notes/releases/latest"><h3>Zip x64</h3><code>MochiNotes-0.10.0-x64.zip</code><p>Unzip and run Mochi Notes.exe.</p></a>
+  </div>
+  <div class="grid three">
+   <div class="card"><h3>Getting past SmartScreen</h3><p>Builds are not code-signed yet, so Windows may show &quot;Windows protected your PC&quot; the first time. This is normal for new software:</p><ol><li>Click <strong>More info</strong>.</li><li>Click <strong>Run anyway</strong>.</li></ol></div>
+   <div class="card"><h3>Verify the SHA256</h3><p>To make sure your download was not tampered with, compare its hash with SHA256SUMS.txt attached to each release:</p><pre><code>certutil -hashfile MochiNotes-Setup-0.10.0-x64.exe SHA256</code></pre></div>
+   <div class="card"><h3>Uninstall and your data</h3><p>Uninstall from Settings → Apps as usual. Uninstalling keeps your notes. Data lives in <code>%APPDATA%\Mochi Notes</code>.</p></div>
+  </div>
+  <p class="center"><a class="btn primary" href="https://github.com/kaito111234/mochi-notes/releases/latest"><span>Download for Windows</span><small>Windows 10/11 · free · v0.10.0</small></a></p>
+ </div>
+</section>
+
+<section id="faq" class="sec">
+ <div class="wrap narrow">
+  <h2>Frequently asked questions</h2>
+  <details><summary>Is Mochi Notes free?</summary><p>Yes. Mochi Notes is completely free and open-source software under the MIT license. No ads, no account. Note that the Mochi character artwork is copyright Joiha and is not covered by the MIT license (see ASSETS-NOTICE).</p></details>
+  <details><summary>Where is my data stored, and is anything sent online?</summary><p>All notes, settings and game progress stay on your PC in %APPDATA%\Mochi Notes. There is no account and no tracking. The only network use is checking for updates through GitHub Releases. You can back up to OneDrive or Google Drive yourself if you like.</p></details>
+  <details><summary>Does uninstalling delete my notes?</summary><p>No. Uninstalling keeps your notes. Your data stays in %APPDATA%\Mochi Notes, so reinstalling picks up where you left off.</p></details>
+  <details><summary>Does it work on Windows 10?</summary><p>Yes. Mochi Notes runs on Windows 10 and Windows 11, with builds for Intel/AMD (x64) and ARM (ARM64).</p></details>
+  <details><summary>Why does Windows show a SmartScreen warning?</summary><p>The installer is not code-signed yet, so SmartScreen may warn you the first time, which is common for new software. Click More info, then Run anyway, and compare the SHA256 with SHA256SUMS.txt to be sure the file is intact.</p></details>
+  <details><summary>Do reminders work in English?</summary><p>Mochi currently parses times typed in Vietnamese (&quot;9h sáng mai họp&quot;, &quot;nhắc 15 phút nữa&quot;), including without diacritics. The app is Vietnamese-first.</p></details>
+ </div>
+</section>
+</main>
+<footer class="foot">
+ <div class="wrap">
+  <p>An open-source project by <a href="https://github.com/kaito111234">Joiha</a>. Source code under the <a href="https://github.com/kaito111234/mochi-notes/blob/master/LICENSE">MIT</a> license; the Mochi character artwork is not MIT, see <a href="https://github.com/kaito111234/mochi-notes/blob/master/ASSETS-NOTICE.md">ASSETS-NOTICE</a>.</p>
+  <p class="links"><a href="https://github.com/kaito111234/mochi-notes">GitHub</a> · <a href="https://github.com/kaito111234/mochi-notes/releases">Releases</a> · <a href="https://github.com/kaito111234/mochi-notes/issues">Report a bug</a> · <a href="https://github.com/kaito111234/mochi-notes/blob/master/CHANGELOG.md">Changelog</a></p>
+  <p class="small">Mochi Notes © Joiha · <a href="../" hreflang="vi" lang="vi">Tiếng Việt</a></p>
+ </div>
+</footer>
+</body>
+</html>

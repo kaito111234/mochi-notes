@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kaito111234.github.io/mochi-notes/sitemap.xml

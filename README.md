@@ -16,7 +16,9 @@
 
 <img src="docs/images/mochi-walk.gif" alt="Bé Mochi đi bộ" width="140">&nbsp;&nbsp;<img src="docs/images/mochi-run.gif" alt="Bé Mochi chạy" width="140">
 
-**Tiếng Việt** · [English](#english)
+<p><a href="https://kaito111234.github.io/mochi-notes/"><img alt="Trang web Mochi Notes" src="https://img.shields.io/badge/Trang%20web-kaito111234.github.io%2Fmochi--notes-ee6a9a?style=for-the-badge&logo=githubpages&logoColor=white"></a></p>
+
+**Tiếng Việt** · [English](#english) · [Trang web](https://kaito111234.github.io/mochi-notes/)
 
 </div>
 
@@ -191,6 +193,8 @@ Cảm ơn [Electron](https://www.electronjs.org/), [electron-builder](https://ww
 ---
 
 <h2 id="english">English</h2>
+
+[![Website](https://img.shields.io/badge/Website-kaito111234.github.io%2Fmochi--notes-ee6a9a?style=for-the-badge&logo=githubpages&logoColor=white)](https://kaito111234.github.io/mochi-notes/en/)
 
 **Mochi Notes** is a **sticky-note app for Windows** with a **desktop pet named Mochi**. Pin notes to your screen, type times in natural Vietnamese ("họp 9h sáng mai" = "meeting 9am tomorrow"), and Mochi walks out to remind you at the right moment. Everything stays on your machine. Open source under the MIT license.
 
