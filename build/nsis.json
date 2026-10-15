@@ -1,0 +1,26 @@
+{
+  "_ghichu": "Đề xuất cho phòng điều hành: gộp các khoá này vào package.json -> build.win.target thêm nsis, và build.nsis = khối dưới. Autostart là việc của app (app.setLoginItemSettings), KHÔNG đặt trong bộ cài.",
+  "win": {
+    "target": [
+      { "target": "nsis", "arch": ["x64"] },
+      { "target": "zip", "arch": ["x64"] }
+    ],
+    "icon": "assets/icon.ico",
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Mochi Notes",
+    "uninstallDisplayName": "Mochi Notes",
+    "deleteAppDataOnUninstall": false,
+    "runAfterFinish": true,
+    "installerLanguages": ["vi_VN"],
+    "language": "1066",
+    "artifactName": "Mochi-Notes-Setup-${version}.${ext}"
+  }
+}
