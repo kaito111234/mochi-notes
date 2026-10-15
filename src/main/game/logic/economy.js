@@ -1,6 +1,7 @@
 'use strict';
 // Kinh tế game: xu/exp, chống cày, chuỗi ngày, level. Thuần, nhận `now`.
 const { dayKey, isYesterday } = require('./time');
+const checklist = require('./checklist');
 
 const RULES = {
   done: { candy: 10, exp: 10 },
@@ -116,7 +117,7 @@ function onCheckItem(box, { noteId, index, done, note, now } = {}) {
   if (off(box) || done !== true) return null;
   const day = rollDay(box, now);
   if (!noteOldEnough(note, now)) return null;
-  const key = `chk:${noteId}:${index}`;
+  const key = checklist.rewardKey(noteId, index, note);   // theo nội dung dòng; thiếu chữ -> khoá cũ theo chỉ số
   if (box.rewarded[key]) return null;
   box.rewarded[key] = now;
   const candy = capCoins(box, RULES.checkItem.candy);

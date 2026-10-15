@@ -26,7 +26,7 @@ test('roll: tạo lần đầu, giữ nguyên cùng kỳ', () => {
   const b = mkBox();
   quests.roll(b, THU);
   assert.strictEqual(b.quests.daily.length, 3);
-  assert.strictEqual(b.quests.weekly.length, 1);
+  assert.strictEqual(b.quests.weekly.length, 3);
   quests.progress(b, 'done', 2, THU);
   quests.roll(b, THU_LATE);
   assert.strictEqual(find(b, 'daily.done3').progress, 2);

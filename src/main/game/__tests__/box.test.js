@@ -9,7 +9,7 @@ test('VERSION = 1 và defaults đúng hợp đồng', () => {
   assert.equal(d.version, 1);
   assert.equal(d.settings.enabled, true);
   assert.deepEqual(d.stats, { energy: 80, mood: 70, affection: 0, candy: 100, exp: 0, streak: { count: 0, lastDay: '' } });
-  assert.equal(Object.keys(d.counters).length, 10);
+  assert.equal(Object.keys(d.counters).length, 12);
   assert.notEqual(defaults().stats, d.stats); // mỗi lần một bản mới
 });
 

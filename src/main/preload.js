@@ -124,9 +124,13 @@ api.game = {
   exchange: itemId => inv('game:exchange', itemId),
   buyFeed: foodId => inv('game:feed', foodId),    // mua + cho ăn ngay
   claim: questId => inv('game:claim', questId),
+  checkin: () => inv('game:checkin'),                 // -> { ok, reason?, reward:{candy,food?}, view }
+  buy: (foodId, n) => inv('game:buy', foodId, n),     // mua n (1-10) vào túi -> { ok, reason?, view }
+  feedBag: foodId => inv('game:feedBag', foodId),     // cho ăn từ túi -> { ok, reason?, factor, line?, view }
+  claimSet: setId => inv('game:claimSet', setId),     // nhận thưởng bộ -> { ok, reason?, reward, view }
   close: () => inv('game:close'),
   onChanged: cb => on('game:changed', cb),        // cb(View)
-  onTab: cb => on('game:tab', cb)                 // cb('wardrobe'|'gacha'|'shop'|'quests'|'stats')
+  onTab: cb => on('game:tab', cb)                 // cb('wardrobe'|'gacha'|'shop'|'quests'|'stats'|'album')
 };
 // ===== HẾT PHÒNG game =====
 // ===== BẮT ĐẦU PHÒNG paper (kênh 'paper:*') =====
