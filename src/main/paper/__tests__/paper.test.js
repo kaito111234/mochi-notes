@@ -42,6 +42,19 @@ t('applySettings', () => {
   assert.strictEqual(L.applySettings(s, { defaultPaper: 'BAD' }).defaultPaper, 'p1');
   assert.deepStrictEqual(L.applySettings(s, {}), s);
 });
+t('hiddenPapers', () => {
+  assert.deepStrictEqual(L.defaultSettings().hiddenPapers, []);
+  const long = 'a'.repeat(64), tooLong = 'a'.repeat(65);
+  const s = L.applySettings(L.defaultSettings(), { hiddenPapers: ['a', 'a', 'B', 3, null, '', tooLong, long, 'x-1'] });
+  assert.deepStrictEqual(s.hiddenPapers, ['a', long, 'x-1']);
+  assert.deepStrictEqual(L.applySettings(s, { tilt: true }).hiddenPapers, s.hiddenPapers);   // không đụng khi patch không có khoá
+  assert.deepStrictEqual(L.applySettings(s, { hiddenPapers: 'x' }).hiddenPapers, s.hiddenPapers); // không phải mảng => bỏ qua
+  assert.deepStrictEqual(L.applySettings(s, { hiddenPapers: [] }).hiddenPapers, []);             // thay cả mảng
+  const many = Array.from({ length: 300 }, (_, i) => 'p' + i);
+  assert.strictEqual(L.applySettings(s, { hiddenPapers: many }).hiddenPapers.length, 200);
+  assert.deepStrictEqual(L.normalize({ settings: { hiddenPapers: ['q', 'q', 'BAD'] } }).settings.hiddenPapers, ['q']);
+  assert.deepStrictEqual(L.normalizeSettings({ hiddenPapers: 'x' }).hiddenPapers, []);
+});
 t('defaultFor', () => {
   assert.strictEqual(L.defaultFor(L.defaultSettings()), null);
   assert.deepStrictEqual(L.defaultFor({ defaultPaper: 'p' }), { paper: 'p' });

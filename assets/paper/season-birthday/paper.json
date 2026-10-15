@@ -1,0 +1,74 @@
+{
+  "id": "season-birthday",
+  "name": "Sinh nhật",
+  "group": "season",
+  "order": 50,
+  "noteColor": "pink",
+  "dark": false,
+  "bg": {
+    "color": "#fff4f8",
+    "head": "#ffe0ec",
+    "gradient": [
+      "#fff4f8",
+      "#ffeef6"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "dots",
+    "color": "rgba(230,110,160,.4)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Sinh nhật",
+    "font": "pangolin",
+    "color": "#c2255c",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#5a2a3d",
+  "font": "pangolin",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/bunting.svg",
+      "pos": "bl",
+      "w": 100,
+      "dx": 4,
+      "dy": 6,
+      "rot": -3
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/cake.svg",
+      "pos": "br",
+      "w": 44,
+      "dx": 8,
+      "dy": 8,
+      "rot": 6
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/balloon.svg",
+      "pos": "tr",
+      "w": 30,
+      "dx": 6,
+      "dy": 26,
+      "rot": 10
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/balloon-blue.svg",
+      "pos": "tr",
+      "w": 28,
+      "dx": 32,
+      "dy": 34,
+      "rot": -8
+    }
+  ],
+  "checklist": false
+}

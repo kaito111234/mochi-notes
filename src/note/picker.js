@@ -13,6 +13,8 @@
   var gridBuilt = Object.create(null);    // groupId -> true
   var els = {};
   var lastPaperId = null;
+  var viewSig = '', editing = false, localHidden = [];   // chế độ ẩn/hiện mẫu; localHidden dùng khi settings chưa có hiddenPapers
+  var SVGNS = 'http://www.w3.org/2000/svg';
 
   function $(tag, cls, text) {
     var e = document.createElement(tag);
@@ -50,11 +52,18 @@
       built = false; // thử lại lần mở sau
       return;
     }
-    panel.appendChild(headRow());
+    panel.appendChild(headRow(true));
     els.tabs = $('div', 'pk-tabs');
     els.tabs.setAttribute('role', 'tablist');
     els.tabs.setAttribute('aria-label', 'Nhóm mẫu giấy');
     panel.appendChild(els.tabs);
+    els.bar = $('div', 'pk-bar'); els.bar.hidden = true;
+    els.barTxt = $('span', 'pk-bartxt', 'Bấm ô để ẩn / hiện mẫu.');
+    els.showAll = $('button', 'pk-showall', 'Hiện lại tất cả');
+    els.showAll.type = 'button';
+    els.showAll.addEventListener('click', function () { setHidden([]); });
+    els.bar.appendChild(els.barTxt); els.bar.appendChild(els.showAll);
+    panel.appendChild(els.bar);
     els.grid = $('div', 'pk-grid');
     els.grid.setAttribute('role', 'listbox');
     els.grid.setAttribute('aria-label', 'Mẫu giấy');
@@ -67,6 +76,14 @@
   function headRow() {
     var h = $('div', 'pk-head');
     h.appendChild($('div', 'ptitle pk-title', 'Mẫu giấy'));
+    if (arguments.length && arguments[0]) {
+      var ed = $('button', 'pk-edit', 'Sửa danh sách');
+      ed.type = 'button'; ed.setAttribute('aria-pressed', 'false');
+      ed.title = 'Ẩn / hiện mẫu trong bộ chọn';
+      ed.addEventListener('click', function () { setEditing(!editing); });
+      els.edit = ed;
+      h.appendChild(ed);
+    }
     var x = $('button', 'pk-x', '✕');
     x.type = 'button'; x.title = 'Đóng (Esc)'; x.setAttribute('aria-label', 'Đóng bộ chọn mẫu giấy');
     x.addEventListener('click', function () { close(); });
@@ -100,11 +117,64 @@
     return d ? d.group : null;
   }
 
+  /* ---------- ẩn / hiện mẫu ---------- */
+  function hiddenList() {
+    var h = state().settings && state().settings.hiddenPapers;
+    return Array.isArray(h) ? h : localHidden;
+  }
+  function locked(id) {
+    var s = state();
+    return id === s.paperId || id === (s.settings && s.settings.defaultPaper);
+  }
+  function isHidden(id) { return !locked(id) && hiddenList().indexOf(id) >= 0; }
+  function setHidden(arr) {
+    localHidden = arr.slice();
+    var S = window.MochiPaperStore;
+    if (S && S.setSettings) {
+      var p = safe(function () { return S.setSettings({ hiddenPapers: arr }); });
+      if (p && p.then) p.then(refreshView, refreshView);
+    }
+    refreshView();
+  }
+  function toggleHidden(id) {
+    if (locked(id)) return;
+    var h = hiddenList().slice(), i = h.indexOf(id);
+    if (i >= 0) h.splice(i, 1); else h.push(id);
+    setHidden(h);
+  }
+  function visibleCount(gid) {
+    return (safe(function () { return P().list(); }) || []).filter(function (d) { return d.group === gid && !isHidden(d.id); }).length;
+  }
+  function tabShown(g) { return editing || g.id === 'plain' || g === groups[0] || visibleCount(g.id) > 0; }
+  function refreshView() {
+    if (!built) return;
+    var cur = groups.filter(function (g) { return g.id === activeGroup; })[0];
+    selectGroup(cur && tabShown(cur) ? activeGroup : (groups.filter(tabShown)[0] || groups[0] || {}).id, false);
+    updateBar();
+  }
+  function updateBar() {
+    els.edit.textContent = editing ? 'Xong' : 'Sửa danh sách';
+    els.edit.setAttribute('aria-pressed', String(editing));
+    els.edit.classList.toggle('on', editing);
+    els.bar.hidden = !editing;
+    var n = hiddenList().filter(function (id) { return !locked(id) && safe(function () { return P().get(id); }); }).length;
+    els.barTxt.textContent = n ? 'Đang ẩn ' + n + ' mẫu' : 'Bấm ô để ẩn / hiện';
+    els.showAll.disabled = !n;
+    panel.classList.toggle('pk-editing', editing);
+  }
+  function setEditing(on) {
+    editing = !!on;
+    preview(null);
+    refreshView();
+    var b = els.edit; if (b) safe(function () { b.focus({ preventScroll: true }); });
+  }
+
   function selectGroup(gid, userClick) {
     if (!gid && groups[0]) gid = groups[0].id;
     activeGroup = gid;
     groups.forEach(function (g) {
       var on = g.id === gid, b = els.tabBtns[g.id];
+      b.hidden = !tabShown(g);
       b.classList.toggle('on', on);
       b.setAttribute('aria-selected', String(on));
       b.tabIndex = on ? 0 : -1;
@@ -129,13 +199,21 @@
     c.appendChild(th);
     c.appendChild($('span', 'pk-name', def.name));
     c.title = def.name;
+    var eye = $('span', 'pk-eye'); eye.setAttribute('aria-hidden', 'true');
+    var sv = document.createElementNS(SVGNS, 'svg'); sv.setAttribute('viewBox', '0 0 24 24');
+    var a = document.createElementNS(SVGNS, 'path'); a.setAttribute('d', 'M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z');
+    var b = document.createElementNS(SVGNS, 'circle'); b.setAttribute('cx', '12'); b.setAttribute('cy', '12'); b.setAttribute('r', '3');
+    var sl = document.createElementNS(SVGNS, 'path'); sl.setAttribute('d', 'M3 3l18 18'); sl.setAttribute('class', 'sl');
+    sv.appendChild(a); sv.appendChild(b); sv.appendChild(sl); eye.appendChild(sv);
+    c.appendChild(eye);
     thumbCache[def.id] = c;
     return c;
   }
 
   function fillGrid(gid) {
-    var list = (safe(function () { return P().list(); }) || []).filter(function (d) { return d.group === gid; });
+    var list = (safe(function () { return P().list(); }) || []).filter(function (d) { return d.group === gid && (editing || !isHidden(d.id)); });
     els.grid.textContent = '';
+    if (!list.length) els.grid.appendChild($('div', 'pk-empty pk-gempty', 'Không còn mẫu nào trong nhóm này.'));
     list.forEach(function (d) { els.grid.appendChild(makeCell(d)); });
     gridBuilt[gid] = true;
     syncSelection();
@@ -147,7 +225,10 @@
     if (!els.grid) return;
     var cur = state().paperId, cs = cells(), tabbable = null;
     cs.forEach(function (c) {
-      var on = c.dataset.id === cur;
+      var on = c.dataset.id === cur, hid = isHidden(c.dataset.id), lk = locked(c.dataset.id);
+      c.classList.toggle('hid', hid);
+      c.classList.toggle('lk', lk);
+      c.title = editing ? (lk ? 'Đang dùng / mặc định: luôn hiện' : (hid ? 'Bấm để hiện lại' : 'Bấm để ẩn')) : (c.getAttribute('aria-label') || '');
       c.setAttribute('aria-selected', String(on));
       c.classList.toggle('sel', on);
       if (on) tabbable = c;
@@ -159,23 +240,23 @@
   function bindGrid() {
     var g = els.grid;
     g.addEventListener('mouseover', function (e) {
-      var c = e.target.closest('.pk-cell'); if (c) preview(c.dataset.id);
+      var c = e.target.closest('.pk-cell'); if (c && !editing) preview(c.dataset.id);
     });
     g.addEventListener('mouseleave', function () { preview(null); });
     g.addEventListener('focusin', function (e) {
-      var c = e.target.closest('.pk-cell'); if (c) preview(c.dataset.id);
+      var c = e.target.closest('.pk-cell'); if (c && !editing) preview(c.dataset.id);
     });
     g.addEventListener('focusout', function (e) {
       if (!e.relatedTarget || !g.contains(e.relatedTarget)) preview(null);
     });
     g.addEventListener('click', function (e) {
-      var c = e.target.closest('.pk-cell'); if (c) choosePaper(c.dataset.id);
+      var c = e.target.closest('.pk-cell'); if (c) cellAct(c.dataset.id);
     });
     g.addEventListener('keydown', function (e) {
       var cs = cells(), i = cs.indexOf(document.activeElement);
       if (i < 0) return;
       var n = i, k = e.key;
-      if (k === 'Enter' || k === ' ') { e.preventDefault(); choosePaper(cs[i].dataset.id); return; }
+      if (k === 'Enter' || k === ' ') { e.preventDefault(); cellAct(cs[i].dataset.id); return; }
       var cols = columns(cs);
       if (k === 'ArrowRight') n = Math.min(cs.length - 1, i + 1);
       else if (k === 'ArrowLeft') n = Math.max(0, i - 1);
@@ -199,6 +280,12 @@
     if (id == null) { if (!previewing) return; previewing = false; safe(function () { C().preview(null); }); return; }
     previewing = true;
     safe(function () { C().preview(id); });
+  }
+  function cellAct(id) {
+    if (!editing) { choosePaper(id); return; }
+    var ids = cells().map(function (c) { return c.dataset.id; }), i = ids.indexOf(id);
+    toggleHidden(id);
+    var c = cells()[i]; if (c) safe(function () { c.focus({ preventScroll: true }); });
   }
   function choosePaper(id) {
     previewing = false;
@@ -294,7 +381,8 @@
   function sync() {
     if (!built) return;
     var s = state();
-    syncSelection();
+    var sig = (editing ? 'e' : 'v') + hiddenList().join(',') + '|' + (s.paperId || '') + '|' + (s.settings && s.settings.defaultPaper || '');
+    if (sig !== viewSig) { viewSig = sig; refreshView(); } else updateBar();
     if (els.font) els.font.value = (s.meta && s.meta.font) || '';
     var shape = s.meta && s.meta.shape || 'free';
     shapeMark(shape);
@@ -312,6 +400,7 @@
     if (N && N.closePops) safe(function () { N.closePops(); });
     build();
     if (built) {
+      editing = false; updateBar();
       var gid = groupOf(state().paperId) || (groups[0] && groups[0].id);
       selectGroup(gid, false);
       sync();

@@ -1,0 +1,62 @@
+{
+  "id": "season-summer",
+  "name": "Mùa hè",
+  "group": "season",
+  "order": 40,
+  "noteColor": "blue",
+  "dark": false,
+  "bg": {
+    "color": "#e6f6fb",
+    "head": "#cdeef7",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(40,140,170,.26)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Hè rồi!",
+    "font": "baloo2",
+    "color": "#c2410c",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#17434f",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/sun.svg",
+      "pos": "tr",
+      "w": 46,
+      "dx": 6,
+      "dy": 2,
+      "rot": 8
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/watermelon.svg",
+      "pos": "br",
+      "w": 40,
+      "dx": 8,
+      "dy": 8,
+      "rot": -8
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/ice-cream.svg",
+      "pos": "tr",
+      "w": 34,
+      "dx": 60,
+      "dy": 10,
+      "rot": -6
+    }
+  ],
+  "checklist": false
+}

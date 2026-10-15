@@ -10,12 +10,24 @@ function defaults() {
   return { v: 1, settings: defaultSettings(), noteMeta: {} };
 }
 function defaultSettings() {
-  return { defaultPaper: null, defaultFont: null, hideDeco: false, tilt: false };
+  return { defaultPaper: null, defaultFont: null, hideDeco: false, tilt: false, hiddenPapers: [] };
 }
 
 // id mẫu/phông: chuỗi [a-z0-9-] dài 1..40, ngược lại null
 function cleanId(v) {
   return typeof v === 'string' && /^[a-z0-9-]{1,40}$/.test(v) ? v : null;
+}
+// danh sách id mẫu ẩn: chỉ chuỗi [a-z0-9-]{1,64}, bỏ trùng, tối đa 200
+function cleanHidden(a) {
+  const out = [];
+  if (!Array.isArray(a)) return out;
+  const seen = new Set();
+  for (const v of a) {
+    if (typeof v !== 'string' || !/^[a-z0-9-]{1,64}$/.test(v) || seen.has(v)) continue;
+    seen.add(v); out.push(v);
+    if (out.length >= 200) break;
+  }
+  return out;
 }
 function okNoteId(id) {
   return typeof id === 'string' && id.length > 0 && id.length <= 200 && !BAD.has(id);
@@ -46,6 +58,7 @@ function normalizeSettings(s) {
   if (own(s, 'defaultFont')) out.defaultFont = cleanId(s.defaultFont);
   if (typeof s.hideDeco === 'boolean') out.hideDeco = s.hideDeco;
   if (typeof s.tilt === 'boolean') out.tilt = s.tilt;
+  out.hiddenPapers = cleanHidden(s.hiddenPapers);
   return out;
 }
 
@@ -82,6 +95,7 @@ function applySettings(settings, patch) {
   if (own(patch, 'defaultFont')) { if (patch.defaultFont === null) out.defaultFont = null; else { const s = cleanId(patch.defaultFont); if (s) out.defaultFont = s; } }
   if (typeof patch.hideDeco === 'boolean') out.hideDeco = patch.hideDeco;
   if (typeof patch.tilt === 'boolean') out.tilt = patch.tilt;
+  if (own(patch, 'hiddenPapers') && Array.isArray(patch.hiddenPapers)) out.hiddenPapers = cleanHidden(patch.hiddenPapers);
   return out;
 }
 
@@ -120,6 +134,6 @@ function clampBounds(size, cur, wa) {
 }
 
 module.exports = {
-  BAD, SHAPES, defaults, defaultSettings, cleanId, okNoteId, normalizeMeta, normalizeSettings,
+  BAD, SHAPES, defaults, defaultSettings, cleanId, cleanHidden, okNoteId, normalizeMeta, normalizeSettings,
   normalize, applyPatch, applySettings, defaultFor, cleanIndex, clampBounds
 };

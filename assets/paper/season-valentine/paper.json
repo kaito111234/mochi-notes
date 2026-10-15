@@ -1,0 +1,65 @@
+{
+  "id": "season-valentine",
+  "name": "Thương",
+  "group": "season",
+  "order": 60,
+  "noteColor": "pink",
+  "dark": false,
+  "bg": {
+    "color": "#ffe6ef",
+    "head": "#ffd0e1",
+    "gradient": [
+      "#ffe9f1",
+      "#ffdbe8"
+    ],
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(220,90,130,.3)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Thương",
+    "font": "pangolin",
+    "color": "#b3194f",
+    "size": 24,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#5f1f38",
+  "font": "mali",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/items/envelope.svg",
+      "pos": "tr",
+      "w": 46,
+      "dx": 8,
+      "dy": 2,
+      "rot": 6
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/heart.svg",
+      "pos": "br",
+      "w": 34,
+      "dx": 10,
+      "dy": 10,
+      "rot": -10
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/heart.svg",
+      "pos": "tr",
+      "w": 20,
+      "dx": 60,
+      "dy": 40,
+      "rot": 14
+    }
+  ],
+  "checklist": false
+}

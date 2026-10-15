@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="checklist.css">
 <link rel="stylesheet" href="picker.css">
 <link rel="stylesheet" href="insight.css">
+<link rel="stylesheet" href="reminders.css">
 </head>
 <body data-color="yellow">
 <div class="note" id="note">
@@ -106,8 +107,8 @@
       <button class="mi danger" type="button" role="menuitem" data-act="delete"><span>Xoá note</span></button>
     </div>
     <div id="menuConfirm" hidden>
-      <div class="ptitle">Xoá note này?</div>
-      <div class="pnote">Note sẽ bị xoá hẳn, không khôi phục được.</div>
+      <div class="ptitle">Chuyển vào thùng rác?</div>
+      <div class="pnote">Khôi phục được trong 30 ngày ở danh sách note.</div>
       <div class="row">
         <button class="btn danger" type="button" data-act="del-yes">Xoá</button>
         <button class="btn" type="button" data-act="del-no" id="delNo">Huỷ</button>
@@ -118,36 +119,50 @@
   <div class="pop picker-panel" id="pickerPanel" hidden role="dialog" aria-label="Mẫu giấy"></div>
 
   <div class="pop panel" id="remPanel" hidden role="dialog" aria-label="Nhắc lịch">
-    <div class="ptitle">Nhắc lịch</div>
-    <label class="fld"><span>Thời gian</span><input type="datetime-local" id="remDue"></label>
-    <div class="two">
-    <label class="fld"><span>Báo trước</span>
-      <select id="remLead">
-        <option value="0">Đúng giờ</option>
-        <option value="300000">5 phút</option>
-        <option value="600000">10 phút</option>
-        <option value="900000">15 phút</option>
-        <option value="1800000">30 phút</option>
-        <option value="3600000">1 tiếng</option>
-        <option value="86400000">1 ngày</option>
-      </select>
-    </label>
-    <label class="fld"><span>Lặp lại</span>
-      <select id="remRepeat">
-        <option value="none">Không</option>
-        <option value="daily">Hằng ngày</option>
-        <option value="weekdays">Ngày thường (T2–T6)</option>
-        <option value="weekly" id="optWeekly">Hằng tuần</option>
-        <option value="monthly" id="optMonthly">Hằng tháng</option>
-      </select>
-    </label>
+    <div class="remscroll">
+      <div id="remList" hidden>
+        <div class="ptitle">Nhắc lịch</div>
+        <ul class="remitems" id="remItems"></ul>
+      </div>
+      <div id="remForm">
+        <div class="ptitle" id="remFormTitle">Nhắc lịch</div>
+        <label class="fld" id="remTitleFld" hidden><span>Tên nhắc</span><input type="text" id="remTitle" maxlength="80" placeholder="Để trống = tiêu đề note" autocomplete="off"></label>
+        <label class="fld"><span>Thời gian</span><input type="datetime-local" id="remDue"></label>
+        <div class="two">
+        <label class="fld"><span>Báo trước</span>
+          <select id="remLead">
+            <option value="0">Đúng giờ</option>
+            <option value="300000">5 phút</option>
+            <option value="600000">10 phút</option>
+            <option value="900000">15 phút</option>
+            <option value="1800000">30 phút</option>
+            <option value="3600000">1 tiếng</option>
+            <option value="86400000">1 ngày</option>
+          </select>
+        </label>
+        <label class="fld"><span>Lặp lại</span>
+          <select id="remRepeat">
+            <option value="none">Không</option>
+            <option value="daily">Hằng ngày</option>
+            <option value="weekdays">Ngày thường (T2–T6)</option>
+            <option value="weekly" id="optWeekly">Hằng tuần</option>
+            <option value="monthly" id="optMonthly">Hằng tháng</option>
+          </select>
+        </label>
+        </div>
+        <div class="auto" id="remAuto" hidden>Tự hiểu từ nội dung</div>
+        <div class="err" id="remErr" role="alert" hidden></div>
+      </div>
     </div>
-    <div class="auto" id="remAuto" hidden>Tự hiểu từ nội dung</div>
-    <div class="err" id="remErr" role="alert" hidden></div>
-    <div class="row">
+    <div class="row remfoot" id="remFormBtns">
       <button class="btn primary" type="button" id="remSave">Lưu</button>
       <button class="btn" type="button" id="remOff">Tắt nhắc</button>
-      <button class="btn" type="button" id="remDone">Đánh dấu xong</button>
+      <button class="btn" type="button" id="remDone">Xong</button>
+      <button class="btn" type="button" id="remBack" hidden>Quay lại</button>
+    </div>
+    <div class="row remfoot" id="remListBtns" hidden>
+      <button class="btn primary" type="button" id="remAdd">+ Thêm nhắc</button>
+      <button class="btn" type="button" id="remClose">Đóng</button>
     </div>
   </div>
 </div>

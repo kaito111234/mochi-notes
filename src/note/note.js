@@ -30,6 +30,8 @@
   const DROP = new Set(['SCRIPT', 'STYLE', 'HEAD', 'META', 'TITLE', 'LINK', 'IFRAME', 'OBJECT', 'EMBED', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'CANVAS', 'VIDEO', 'AUDIO', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION']);
   const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%\/]+\)|hsla?\([\d\s.,%\/a-z]+\)|[a-z]+)$/i;
 
+  // Chromium đặt background-color lên cả B/U/S… khi tô sáng chữ đang đậm/gạch: phải giữ.
+  const STYLED = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'DEL', 'MARK']);
   function bgOf(el) {
     const v = el.style && el.style.backgroundColor;
     return v && COLOR_RE.test(v.trim()) ? v.trim() : '';
@@ -45,8 +47,8 @@
         if (/^data:image\//i.test(s)) { const im = doc.createElement('img'); im.setAttribute('src', s); dst.appendChild(im); }
         continue;
       }
-      if (!ALLOW.has(tag)) { cleanInto(n, dst, doc); continue; }
-      if (tag === 'SPAN') {
+      if (!ALLOW.has(tag) && tag !== 'FONT') { cleanInto(n, dst, doc); continue; }
+      if (tag === 'SPAN' || tag === 'FONT') {
         const bg = bgOf(n);
         if (!bg) { cleanInto(n, dst, doc); continue; }
         const el = doc.createElement('span'); el.setAttribute('style', 'background-color: ' + bg);
@@ -54,7 +56,7 @@
       }
       const el = doc.createElement(tag.toLowerCase());
       if (tag === 'DIV' || tag === 'LI') { const ck = n.getAttribute('data-ck'); if (ck === '0' || ck === '1') el.setAttribute('data-ck', ck); }
-      if (tag === 'MARK') { const bg = bgOf(n); if (bg) el.setAttribute('style', 'background-color: ' + bg); }
+      if (STYLED.has(tag)) { const bg = bgOf(n); if (bg) el.setAttribute('style', 'background-color: ' + bg); }
       cleanInto(n, el, doc);
       dst.appendChild(el);
     }
@@ -388,6 +390,16 @@
     if (r.freq === 'hourly') return 'Mỗi ' + (iv > 1 ? iv + ' ' : '') + 'tiếng';
     return '';
   }
+  function overLabel(ms) {
+    if (ms < 10 * 1000) return 'vừa đến giờ';
+    if (ms < P.MIN) return 'quá hạn vài giây';
+    return 'quá hạn ' + P.dur(ms);
+  }
+  function moreCount() {
+    const r = note && note.reminder;
+    if (!r || !Array.isArray(note.reminders)) return 0;
+    return note.reminders.filter(x => x && !x.done && x.id !== r.id).length;
+  }
   function renderChip() {
     const r = note && note.reminder, row = $('chipRow'), chip = $('chip');
     row.hidden = !r;
@@ -395,7 +407,7 @@
     const now = Date.now();
     let cls = '', txt;
     if (r.done) { cls = 'done'; txt = 'Đã xong'; }
-    else if (now >= r.due) { cls = 'over'; txt = P.whenLabel(r.due) + ' · quá hạn ' + P.dur(now - r.due); }
+    else if (now >= r.due) { cls = 'over'; txt = P.whenLabel(r.due) + ' · ' + overLabel(now - r.due); }
     else {
       txt = P.whenLabel(r.due) + ' · ' + P.leadLabel(r.lead);
       if (r.due - now <= Math.max(r.lead || 0, 15 * P.MIN)) cls = 'soon';
@@ -405,6 +417,8 @@
     chip.className = 'chip ' + cls;
     chip.querySelector('.i-clock').hidden = !!r.done;
     chip.querySelector('.i-check').hidden = !r.done;
+    const more = moreCount();
+    if (more > 0) txt += ' · +' + more;
     $('chipText').textContent = txt;
     chip.title = chip.ariaLabel = 'Nhắc lịch: ' + txt;
   }
@@ -487,18 +501,64 @@
     const d = new Date(ms);
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
+  let editRid;                 // undefined = chế độ cũ (nhắc chính); null = đang thêm; chuỗi = sửa mục đó
+  let formRep = null;          // lịch lặp của mục đang sửa (để chọn đúng trong ô "Lặp lại")
+  let listShown = false;
+  function isMulti() { return !!(N2.setReminderItem && note && Array.isArray(note.reminders)); }
+  function itemTitle(r) { return r.title || titleOf(note && note.text); }
   function refreshRemMeta() {
+    if (isMulti()) { if (listShown) renderRemList(); return; }
     const r = note && note.reminder;
     $('remAuto').hidden = !(r && r.auto);
     $('remOff').hidden = !r;
     $('remDone').hidden = !(r && !r.done);
   }
-  function openRem() {
-    if (!note) return;
-    const r = note.reminder, sel = $('remLead');
+  function setView(list) {
+    listShown = list;
+    $('remList').hidden = !list; $('remForm').hidden = list;
+    $('remListBtns').hidden = !list; $('remFormBtns').hidden = list;
+  }
+  function itemBtn(act, label, rid, cls) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'rb' + (cls ? ' ' + cls : ''); b.dataset.a = act; b.dataset.rid = rid;
+    b.textContent = label; b.title = label; return b;
+  }
+  function renderRemList() {
+    const ul = $('remItems'); ul.textContent = '';
+    const list = (note && note.reminders) || [], now = Date.now();
+    if (!list.length) { const li = document.createElement('li'); li.className = 'rempty'; li.textContent = 'Chưa có nhắc nào.'; ul.appendChild(li); return; }
+    list.forEach(r => {
+      const li = document.createElement('li');
+      const over = !r.done && now >= r.due;
+      li.className = 'ri' + (r.done ? ' done' : '') + (over ? ' over' : '');
+      const t = document.createElement('div'); t.className = 'rt';
+      const h = document.createElement('b'); h.textContent = itemTitle(r);
+      const m = document.createElement('span');
+      let tx = r.done ? 'Đã xong' : P.whenLabel(r.due) + (over ? ' · ' + overLabel(now - r.due) : '');
+      if (!r.done && r.repeat) { const d = describeRep(r.repeat); if (d) tx += ' · ' + d; }
+      m.textContent = tx;
+      t.appendChild(h); t.appendChild(m); li.appendChild(t);
+      const a = document.createElement('div'); a.className = 'ra';
+      if (!r.done) { a.appendChild(itemBtn('done', 'Xong', r.id)); a.appendChild(itemBtn('snooze', 'Hoãn', r.id)); }
+      a.appendChild(itemBtn('edit', 'Sửa', r.id));
+      a.appendChild(itemBtn('del', 'Xoá', r.id, 'del'));
+      li.appendChild(a); ul.appendChild(li);
+    });
+  }
+  function showList() {
+    setView(true); renderRemList();
+    const f = $('remItems').querySelector('button') || $('remAdd');
+    if (f) f.focus();
+  }
+  function showForm(rid) {
+    editRid = rid;
+    const multi = isMulti();
+    const r = multi ? (rid ? (note.reminders || []).find(x => x.id === rid) : null) : (note && note.reminder);
+    const sel = $('remLead');
     let due, lead;
     if (r) { due = r.due; lead = r.lead || 0; }
     else { due = Math.ceil((Date.now() + P.HOUR) / (5 * P.MIN)) * 5 * P.MIN; lead = 5 * P.MIN; }
+    formRep = multi ? (r && r.repeat) || null : curRepeat();
     $('remDue').value = toLocalInput(due);
     Array.from(sel.querySelectorAll('option[data-extra]')).forEach(o => o.remove());
     if (!Array.from(sel.options).some(o => +o.value === lead)) {
@@ -508,9 +568,21 @@
     sel.value = String(lead);
     syncRepeatUi(due);
     $('remErr').hidden = true;
-    refreshRemMeta();
-    openPop(remPanel, $('btnRem'));
+    $('remTitleFld').hidden = !multi;
+    $('remTitle').value = multi && r && r.title ? r.title : '';
+    $('remFormTitle').textContent = multi ? (rid ? 'Sửa nhắc' : 'Thêm nhắc') : 'Nhắc lịch';
+    $('remAuto').hidden = !(r && r.auto);
+    $('remOff').hidden = multi || !r;
+    $('remDone').hidden = multi || !(r && !r.done);
+    $('remBack').hidden = !(multi && note.reminders.length);
+    setView(false);
     $('remDue').focus();
+  }
+  function openRem() {
+    if (!note) return;
+    openPop(remPanel, $('btnRem'));
+    if (isMulti() && note.reminders.length) showList();
+    else showForm(isMulti() ? null : undefined);
   }
   function repKey(r) {
     if (!r) return 'none';
@@ -535,7 +607,7 @@
     const ms = isFinite(due) ? due : Date.now(), d = new Date(ms);
     $('optWeekly').textContent = 'Hằng tuần (' + WD[d.getDay()] + ')';
     $('optMonthly').textContent = 'Hằng tháng (ngày ' + d.getDate() + ')';
-    const cur = curRepeat(), key = repKey(cur);
+    const cur = formRep, key = repKey(cur);
     Array.from(sel.querySelectorAll('option[data-extra]')).forEach(o => o.remove());
     if (key === 'custom') {
       const o = document.createElement('option'); o.value = 'custom'; o.dataset.extra = '1';
@@ -550,7 +622,17 @@
     const err = $('remErr');
     if (!isFinite(due)) { err.textContent = 'Hãy chọn ngày và giờ.'; err.hidden = false; return; }
     if (due <= Date.now()) { err.textContent = 'Hãy chọn một thời điểm trong tương lai.'; err.hidden = false; return; }
-    const sel = $('remRepeat').value, cur = curRepeat();
+    const sel = $('remRepeat').value, cur = formRep;
+    if (isMulti() && editRid !== undefined) {
+      const payload = { due, lead: +$('remLead').value || 0, title: $('remTitle').value.trim() };
+      if (sel !== 'custom') payload.repeat = buildRepeat(sel, due);
+      let r = null;
+      try { r = await N2.setReminderItem(id, editRid, payload); } catch (_) {}
+      if (r && r.id) applyNote(r, { noHtml: true });
+      else { err.textContent = 'Không lưu được nhắc (tối đa 20 nhắc).'; err.hidden = false; return; }
+      showList();
+      return;
+    }
     let r = await M.setReminder(id, { due, lead: +$('remLead').value || 0 });
     if (r) applyNote(r, { noHtml: true });
     if (N2.setRepeat && sel !== 'custom') {
@@ -566,6 +648,21 @@
   $('remOff').addEventListener('click', async () => { const r = await M.setReminder(id, null); if (r) applyNote(r, { noHtml: true }); closePops(); });
   $('remDone').addEventListener('click', async () => { const r = await M.markDone(id); if (r) applyNote(r, { noHtml: true }); closePops(); });
   remPanel.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); saveRem(); } });
+  $('remBack').addEventListener('click', showList);
+  $('remAdd').addEventListener('click', () => showForm(null));
+  $('remClose').addEventListener('click', () => { closePops(); $('btnRem').focus(); });
+  $('remItems').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-a]'); if (!b || !note) return;
+    const rid = b.dataset.rid; let r = null;
+    try {
+      if (b.dataset.a === 'edit') { showForm(rid); return; }
+      if (b.dataset.a === 'done') r = await N2.doneItem(id, rid);
+      else if (b.dataset.a === 'snooze') { r = await N2.snoozeItem(id, rid, 10); toast('Hoãn 10 phút', 1000); }
+      else if (b.dataset.a === 'del') r = await N2.removeReminderItem(id, rid);
+    } catch (_) {}
+    if (r && r.id) applyNote(r, { noHtml: true });
+    if (listShown) renderRemList();
+  });
   $('chip').addEventListener('click', toggleRem);
   $('btnRem').addEventListener('click', toggleRem);
 
@@ -775,6 +872,8 @@
     let got = false;
     if (N2.getMeta) { try { const m = await N2.getMeta(id); if (m) { got = true; meta = m; applyZoom(m.zoom); applyLocked(m.locked); renderChip(); } } catch (_) {} }
     if (!got && !metaPushed) applyLocked(false);
+    // Note mới tạo (rỗng): đặt con trỏ vào vùng soạn để gõ ngay.
+    try { if (!locked && !((n.text || '').trim()) && !n.html) ed.focus(); } catch (_) {}
     readyDone = true; emit('ready');
   })();
   if (N2.onMeta) N2.onMeta(m => {

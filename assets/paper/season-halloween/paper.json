@@ -1,0 +1,62 @@
+{
+  "id": "season-halloween",
+  "name": "Halloween",
+  "group": "season",
+  "order": 70,
+  "noteColor": "purple",
+  "dark": false,
+  "bg": {
+    "color": "#fff1df",
+    "head": "#ffe0bd",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(150,90,200,.3)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Halloween",
+    "font": "baloo2",
+    "color": "#6b3fa8",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#3a2455",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/cat-pumpkin.svg",
+      "pos": "tr",
+      "w": 48,
+      "dx": 6,
+      "dy": 2,
+      "rot": 4
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/pumpkin.svg",
+      "pos": "br",
+      "w": 38,
+      "dx": 8,
+      "dy": 8,
+      "rot": 8
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/star.svg",
+      "pos": "tr",
+      "w": 16,
+      "dx": 62,
+      "dy": 34,
+      "rot": 12
+    }
+  ],
+  "checklist": false
+}

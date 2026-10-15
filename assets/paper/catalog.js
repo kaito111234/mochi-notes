@@ -486,6 +486,77 @@ window.MochiPaperCatalog = {
       "checklist": false
     },
     {
+      "id": "cute-rainy",
+      "name": "Mùa mưa",
+      "group": "cute",
+      "order": 60,
+      "noteColor": "blue",
+      "dark": false,
+      "bg": {
+        "color": "#e8eef4",
+        "head": "#d5e1ec",
+        "gradient": null,
+        "texture": "none"
+      },
+      "lines": {
+        "kind": "ruled",
+        "color": "rgba(90,120,160,.28)",
+        "step": 26,
+        "margin": null
+      },
+      "header": {
+        "text": "Mưa rồi",
+        "font": "pangolin",
+        "color": "#3d5a7a",
+        "size": 22,
+        "align": "left",
+        "style": "plain"
+      },
+      "ink": "#27394d",
+      "font": "nunito",
+      "edge": null,
+      "corner": null,
+      "deco": [
+        {
+          "kind": "img",
+          "src": "deco/animals/frog-umbrella.svg",
+          "pos": "tr",
+          "w": 54,
+          "dx": 8,
+          "dy": 2,
+          "rot": 4
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/cloud.svg",
+          "pos": "tr",
+          "w": 30,
+          "dx": 66,
+          "dy": 6,
+          "rot": -4
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/raindrop.svg",
+          "pos": "br",
+          "w": 26,
+          "dx": 10,
+          "dy": 10,
+          "rot": -6
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/raindrop.svg",
+          "pos": "br",
+          "w": 18,
+          "dx": 40,
+          "dy": 26,
+          "rot": 8
+        }
+      ],
+      "checklist": false
+    },
+    {
       "id": "student-oly",
       "name": "Vở ô ly",
       "group": "student",
@@ -1050,6 +1121,269 @@ window.MochiPaperCatalog = {
           "dx": 8,
           "dy": 8,
           "rot": 10
+        }
+      ],
+      "checklist": false
+    },
+    {
+      "id": "season-summer",
+      "name": "Mùa hè",
+      "group": "season",
+      "order": 40,
+      "noteColor": "blue",
+      "dark": false,
+      "bg": {
+        "color": "#e6f6fb",
+        "head": "#cdeef7",
+        "gradient": null,
+        "texture": "none"
+      },
+      "lines": {
+        "kind": "ruled",
+        "color": "rgba(40,140,170,.26)",
+        "step": 26,
+        "margin": null
+      },
+      "header": {
+        "text": "Hè rồi!",
+        "font": "baloo2",
+        "color": "#c2410c",
+        "size": 22,
+        "align": "left",
+        "style": "plain"
+      },
+      "ink": "#17434f",
+      "font": "nunito",
+      "edge": null,
+      "corner": null,
+      "deco": [
+        {
+          "kind": "img",
+          "src": "deco/items/sun.svg",
+          "pos": "tr",
+          "w": 46,
+          "dx": 6,
+          "dy": 2,
+          "rot": 8
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/watermelon.svg",
+          "pos": "br",
+          "w": 40,
+          "dx": 8,
+          "dy": 8,
+          "rot": -8
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/ice-cream.svg",
+          "pos": "tr",
+          "w": 34,
+          "dx": 60,
+          "dy": 10,
+          "rot": -6
+        }
+      ],
+      "checklist": false
+    },
+    {
+      "id": "season-birthday",
+      "name": "Sinh nhật",
+      "group": "season",
+      "order": 50,
+      "noteColor": "pink",
+      "dark": false,
+      "bg": {
+        "color": "#fff4f8",
+        "head": "#ffe0ec",
+        "gradient": [
+          "#fff4f8",
+          "#ffeef6"
+        ],
+        "texture": "none"
+      },
+      "lines": {
+        "kind": "dots",
+        "color": "rgba(230,110,160,.4)",
+        "step": 26,
+        "margin": null
+      },
+      "header": {
+        "text": "Sinh nhật",
+        "font": "pangolin",
+        "color": "#c2255c",
+        "size": 22,
+        "align": "left",
+        "style": "plain"
+      },
+      "ink": "#5a2a3d",
+      "font": "pangolin",
+      "edge": null,
+      "corner": null,
+      "deco": [
+        {
+          "kind": "img",
+          "src": "deco/items/bunting.svg",
+          "pos": "bl",
+          "w": 100,
+          "dx": 4,
+          "dy": 6,
+          "rot": -3
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/cake.svg",
+          "pos": "br",
+          "w": 44,
+          "dx": 8,
+          "dy": 8,
+          "rot": 6
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/balloon.svg",
+          "pos": "tr",
+          "w": 30,
+          "dx": 6,
+          "dy": 26,
+          "rot": 10
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/balloon-blue.svg",
+          "pos": "tr",
+          "w": 28,
+          "dx": 32,
+          "dy": 34,
+          "rot": -8
+        }
+      ],
+      "checklist": false
+    },
+    {
+      "id": "season-valentine",
+      "name": "Thương",
+      "group": "season",
+      "order": 60,
+      "noteColor": "pink",
+      "dark": false,
+      "bg": {
+        "color": "#ffe6ef",
+        "head": "#ffd0e1",
+        "gradient": [
+          "#ffe9f1",
+          "#ffdbe8"
+        ],
+        "texture": "none"
+      },
+      "lines": {
+        "kind": "ruled",
+        "color": "rgba(220,90,130,.3)",
+        "step": 26,
+        "margin": null
+      },
+      "header": {
+        "text": "Thương",
+        "font": "pangolin",
+        "color": "#b3194f",
+        "size": 24,
+        "align": "left",
+        "style": "plain"
+      },
+      "ink": "#5f1f38",
+      "font": "mali",
+      "edge": null,
+      "corner": null,
+      "deco": [
+        {
+          "kind": "img",
+          "src": "deco/items/envelope.svg",
+          "pos": "tr",
+          "w": 46,
+          "dx": 8,
+          "dy": 2,
+          "rot": 6
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/heart.svg",
+          "pos": "br",
+          "w": 34,
+          "dx": 10,
+          "dy": 10,
+          "rot": -10
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/heart.svg",
+          "pos": "tr",
+          "w": 20,
+          "dx": 60,
+          "dy": 40,
+          "rot": 14
+        }
+      ],
+      "checklist": false
+    },
+    {
+      "id": "season-halloween",
+      "name": "Halloween",
+      "group": "season",
+      "order": 70,
+      "noteColor": "purple",
+      "dark": false,
+      "bg": {
+        "color": "#fff1df",
+        "head": "#ffe0bd",
+        "gradient": null,
+        "texture": "none"
+      },
+      "lines": {
+        "kind": "ruled",
+        "color": "rgba(150,90,200,.3)",
+        "step": 26,
+        "margin": null
+      },
+      "header": {
+        "text": "Halloween",
+        "font": "baloo2",
+        "color": "#6b3fa8",
+        "size": 22,
+        "align": "left",
+        "style": "plain"
+      },
+      "ink": "#3a2455",
+      "font": "nunito",
+      "edge": null,
+      "corner": null,
+      "deco": [
+        {
+          "kind": "img",
+          "src": "deco/animals/cat-pumpkin.svg",
+          "pos": "tr",
+          "w": 48,
+          "dx": 6,
+          "dy": 2,
+          "rot": 4
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/pumpkin.svg",
+          "pos": "br",
+          "w": 38,
+          "dx": 8,
+          "dy": 8,
+          "rot": 8
+        },
+        {
+          "kind": "img",
+          "src": "deco/items/star.svg",
+          "pos": "tr",
+          "w": 16,
+          "dx": 62,
+          "dy": 34,
+          "rot": 12
         }
       ],
       "checklist": false

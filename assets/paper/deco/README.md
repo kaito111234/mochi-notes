@@ -23,6 +23,8 @@ SVG vẽ tay bằng code cho giấy note của Mochi Notes. **Vẽ nguyên bản
 | `penguin.svg` | Chim cánh cụt | 0 0 64 64 |
 | `frog.svg` | Ếch | 0 0 64 64 |
 | `whale.svg` | Cá voi | 0 0 64 64 |
+| `frog-umbrella.svg` | Ếch che ô hồng | 0 0 64 64 |
+| `cat-pumpkin.svg` | Mèo đen đội mũ phù thủy tím | 0 0 64 64 |
 
 ## `items/` — đồ vật, mùa và lễ
 | File | Mô tả | viewBox |
@@ -43,3 +45,15 @@ SVG vẽ tay bằng code cho giấy note của Mochi Notes. **Vẽ nguyên bản
 | `leaf.svg` | Lá xanh | 0 0 64 64 |
 | `coffee.svg` | Cốc cà phê có hơi bốc | 0 0 64 64 |
 | `pencil.svg` | Bút chì vàng nằm chéo | 0 0 64 64 |
+| `watermelon.svg` | Miếng dưa hấu | 0 0 64 64 |
+| `ice-cream.svg` | Kem ốc quế có mặt | 0 0 64 64 |
+| `sun.svg` | Mặt trời cười | 0 0 64 64 |
+| `cake.svg` | Bánh kem sinh nhật có nến | 0 0 64 64 |
+| `balloon.svg` | Bóng bay hồng | 0 0 64 64 |
+| `balloon-blue.svg` | Bóng bay xanh | 0 0 64 64 |
+| `bunting.svg` | Dây cờ tam giác nhiều màu | 0 0 120 40 |
+| `envelope.svg` | Phong thư có tim | 0 0 64 64 |
+| `pumpkin.svg` | Bí ngô cười (dễ thương) | 0 0 64 64 |
+| `raindrop.svg` | Giọt mưa có mặt | 0 0 64 64 |
+| `cloud.svg` | Đám mây có mặt | 0 0 64 64 |
+| `umbrella.svg` | Ô vàng | 0 0 64 64 |

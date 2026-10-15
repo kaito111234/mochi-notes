@@ -1,25 +1,33 @@
+/* Dải gợi ý "hiểu note" (phòng paper). Dùng --fg/--fg-rgb của note nên đọc được cả nền tối. */
 .insight-row {
-  display: flex; align-items: center; gap: 6px;
-  min-height: 24px; max-height: 24px; box-sizing: border-box;
-  margin: 2px 6px; padding: 0 3px 0 7px;
-  font-size: 12px; line-height: 24px;
-  color: var(--fg, #1f1f1f);
-  background: rgba(var(--fg-rgb, 31,31,31), .06);
-  border-radius: 12px;
-  overflow: hidden;
-  flex: 0 0 auto;
+  flex: none; display: flex; align-items: center; gap: 6px; box-sizing: border-box;
+  min-height: 26px; margin: 2px 8px 0; padding: 2px 4px 2px 8px;
+  font-size: 12px; line-height: 20px; color: var(--fg, #1f1f1f);
+  background: rgba(var(--fg-rgb, 31,31,31), .08);
+  border: 1px solid rgba(var(--fg-rgb, 31,31,31), .07);
+  border-radius: 13px; overflow: hidden; position: relative; z-index: 1;
 }
 .insight-row[hidden] { display: none; }
 .insight-row.show { animation: ins-in .28s ease-out both; }
+.insight-row.busy { opacity: .6; pointer-events: none; }
 @keyframes ins-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 .insight-row .ins-ic { display: inline-flex; flex: none; opacity: .75; }
-.insight-row .ins-tx { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.insight-row .ins-tx { flex: 0 100 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .85; }
+.insight-row .ins-btns { flex: 1 1 auto; min-width: 0; display: flex; gap: 4px; justify-content: flex-end; overflow: hidden; }
 .insight-row button {
-  flex: none; font: inherit; font-size: 12px; line-height: 18px; height: 18px;
-  border: 0; cursor: pointer; color: inherit; padding: 0 8px; border-radius: 9px;
-  background: transparent;
+  font: inherit; font-size: 12px; line-height: 18px; height: 20px; border: 0; cursor: pointer;
+  color: inherit; padding: 0 8px; border-radius: 10px; background: transparent;
+  -webkit-app-region: no-drag;
 }
-.insight-row .ins-go { background: rgba(var(--fg-rgb, 31,31,31), .14); font-weight: 600; }
-.insight-row .ins-go:hover, .insight-row .ins-x:hover { background: rgba(var(--fg-rgb, 31,31,31), .22); }
-.insight-row .ins-x { padding: 0 6px; opacity: .6; }
+.insight-row .ins-go {
+  flex: 0 1 auto; min-width: 36px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: rgba(var(--fg-rgb, 31,31,31), .14); font-weight: 600;
+}
+.insight-row .ins-go:hover:not(:disabled), .insight-row .ins-more:hover, .insight-row .ins-x:hover { background: rgba(var(--fg-rgb, 31,31,31), .24); }
+.insight-row .ins-go:disabled { opacity: .4; cursor: default; }
+.insight-row .ins-more { flex: none; padding: 0 6px; font-weight: 700; }
+.insight-row .ins-x { flex: none; padding: 0 6px; opacity: .6; }
+.insight-row button:focus-visible { outline: 2px solid rgba(var(--fg-rgb, 31,31,31), .5); outline-offset: 1px; }
+.insight-row.compact { margin: 2px 6px 0; padding-left: 6px; gap: 4px; }
+.insight-row.compact .ins-btns { justify-content: flex-start; }
 @media (prefers-reduced-motion: reduce) { .insight-row.show { animation: none; } }

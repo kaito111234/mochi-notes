@@ -1,0 +1,71 @@
+{
+  "id": "cute-rainy",
+  "name": "Mùa mưa",
+  "group": "cute",
+  "order": 60,
+  "noteColor": "blue",
+  "dark": false,
+  "bg": {
+    "color": "#e8eef4",
+    "head": "#d5e1ec",
+    "gradient": null,
+    "texture": "none"
+  },
+  "lines": {
+    "kind": "ruled",
+    "color": "rgba(90,120,160,.28)",
+    "step": 26,
+    "margin": null
+  },
+  "header": {
+    "text": "Mưa rồi",
+    "font": "pangolin",
+    "color": "#3d5a7a",
+    "size": 22,
+    "align": "left",
+    "style": "plain"
+  },
+  "ink": "#27394d",
+  "font": "nunito",
+  "edge": null,
+  "corner": null,
+  "deco": [
+    {
+      "kind": "img",
+      "src": "deco/animals/frog-umbrella.svg",
+      "pos": "tr",
+      "w": 54,
+      "dx": 8,
+      "dy": 2,
+      "rot": 4
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/cloud.svg",
+      "pos": "tr",
+      "w": 30,
+      "dx": 66,
+      "dy": 6,
+      "rot": -4
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/raindrop.svg",
+      "pos": "br",
+      "w": 26,
+      "dx": 10,
+      "dy": 10,
+      "rot": -6
+    },
+    {
+      "kind": "img",
+      "src": "deco/items/raindrop.svg",
+      "pos": "br",
+      "w": 18,
+      "dx": 40,
+      "dy": 26,
+      "rot": 8
+    }
+  ],
+  "checklist": false
+}
