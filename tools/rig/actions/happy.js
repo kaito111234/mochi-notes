@@ -16,12 +16,12 @@ const f = (o) => o;
 
 const frames = [
   // 1 lấy đà
-  f({ ms: 100, face: 'happy', global: G(0.96, 0, 1.02),
+  f({ ms: 100, face: 'closed_happy', global: G(0.96, 0, 1.02),
       bones: { chest: { sy: 0.98, r: 2 }, head: { r: 0, y: 2 }, ...arms(-12, 8, -12, 8), ...hairBack(-0.5), hand_l: {}, hand_r: {} },
       swap: { hand_l: 'open', hand_r: 'open' }, z: ARM_Z,
       show: [] }),
   // 2 nén sâu, tay vung ra sau
-  f({ ms: 100, face: 'happy', global: G(0.93, 0, 1.03),
+  f({ ms: 100, face: 'closed_happy', global: G(0.93, 0, 1.03),
       bones: { chest: { sy: 0.97, r: 3 }, head: { r: 0, y: 3 }, ...arms(-22, 8, -22, 8), ...hairBack(-1) },
       swap: { hand_l: 'fist', hand_r: 'fist' }, z: ARM_Z }),
   // 3 bật lên, kéo giãn, tay giơ nắm
@@ -48,7 +48,7 @@ const frames = [
       show: [{ id: 'fx_notes', file: 'fx/notes_music.svg', bone: 'canvas', z: 210, y: 4 },
              { id: 'fx_sp2', file: 'fx/sparkle2.svg', bone: 'canvas', z: 211 }] }),
   // 7 đứng ôm má
-  f({ ms: 160, face: 'happy', global: G(0.98, 0, 1.01),
+  f({ ms: 160, face: 'laugh', global: G(0.98, 0, 1.01),
       bones: { chest: { sy: 0.99, r: 0 }, head: { r: 3, y: 1 }, ...arms(40, 140), ...hairBack(-0.4) },
       swap: { hand_l: 'open', hand_r: 'open' }, z: ARM_Z,
       show: [{ id: 'fx_sp1', file: 'fx/sparkle.svg', bone: 'canvas', z: 211 }] }),
