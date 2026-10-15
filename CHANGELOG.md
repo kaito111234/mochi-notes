@@ -2,6 +2,11 @@
 
 Tóm từ lịch sử git. Phiên bản mới nhất ở trên cùng.
 
+## 0.11.0
+- Làm lại màn nhắc to: bé bay ra, đập tay lên kính, tờ note đẹp, nút Xong / Hoãn 5–10 phút / Mở note, phím tắt Enter/S/Esc.
+- Menu khay: chọn hiệu ứng nhắc to Sinh động hoặc Nhẹ nhàng.
+- README và trang web có clip demo thật.
+
 ## 0.10.0
 - Sao lưu note ra OneDrive / Google Drive (mỗi ngày và khi tắt app, giữ 14 bản).
 - Hướng dẫn lần đầu 6 bước cho người dùng mới.
